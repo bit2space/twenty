@@ -21,30 +21,33 @@ export class GoogleEmailAliasManagerService {
         connectedAccount,
       );
 
-    const peopleClient = google.people({
+    const gmailClient = google.gmail({
       version: 'v1',
       auth: oAuth2Client,
     });
 
-    const emailsResponse = await peopleClient.people
-      .get({
-        resourceName: 'people/me',
-        personFields: 'emailAddresses',
+    // Use Gmail API to get Send-As aliases instead of People API
+    // This correctly fetches Gmail aliases configured in Settings → Accounts → "Send mail as"
+    const sendAsResponse = await gmailClient.users.settings.sendAs
+      .list({
+        userId: 'me',
       })
       .catch((error) => {
         throw this.gmailEmailAliasErrorHandlerService.handleError(error);
       });
 
-    const emailAddresses = emailsResponse.data.emailAddresses;
+    const sendAsAddresses = sendAsResponse.data.sendAs;
 
     const handleAliases =
-      emailAddresses
-        ?.filter((emailAddress) => {
-          return emailAddress.metadata?.primary !== true;
+      sendAsAddresses
+        ?.filter((sendAs) => {
+          // Filter out the primary address (isPrimary === true)
+          return sendAs.isPrimary !== true;
         })
-        .map((emailAddress) => {
-          return emailAddress.value || '';
-        }) || [];
+        .map((sendAs) => {
+          return sendAs.sendAsEmail || '';
+        })
+        .filter((email) => email !== '') || [];
 
     return handleAliases;
   }

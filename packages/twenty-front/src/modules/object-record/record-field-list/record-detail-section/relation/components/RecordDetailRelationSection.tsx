@@ -1,9 +1,9 @@
 import { useContext } from 'react';
-import { useRecoilValue } from 'recoil';
 
 import { useObjectMetadataItem } from '@/object-metadata/hooks/useObjectMetadataItem';
 import { useObjectMetadataItems } from '@/object-metadata/hooks/useObjectMetadataItems';
 import { useAggregateRecords } from '@/object-record/hooks/useAggregateRecords';
+import { useRecordFieldsScopeContextOrThrow } from '@/object-record/record-field-list/contexts/RecordFieldsScopeContext';
 import { RecordDetailSectionContainer } from '@/object-record/record-field-list/record-detail-section/components/RecordDetailSectionContainer';
 import { RecordDetailRelationRecordsList } from '@/object-record/record-field-list/record-detail-section/relation/components/RecordDetailRelationRecordsList';
 import { RecordDetailRelationSectionDropdown } from '@/object-record/record-field-list/record-detail-section/relation/components/RecordDetailRelationSectionDropdown';
@@ -20,8 +20,9 @@ import { AggregateOperations } from '@/object-record/record-table/constants/Aggr
 import { type ObjectRecord } from '@/object-record/types/ObjectRecord';
 import { isDropdownOpenComponentState } from '@/ui/layout/dropdown/states/isDropdownOpenComponentState';
 import { useIsMobile } from '@/ui/utilities/responsive/hooks/useIsMobile';
-import { useRecoilComponentValue } from '@/ui/utilities/state/component-state/hooks/useRecoilComponentValue';
-import { coreIndexViewIdFromObjectMetadataItemFamilySelector } from '@/views/states/selectors/coreIndexViewIdFromObjectMetadataItemFamilySelector';
+import { useAtomFamilySelectorValue } from '@/ui/utilities/state/jotai/hooks/useAtomFamilySelectorValue';
+import { useAtomComponentStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomComponentStateValue';
+import { indexViewIdFromObjectMetadataItemFamilySelector } from '@/views/states/selectors/indexViewIdFromObjectMetadataItemFamilySelector';
 import { useLingui } from '@lingui/react/macro';
 import {
   AppPath,
@@ -46,6 +47,7 @@ export const RecordDetailRelationSection = ({
 }: RecordDetailRelationSectionProps) => {
   const { t } = useLingui();
 
+  const { scopeInstanceId } = useRecordFieldsScopeContextOrThrow();
   const { recordId, fieldDefinition } = useContext(FieldContext);
 
   const {
@@ -79,9 +81,10 @@ export const RecordDetailRelationSection = ({
     );
   }
 
-  const fieldValue = useRecoilValue<
-    ({ id: string } & Record<string, any>) | ObjectRecord[] | null
-  >(recordStoreFamilySelector({ recordId, fieldName }));
+  const fieldValue = useAtomFamilySelectorValue(recordStoreFamilySelector, {
+    recordId,
+    fieldName,
+  }) as ({ id: string } & Record<string, unknown>) | ObjectRecord[] | null;
 
   // TODO: use new relation type
   const isToOneObject = relationType === RelationType.MANY_TO_ONE;
@@ -95,17 +98,17 @@ export const RecordDetailRelationSection = ({
   const dropdownId = getRecordFieldCardRelationPickerDropdownId({
     fieldDefinition,
     recordId,
+    instanceId: scopeInstanceId,
   });
 
-  const isDropdownOpen = useRecoilComponentValue(
+  const isDropdownOpen = useAtomComponentStateValue(
     isDropdownOpenComponentState,
     dropdownId,
   );
 
-  const indexViewId = useRecoilValue(
-    coreIndexViewIdFromObjectMetadataItemFamilySelector({
-      objectMetadataItemId: relationObjectMetadataItem.id,
-    }),
+  const indexViewId = useAtomFamilySelectorValue(
+    indexViewIdFromObjectMetadataItemFamilySelector,
+    { objectMetadataItemId: relationObjectMetadataItem.id },
   );
 
   const filterQueryParams = {
@@ -185,6 +188,7 @@ export const RecordDetailRelationSection = ({
       }}
     >
       <RecordDetailSectionContainer
+        dataTestId={`${fieldDefinition.label.toLowerCase().replace(' ', '-')}-relation`}
         title={fieldDefinition.label}
         link={
           isToManyObjects

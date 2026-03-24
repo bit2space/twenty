@@ -32,6 +32,7 @@ export enum ErrorCode {
   TIMEOUT = 'TIMEOUT',
   INTERNAL_SERVER_ERROR = 'INTERNAL_SERVER_ERROR',
   METADATA_VALIDATION_FAILED = 'METADATA_VALIDATION_FAILED',
+  APPLICATION_INSTALLATION_FAILED = 'APPLICATION_INSTALLATION_FAILED',
 }
 
 type RestrictedGraphQLErrorExtensions = {
@@ -40,7 +41,7 @@ type RestrictedGraphQLErrorExtensions = {
 };
 
 export class BaseGraphQLError extends GraphQLError {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // oxlint-disable-next-line @typescripttypescript/no-explicit-any
   public extensions: Record<string, any>;
   override readonly name!: string;
   readonly locations: ReadonlyArray<SourceLocation> | undefined;
@@ -50,12 +51,12 @@ export class BaseGraphQLError extends GraphQLError {
   readonly nodes: ReadonlyArray<ASTNode> | undefined;
   public originalError: Error | undefined;
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // oxlint-disable-next-line @typescripttypescript/no-explicit-any
   [key: string]: any;
   constructor(
     exceptionOrMessage: string | CustomException,
     code?: string,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // oxlint-disable-next-line @typescripttypescript/no-explicit-any
     extensions?: Record<string, any>,
   ) {
     if (exceptionOrMessage instanceof CustomException) {

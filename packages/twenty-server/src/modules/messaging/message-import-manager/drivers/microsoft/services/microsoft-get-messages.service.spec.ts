@@ -2,7 +2,10 @@ import { Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Test, type TestingModule } from '@nestjs/testing';
 
-import { ConnectedAccountProvider } from 'twenty-shared/types';
+import {
+  ConnectedAccountProvider,
+  MessageParticipantRole,
+} from 'twenty-shared/types';
 
 import { TwentyConfigService } from 'src/engine/core-modules/twenty-config/twenty-config.service';
 import { GoogleOAuth2ClientManagerService } from 'src/modules/connected-account/oauth2-client-manager/drivers/google/google-oauth2-client-manager.service';
@@ -97,15 +100,18 @@ describe('Microsoft get messages service', () => {
         {
           displayName: 'John l',
           handle: 'john.l@outlook.fr',
-          role: 'from',
+          role: MessageParticipantRole.FROM,
         },
         {
           displayName: 'Walker',
           handle: 'walker@felixacme.onmicrosoft.com',
-          role: 'to',
+          role: MessageParticipantRole.TO,
         },
       ],
       attachments: [],
+      messageFolderExternalIds: responseExample1.body.parentFolderId
+        ? [responseExample1.body.parentFolderId]
+        : [],
     });
 
     const responseExample2 =
@@ -130,25 +136,28 @@ describe('Microsoft get messages service', () => {
         {
           displayName: 'Microsoft',
           handle: 'microsoft-noreply@microsoft.com',
-          role: 'from',
+          role: MessageParticipantRole.FROM,
         },
         {
           displayName: 'Walker',
           handle: 'walker@felixacme.onmicrosoft.com',
-          role: 'to',
+          role: MessageParticipantRole.TO,
         },
         {
           displayName: 'Antoine',
           handle: 'antoine@gmail.com',
-          role: 'cc',
+          role: MessageParticipantRole.CC,
         },
         {
           displayName: 'Cyril@acme2.com',
           handle: 'cyril@acme2.com',
-          role: 'cc',
+          role: MessageParticipantRole.CC,
         },
       ],
       attachments: [],
+      messageFolderExternalIds: responseExample2.body.parentFolderId
+        ? [responseExample2.body.parentFolderId]
+        : [],
     });
   });
 
@@ -184,10 +193,13 @@ describe('Microsoft get messages service', () => {
           displayName: responseExample.body.sender.emailAddress.name,
           handle:
             responseExample.body.sender.emailAddress.address.toLowerCase(),
-          role: 'from',
+          role: MessageParticipantRole.FROM,
         },
       ],
       attachments: [],
+      messageFolderExternalIds: responseExample.body.parentFolderId
+        ? [responseExample.body.parentFolderId]
+        : [],
     });
   });
 });

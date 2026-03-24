@@ -1,71 +1,89 @@
-import styled from '@emotion/styled';
+import { styled } from '@linaria/react';
 import { useContext } from 'react';
+import { MOBILE_VIEWPORT, themeCssVariables } from 'twenty-ui/theme-constants';
 
-import { RECORD_TABLE_COLUMN_CHECKBOX_WIDTH } from '@/object-record/record-table/constants/RecordTableColumnCheckboxWidth';
-import { RECORD_TABLE_COLUMN_DRAG_AND_DROP_WIDTH } from '@/object-record/record-table/constants/RecordTableColumnDragAndDropWidth';
+import {
+  RECORD_TABLE_CHECKBOX_WIDTH_CSS_VAR,
+  RECORD_TABLE_DRAG_DROP_WIDTH_CSS_VAR,
+} from '@/object-record/record-table/components/RecordTableStyleWrapper';
 import { RECORD_TABLE_LABEL_IDENTIFIER_COLUMN_WIDTH_ON_MOBILE } from '@/object-record/record-table/constants/RecordTableLabelIdentifierColumnWidthOnMobile';
 import { RECORD_TABLE_ROW_HEIGHT } from '@/object-record/record-table/constants/RecordTableRowHeight';
 import { TABLE_Z_INDEX } from '@/object-record/record-table/constants/TableZIndex';
 import { useRecordTableContextOrThrow } from '@/object-record/record-table/contexts/RecordTableContext';
 import { RecordTableColumnAggregateFooterCellContext } from '@/object-record/record-table/record-table-footer/components/RecordTableColumnAggregateFooterCellContext';
+import { RecordTableColumnAggregateFooterValue } from '@/object-record/record-table/record-table-footer/components/RecordTableColumnAggregateFooterValue';
 import { RecordTableColumnFooterWithDropdown } from '@/object-record/record-table/record-table-footer/components/RecordTableColumnAggregateFooterWithDropdown';
+import { hasAggregateOperationForViewFieldFamilySelector } from '@/object-record/record-table/record-table-footer/states/hasAggregateOperationForViewFieldFamilySelector';
+import { isRecordTableColumnResizableComponentState } from '@/object-record/record-table/states/isRecordTableColumnResizableComponentState';
 import { getRecordTableColumnFieldWidthClassName } from '@/object-record/record-table/utils/getRecordTableColumnFieldWidthClassName';
+import { useAtomFamilySelectorValue } from '@/ui/utilities/state/jotai/hooks/useAtomFamilySelectorValue';
+import { useAtomComponentStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomComponentStateValue';
 import { cx } from '@linaria/core';
 import { findByProperty, isDefined } from 'twenty-shared/utils';
-import { MOBILE_VIEWPORT } from 'twenty-ui/theme';
 
 const StyledColumnFooterCell = styled.div<{
   columnWidth: number;
   isFirstCell: boolean;
-  isTableWithGroups: boolean;
+  isReadOnly: boolean;
 }>`
-  background-color: ${({ theme }) => theme.background.primary};
-  color: ${({ theme }) => theme.font.color.tertiary};
+  background-color: ${themeCssVariables.background.primary};
+  border-right: solid 1px ${themeCssVariables.background.primary};
 
-  border-right: solid 1px ${({ theme }) => theme.background.primary};
+  bottom: 0;
 
-  padding: 0;
+  color: ${themeCssVariables.font.color.tertiary};
 
-  ${({ columnWidth }) => `
-      min-width: ${columnWidth}px;
-      width: ${columnWidth}px;
-      `}
-  text-align: left;
-  ${({ theme }) => {
-    return `
-    &:hover {
-      background: ${theme.background.secondary};
-    };
-    `;
-  }};
+  cursor: ${({ isReadOnly }) => (isReadOnly ? 'default' : 'pointer')};
   height: ${RECORD_TABLE_ROW_HEIGHT}px;
+
+  left: ${({ isFirstCell }) =>
+    isFirstCell
+      ? `calc(var(${RECORD_TABLE_DRAG_DROP_WIDTH_CSS_VAR}) + var(${RECORD_TABLE_CHECKBOX_WIDTH_CSS_VAR}))`
+      : 'auto'};
+
+  &:hover {
+    background: ${({ isReadOnly }) =>
+      isReadOnly
+        ? themeCssVariables.background.primary
+        : themeCssVariables.background.secondary};
+  }
+
+  min-width: ${({ columnWidth }) => columnWidth}px;
 
   overflow: hidden;
 
+  padding: 0;
+
   position: sticky;
-  bottom: 0;
+  text-align: left;
 
-  ${({ isFirstCell }) =>
-    isFirstCell
-      ? `
-    @media (max-width: ${MOBILE_VIEWPORT}px) {
-            width: ${RECORD_TABLE_LABEL_IDENTIFIER_COLUMN_WIDTH_ON_MOBILE}px;
-            max-width: ${RECORD_TABLE_LABEL_IDENTIFIER_COLUMN_WIDTH_ON_MOBILE}px;
-            min-width: ${RECORD_TABLE_LABEL_IDENTIFIER_COLUMN_WIDTH_ON_MOBILE}px;
-          }
-  `
-      : ''}
+  width: ${({ columnWidth }) => columnWidth}px;
 
-  ${({ isFirstCell, isTableWithGroups }) =>
+  z-index: ${({ isFirstCell }) =>
     isFirstCell
-      ? `left: ${RECORD_TABLE_COLUMN_DRAG_AND_DROP_WIDTH + RECORD_TABLE_COLUMN_CHECKBOX_WIDTH}px; z-index: ${isTableWithGroups ? TABLE_Z_INDEX.footer.tableWithGroups.stickyColumn : TABLE_Z_INDEX.footer.tableWithoutGroups.stickyColumn};`
-      : `z-index: ${isTableWithGroups ? TABLE_Z_INDEX.footer.tableWithGroups.default : TABLE_Z_INDEX.footer.tableWithoutGroups.default};`}
+      ? TABLE_Z_INDEX.footer.stickyColumn
+      : TABLE_Z_INDEX.footer.default};
+
+  @media (max-width: ${MOBILE_VIEWPORT}px) {
+    max-width: ${({ isFirstCell }) =>
+      isFirstCell
+        ? `${RECORD_TABLE_LABEL_IDENTIFIER_COLUMN_WIDTH_ON_MOBILE}px`
+        : 'none'};
+    min-width: ${({ isFirstCell }) =>
+      isFirstCell
+        ? `${RECORD_TABLE_LABEL_IDENTIFIER_COLUMN_WIDTH_ON_MOBILE}px`
+        : '0'};
+    width: ${({ isFirstCell }) =>
+      isFirstCell
+        ? `${RECORD_TABLE_LABEL_IDENTIFIER_COLUMN_WIDTH_ON_MOBILE}px`
+        : 'auto'};
+  }
 `;
 
 const StyledColumnFootContainer = styled.div`
   position: relative;
-  z-index: 1;
   width: 100%;
+  z-index: 1;
 `;
 
 export const RecordTableAggregateFooterCell = ({
@@ -77,15 +95,24 @@ export const RecordTableAggregateFooterCell = ({
 }) => {
   const { visibleRecordFields } = useRecordTableContextOrThrow();
 
-  const { fieldMetadataId } = useContext(
+  const { fieldMetadataId, viewFieldId } = useContext(
     RecordTableColumnAggregateFooterCellContext,
   );
+
+  const hasAggregateOperationForViewField = useAtomFamilySelectorValue(
+    hasAggregateOperationForViewFieldFamilySelector,
+    { viewFieldId },
+  );
+
+  const isRecordTableColumnResizable = useAtomComponentStateValue(
+    isRecordTableColumnResizableComponentState,
+  );
+
+  const isFooterReadOnly = !isRecordTableColumnResizable;
 
   const recordField = visibleRecordFields.find(
     findByProperty('fieldMetadataItemId', fieldMetadataId),
   );
-
-  const isTableWithGroups = isDefined(currentRecordGroupId);
 
   const isFirstCell = columnIndex === 0;
 
@@ -97,17 +124,26 @@ export const RecordTableAggregateFooterCell = ({
     <StyledColumnFooterCell
       columnWidth={recordField.size + 1}
       isFirstCell={isFirstCell}
+      isReadOnly={isFooterReadOnly}
       className={cx(
         'footer-cell',
         getRecordTableColumnFieldWidthClassName(columnIndex),
       )}
-      isTableWithGroups={isTableWithGroups}
     >
       <StyledColumnFootContainer>
-        <RecordTableColumnFooterWithDropdown
-          currentRecordGroupId={currentRecordGroupId}
-          isFirstCell={isFirstCell}
-        />
+        {isFooterReadOnly ? (
+          hasAggregateOperationForViewField ? (
+            <RecordTableColumnAggregateFooterValue
+              fieldMetadataId={fieldMetadataId}
+              dropdownId={`${fieldMetadataId}-footer-readonly`}
+            />
+          ) : null
+        ) : (
+          <RecordTableColumnFooterWithDropdown
+            currentRecordGroupId={currentRecordGroupId}
+            isFirstCell={isFirstCell}
+          />
+        )}
       </StyledColumnFootContainer>
     </StyledColumnFooterCell>
   );

@@ -1,37 +1,39 @@
 import { shouldCompactRecordIndexLabelIdentifierComponentState } from '@/object-record/record-index/states/shouldCompactRecordIndexLabelIdentifierComponentState';
 import { RECORD_TABLE_HORIZONTAL_SCROLL_SHADOW_VISIBILITY_CSS_VARIABLE_NAME } from '@/object-record/record-table/constants/RecordTableHorizontalScrollShadowVisibilityCssVariableName';
 import { RECORD_TABLE_VERTICAL_SCROLL_SHADOW_VISIBILITY_CSS_VARIABLE_NAME } from '@/object-record/record-table/constants/RecordTableVerticalScrollShadowVisibilityCssVariableName';
+import { useRecordTableContextOrThrow } from '@/object-record/record-table/contexts/RecordTableContext';
 import { isRecordTableScrolledHorizontallyComponentState } from '@/object-record/record-table/states/isRecordTableScrolledHorizontallyComponentState';
 import { isRecordTableScrolledVerticallyComponentState } from '@/object-record/record-table/states/isRecordTableScrolledVerticallyComponentState';
 import { shouldCompactRecordTableFirstColumnComponentState } from '@/object-record/record-table/states/shouldCompactRecordTableFirstColumnComponentState';
 import { updateRecordTableCSSVariable } from '@/object-record/record-table/utils/updateRecordTableCSSVariable';
 
 import { useScrollWrapperHTMLElement } from '@/ui/utilities/scroll/hooks/useScrollWrapperHTMLElement';
-import { useRecoilComponentState } from '@/ui/utilities/state/component-state/hooks/useRecoilComponentState';
-import { useSetRecoilComponentState } from '@/ui/utilities/state/component-state/hooks/useSetRecoilComponentState';
+import { useAtomComponentState } from '@/ui/utilities/state/jotai/hooks/useAtomComponentState';
+import { useSetAtomComponentState } from '@/ui/utilities/state/jotai/hooks/useSetAtomComponentState';
 
 import { useEffect } from 'react';
 import { isDefined } from 'twenty-shared/utils';
 import { useIsMobile } from 'twenty-ui/utilities';
 
 export const RecordTableScrollAndZIndexEffect = () => {
+  const { recordTableId } = useRecordTableContextOrThrow();
   const { scrollWrapperHTMLElement } = useScrollWrapperHTMLElement();
   const isMobile = useIsMobile();
   const [
     isRecordTableScrolledHorizontally,
     setIsRecordTableScrolledHorizontally,
-  ] = useRecoilComponentState(isRecordTableScrolledHorizontallyComponentState);
+  ] = useAtomComponentState(isRecordTableScrolledHorizontallyComponentState);
 
-  const setShouldCompactRecordTableFirstColumn = useSetRecoilComponentState(
+  const setShouldCompactRecordTableFirstColumn = useSetAtomComponentState(
     shouldCompactRecordTableFirstColumnComponentState,
   );
 
-  const setShouldCompactRecordIndexLabelIdentifier = useSetRecoilComponentState(
+  const setShouldCompactRecordIndexLabelIdentifier = useSetAtomComponentState(
     shouldCompactRecordIndexLabelIdentifierComponentState,
   );
 
   const [isRecordTableScrolledVertically, setIsRecordTableScrolledVertically] =
-    useRecoilComponentState(isRecordTableScrolledVerticallyComponentState);
+    useAtomComponentState(isRecordTableScrolledVerticallyComponentState);
 
   useEffect(() => {
     if (!isDefined(scrollWrapperHTMLElement)) {
@@ -51,6 +53,7 @@ export const RecordTableScrollAndZIndexEffect = () => {
           : 'hidden';
 
         updateRecordTableCSSVariable(
+          recordTableId,
           RECORD_TABLE_VERTICAL_SCROLL_SHADOW_VISIBILITY_CSS_VARIABLE_NAME,
           newVisibilityOfShadows,
         );
@@ -66,6 +69,7 @@ export const RecordTableScrollAndZIndexEffect = () => {
           : 'hidden';
 
         updateRecordTableCSSVariable(
+          recordTableId,
           RECORD_TABLE_HORIZONTAL_SCROLL_SHADOW_VISIBILITY_CSS_VARIABLE_NAME,
           newVisibilityOfShadows,
         );
@@ -88,6 +92,7 @@ export const RecordTableScrollAndZIndexEffect = () => {
       scrollWrapperHTMLElement?.removeEventListener('scroll', handleScroll);
     };
   }, [
+    recordTableId,
     scrollWrapperHTMLElement,
     isRecordTableScrolledVertically,
     isRecordTableScrolledHorizontally,

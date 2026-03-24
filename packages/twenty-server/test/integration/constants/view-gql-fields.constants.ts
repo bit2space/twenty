@@ -23,6 +23,7 @@ export const VIEW_FIELD_GQL_FIELDS = `
     isVisible
     size
     viewId
+    viewFieldGroupId
     createdAt
     updatedAt
     deletedAt
@@ -64,6 +65,18 @@ export const VIEW_FILTER_GROUP_GQL_FIELDS = `
     id
     logicalOperator
     parentViewFilterGroupId
+    positionInViewFilterGroup
+    viewId
+    createdAt
+    updatedAt
+    deletedAt
+`;
+
+export const VIEW_FIELD_GROUP_GQL_FIELDS = `
+    id
+    name
+    position
+    isVisible
     viewId
     createdAt
     updatedAt

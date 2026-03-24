@@ -1,4 +1,4 @@
-import { useSetRecoilComponentState } from '@/ui/utilities/state/component-state/hooks/useSetRecoilComponentState';
+import { useSetAtomComponentState } from '@/ui/utilities/state/jotai/hooks/useSetAtomComponentState';
 import { useGetUpdatableWorkflowVersionOrThrow } from '@/workflow/hooks/useGetUpdatableWorkflowVersionOrThrow';
 import { workflowLastCreatedStepIdComponentState } from '@/workflow/states/workflowLastCreatedStepIdComponentState';
 import { type WorkflowActionType } from '@/workflow/types/Workflow';
@@ -18,10 +18,10 @@ import { v4 } from 'uuid';
 export const useCreateStep = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { createWorkflowVersionStep } = useCreateWorkflowVersionStep();
-  const setWorkflowSelectedNode = useSetRecoilComponentState(
+  const setWorkflowSelectedNode = useSetAtomComponentState(
     workflowSelectedNodeComponentState,
   );
-  const setWorkflowLastCreatedStepId = useSetRecoilComponentState(
+  const setWorkflowLastCreatedStepId = useSetAtomComponentState(
     workflowLastCreatedStepIdComponentState,
   );
 
@@ -34,12 +34,18 @@ export const useCreateStep = () => {
     nextStepId,
     position,
     connectionOptions,
+    shouldSelectNode = true,
+    workflowVersionId: providedWorkflowVersionId,
+    defaultSettings,
   }: {
     newStepType: WorkflowActionType;
     parentStepId: string | undefined;
     nextStepId: string | undefined;
     position?: { x: number; y: number };
     connectionOptions?: WorkflowStepConnectionOptions;
+    shouldSelectNode?: boolean;
+    workflowVersionId?: string;
+    defaultSettings?: Record<string, unknown>;
   }) => {
     if (isLoading === true) {
       return;
@@ -48,7 +54,8 @@ export const useCreateStep = () => {
     setIsLoading(true);
 
     try {
-      const workflowVersionId = await getUpdatableWorkflowVersion();
+      const workflowVersionId =
+        providedWorkflowVersionId ?? (await getUpdatableWorkflowVersion());
       const id = v4();
 
       const workflowVersionStepChanges = (
@@ -60,6 +67,7 @@ export const useCreateStep = () => {
           nextStepId,
           position,
           parentStepConnectionOptions: connectionOptions,
+          defaultSettings,
         })
       )?.data?.createWorkflowVersionStep;
 
@@ -77,7 +85,9 @@ export const useCreateStep = () => {
         throw new Error("Couldn't create step");
       }
 
-      setWorkflowSelectedNode(id);
+      if (shouldSelectNode) {
+        setWorkflowSelectedNode(id);
+      }
       setWorkflowLastCreatedStepId(id);
 
       return isDefined(createdFirstStepDiff)

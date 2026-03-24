@@ -1,14 +1,14 @@
-import { useCreateFavorite } from '@/favorites/hooks/useCreateFavorite';
-import { useFavorites } from '@/favorites/hooks/useFavorites';
+import { useCreateNavigationMenuItem } from '@/navigation-menu-item/common/hooks/useCreateNavigationMenuItem';
+import { useNavigationMenuItemsData } from '@/navigation-menu-item/display/hooks/useNavigationMenuItemsData';
+import { type ObjectRecord } from '@/object-record/types/ObjectRecord';
 import { useHasPermissionFlag } from '@/settings/roles/hooks/useHasPermissionFlag';
 import { DropdownContent } from '@/ui/layout/dropdown/components/DropdownContent';
 import { DropdownMenuItemsContainer } from '@/ui/layout/dropdown/components/DropdownMenuItemsContainer';
 import { useCloseDropdown } from '@/ui/layout/dropdown/hooks/useCloseDropdown';
 import { MenuItemWithOptionDropdown } from '@/ui/navigation/menu-item/components/MenuItemWithOptionDropdown';
-import { useSetRecoilComponentState } from '@/ui/utilities/state/component-state/hooks/useSetRecoilComponentState';
+import { useSetAtomComponentState } from '@/ui/utilities/state/jotai/hooks/useSetAtomComponentState';
 import { type View } from '@/views/types/View';
-import { useDeleteViewFromCurrentState } from '@/views/view-picker/hooks/useDeleteViewFromCurrentState';
-import { useViewPickerMode } from '@/views/view-picker/hooks/useViewPickerMode';
+import { useDestroyViewFromCurrentState } from '@/views/view-picker/hooks/useDestroyViewFromCurrentState';
 import { viewPickerReferenceViewIdComponentState } from '@/views/view-picker/states/viewPickerReferenceViewIdComponentState';
 import { useLingui } from '@lingui/react/macro';
 import {
@@ -19,19 +19,17 @@ import {
   useIcons,
 } from 'twenty-ui/display';
 import { MenuItem } from 'twenty-ui/navigation';
-import { ViewVisibility } from '~/generated-metadata/graphql';
-import { PermissionFlagType } from '~/generated/graphql';
+import {
+  PermissionFlagType,
+  ViewVisibility,
+} from '~/generated-metadata/graphql';
 
 type ViewPickerOptionDropdownProps = {
   isIndexView: boolean;
+  isLastView: boolean;
   view: Pick<
     View,
-    | 'id'
-    | 'name'
-    | 'icon'
-    | '__typename'
-    | 'visibility'
-    | 'createdByUserWorkspaceId'
+    'id' | 'name' | 'icon' | 'visibility' | 'createdByUserWorkspaceId'
   >;
   onEdit: (event: React.MouseEvent<HTMLElement>, viewId: string) => void;
   handleViewSelect: (viewId: string) => void;
@@ -39,6 +37,7 @@ type ViewPickerOptionDropdownProps = {
 
 export const ViewPickerOptionDropdown = ({
   isIndexView,
+  isLastView,
   onEdit,
   view,
   handleViewSelect,
@@ -48,38 +47,36 @@ export const ViewPickerOptionDropdown = ({
   const { t } = useLingui();
   const { closeDropdown } = useCloseDropdown();
   const { getIcon } = useIcons();
-  const { deleteViewFromCurrentState } = useDeleteViewFromCurrentState();
-  const setViewPickerReferenceViewId = useSetRecoilComponentState(
+  const { destroyViewFromCurrentState } = useDestroyViewFromCurrentState();
+  const setViewPickerReferenceViewId = useSetAtomComponentState(
     viewPickerReferenceViewIdComponentState,
   );
-  const { setViewPickerMode } = useViewPickerMode();
   const hasViewsPermission = useHasPermissionFlag(PermissionFlagType.VIEWS);
 
-  const { sortedFavorites: favorites } = useFavorites();
-  const { createFavorite } = useCreateFavorite();
+  const { createNavigationMenuItem } = useCreateNavigationMenuItem();
+  const { navigationMenuItems, currentWorkspaceMemberId } =
+    useNavigationMenuItemsData();
 
   // Users with VIEWS permission can edit all views
   // Users without VIEWS permission can only edit unlisted views (which are always their own, filtered by backend)
   const canEditView =
     hasViewsPermission || view.visibility === ViewVisibility.UNLISTED;
 
-  const isFavorite = favorites.some(
-    (favorite) =>
-      favorite.recordId === view.id && favorite.forWorkspaceMemberId,
+  const isFavorite = navigationMenuItems.some(
+    (item) =>
+      item.viewId === view.id &&
+      item.userWorkspaceId === currentWorkspaceMemberId,
   );
 
   const handleDelete = () => {
     setViewPickerReferenceViewId(view.id);
-    deleteViewFromCurrentState();
+    destroyViewFromCurrentState();
     closeDropdown(dropdownId);
   };
 
   const handleAddToFavorites = () => {
     if (!isFavorite) {
-      createFavorite(view, 'view');
-    } else {
-      setViewPickerReferenceViewId(view.id);
-      setViewPickerMode('favorite-folders-picker');
+      createNavigationMenuItem(view as unknown as ObjectRecord, 'view');
     }
     closeDropdown(dropdownId);
   };
@@ -131,12 +128,14 @@ export const ViewPickerOptionDropdown = ({
                           closeDropdown(dropdownId);
                         }}
                       />
-                      <MenuItem
-                        LeftIcon={IconTrash}
-                        text={t`Delete`}
-                        onClick={handleDelete}
-                        accent="danger"
-                      />
+                      {!isLastView && (
+                        <MenuItem
+                          LeftIcon={IconTrash}
+                          text={t`Delete`}
+                          onClick={handleDelete}
+                          accent="danger"
+                        />
+                      )}
                     </>
                   )}
                 </>

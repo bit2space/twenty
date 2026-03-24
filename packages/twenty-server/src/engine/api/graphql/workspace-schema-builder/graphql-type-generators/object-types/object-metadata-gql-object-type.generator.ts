@@ -6,13 +6,14 @@ import {
   isInputObjectType,
 } from 'graphql';
 import { FieldMetadataType } from 'twenty-shared/types';
-import { isDefined } from 'twenty-shared/utils';
+import { isDefined, pascalCase } from 'twenty-shared/utils';
 
 import { ObjectTypeDefinitionKind } from 'src/engine/api/graphql/workspace-schema-builder/enums/object-type-definition-kind.enum';
 import { RelationFieldMetadataGqlObjectTypeGenerator } from 'src/engine/api/graphql/workspace-schema-builder/graphql-type-generators/object-types/relation-field-metadata-gql-object-type.generator';
 import { TypeMapperService } from 'src/engine/api/graphql/workspace-schema-builder/services/type-mapper.service';
 import { GqlTypesStorage } from 'src/engine/api/graphql/workspace-schema-builder/storages/gql-types.storage';
 import { GraphQLOutputTypeFieldConfigMap } from 'src/engine/api/graphql/workspace-schema-builder/types/graphql-field-config-map.types';
+import { applyTypeOptionsForOutputType } from 'src/engine/api/graphql/workspace-schema-builder/utils/apply-type-options-for-output-type.util';
 import { computeCompositeFieldObjectTypeKey } from 'src/engine/api/graphql/workspace-schema-builder/utils/compute-stored-gql-type-key-utils/compute-composite-field-object-type-key.util';
 import { computeEnumFieldGqlTypeKey } from 'src/engine/api/graphql/workspace-schema-builder/utils/compute-stored-gql-type-key-utils/compute-enum-field-gql-type-key.util';
 import { computeObjectMetadataObjectTypeKey } from 'src/engine/api/graphql/workspace-schema-builder/utils/compute-stored-gql-type-key-utils/compute-object-metadata-object-type-key.util';
@@ -21,7 +22,6 @@ import { isEnumFieldMetadataType } from 'src/engine/metadata-modules/field-metad
 import { type FlatFieldMetadata } from 'src/engine/metadata-modules/flat-field-metadata/types/flat-field-metadata.type';
 import { isMorphOrRelationFlatFieldMetadata } from 'src/engine/metadata-modules/flat-field-metadata/utils/is-morph-or-relation-flat-field-metadata.util';
 import { type FlatObjectMetadata } from 'src/engine/metadata-modules/flat-object-metadata/types/flat-object-metadata.type';
-import { pascalCase } from 'src/utils/pascal-case';
 
 @Injectable()
 export class ObjectMetadataGqlObjectTypeGenerator {
@@ -134,10 +134,10 @@ export class ObjectMetadataGqlObjectTypeGenerator {
 
         type = enumFieldEnumType;
       } else {
-        type = this.typeMapperService.mapToScalarType(
-          field.type,
-          typeFactoryOptions,
-        );
+        type = this.typeMapperService.mapToPreBuiltGraphQLOutputType({
+          fieldMetadataType: field.type,
+          typeOptions: typeFactoryOptions,
+        });
 
         if (!isDefined(type)) {
           const message = `Could not find a GraphQL output type for ${field.name} scalar field metadata of object ${objectNameSingular}`;
@@ -151,7 +151,7 @@ export class ObjectMetadataGqlObjectTypeGenerator {
         }
       }
 
-      const modifiedType = this.typeMapperService.applyTypeOptions(
+      const modifiedType = applyTypeOptionsForOutputType(
         type,
         typeFactoryOptions,
       );

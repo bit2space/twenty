@@ -1,18 +1,18 @@
 import { type FieldMetadataItem } from '@/object-metadata/types/FieldMetadataItem';
-import { type ObjectMetadataItem } from '@/object-metadata/types/ObjectMetadataItem';
+import { type EnrichedObjectMetadataItem } from '@/object-metadata/types/EnrichedObjectMetadataItem';
 import { type ExtendedAggregateOperations } from '@/object-record/record-table/types/ExtendedAggregateOperations';
 import { getAvailableAggregationsFromObjectFields } from '@/object-record/utils/getAvailableAggregationsFromObjectFields';
 import { useMemo } from 'react';
 import { type Nullable } from 'twenty-shared/types';
 import { isDefined } from 'twenty-shared/utils';
-import { AggregateOperations } from '~/generated/graphql';
+import { AggregateOperations } from '~/generated-metadata/graphql';
 
 export const useAggregateGqlFieldsFromRecordIndexGroupAggregates = ({
   objectMetadataItem,
   recordIndexGroupAggregateFieldMetadataItem,
   recordIndexGroupAggregateOperation,
 }: {
-  objectMetadataItem: ObjectMetadataItem;
+  objectMetadataItem: EnrichedObjectMetadataItem;
   recordIndexGroupAggregateFieldMetadataItem: Nullable<FieldMetadataItem>;
   recordIndexGroupAggregateOperation: ExtendedAggregateOperations;
 }) => {

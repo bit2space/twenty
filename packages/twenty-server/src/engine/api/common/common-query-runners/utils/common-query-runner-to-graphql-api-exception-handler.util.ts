@@ -1,8 +1,8 @@
 import { assertUnreachable } from 'twenty-shared/utils';
 
 import {
-  CommonQueryRunnerExceptionCode,
   type CommonQueryRunnerException,
+  CommonQueryRunnerExceptionCode,
 } from 'src/engine/api/common/common-query-runners/errors/common-query-runner.exception';
 import {
   AuthenticationError,
@@ -22,11 +22,14 @@ export const commonQueryRunnerToGraphqlApiExceptionHandler = (
     case CommonQueryRunnerExceptionCode.INVALID_ARGS_LAST:
     case CommonQueryRunnerExceptionCode.INVALID_QUERY_INPUT:
     case CommonQueryRunnerExceptionCode.INVALID_ARGS_DATA:
+    case CommonQueryRunnerExceptionCode.INVALID_ARGS_FILTER:
     case CommonQueryRunnerExceptionCode.UPSERT_MULTIPLE_MATCHING_RECORDS_CONFLICT:
     case CommonQueryRunnerExceptionCode.INVALID_CURSOR:
     case CommonQueryRunnerExceptionCode.TOO_MANY_RECORDS_TO_UPDATE:
     case CommonQueryRunnerExceptionCode.BAD_REQUEST:
     case CommonQueryRunnerExceptionCode.TOO_COMPLEX_QUERY:
+    case CommonQueryRunnerExceptionCode.MISSING_TIMEZONE_FOR_DATE_GROUP_BY:
+    case CommonQueryRunnerExceptionCode.INVALID_TIMEZONE:
       throw new UserInputError(error);
     case CommonQueryRunnerExceptionCode.INVALID_AUTH_CONTEXT:
       throw new AuthenticationError(error);

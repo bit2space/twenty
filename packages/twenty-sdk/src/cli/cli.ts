@@ -1,10 +1,12 @@
 #!/usr/bin/env node
+import { registerCommands } from '@/cli/commands/app-command';
+import { ConfigService } from '@/cli/utilities/config/config-service';
 import chalk from 'chalk';
 import { Command, CommanderError } from 'commander';
-import { AppCommand } from './commands/app.command';
-import { AuthCommand } from './commands/auth.command';
-import { ConfigService } from './services/config.service';
+import { inspect } from 'util';
 import packageJson from '../../package.json';
+
+inspect.defaultOptions.depth = 10;
 
 const program = new Command();
 
@@ -14,24 +16,27 @@ program
   .version(packageJson.version);
 
 program.option(
-  '--workspace <name>',
-  'Use a specific workspace configuration',
-  'default',
+  '-r, --remote <name>',
+  'Use a specific remote (overrides the default set by remote switch)',
 );
 
-program.hook('preAction', (thisCommand) => {
+program.hook('preAction', async (thisCommand) => {
   const opts = (thisCommand as any).optsWithGlobals
     ? (thisCommand as any).optsWithGlobals()
     : thisCommand.opts();
-  const workspace = opts.workspace;
-  ConfigService.setActiveWorkspace(workspace);
-  console.log(
-    chalk.gray(`👩‍💻 Workspace - ${ConfigService.getActiveWorkspace()}`),
-  );
+
+  let remote = opts.remote;
+  if (!remote) {
+    const configService = new ConfigService();
+    remote = await configService.getDefaultRemote();
+  } else {
+    console.log(chalk.gray(`Using remote: ${remote}`));
+  }
+
+  ConfigService.setActiveRemote(remote);
 });
 
-program.addCommand(new AuthCommand().getCommand());
-program.addCommand(new AppCommand().getCommand());
+registerCommands(program);
 
 program.exitOverride();
 

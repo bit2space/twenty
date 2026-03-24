@@ -1,36 +1,21 @@
+import { type PageLayoutWidget } from '@/page-layout/types/PageLayoutWidget';
 import { PageLayoutWidgetNoDataDisplay } from '@/page-layout/widgets/components/PageLayoutWidgetNoDataDisplay';
 import { GraphWidget } from '@/page-layout/widgets/graph/components/GraphWidget';
-import { GraphWidgetComponentInstanceContext } from '@/page-layout/widgets/graph/states/contexts/GraphWidgetComponentInstanceContext';
+import { hasMinimalRequiredConfigForGraph } from '@/page-layout/widgets/graph/utils/hasMinimalRequiredConfigForGraph';
 import { isDefined } from 'twenty-shared/utils';
-import { GraphType, type PageLayoutWidget } from '~/generated/graphql';
 
 type GraphWidgetRendererProps = {
   widget: PageLayoutWidget;
 };
 
 export const GraphWidgetRenderer = ({ widget }: GraphWidgetRendererProps) => {
-  if (!widget.configuration || !('graphType' in widget.configuration)) {
-    return <PageLayoutWidgetNoDataDisplay widgetId={widget.id} />;
-  }
-
-  const graphType = widget.configuration.graphType;
-
   if (
-    !Object.values(GraphType).includes(graphType) ||
-    !isDefined(widget.objectMetadataId)
+    !isDefined(widget.configuration) ||
+    !isDefined(widget.objectMetadataId) ||
+    !hasMinimalRequiredConfigForGraph(widget.configuration)
   ) {
-    return <PageLayoutWidgetNoDataDisplay widgetId={widget.id} />;
+    return <PageLayoutWidgetNoDataDisplay />;
   }
 
-  return (
-    <GraphWidgetComponentInstanceContext.Provider
-      value={{ instanceId: widget.id }}
-    >
-      <GraphWidget
-        widget={widget}
-        objectMetadataId={widget.objectMetadataId}
-        graphType={graphType}
-      />
-    </GraphWidgetComponentInstanceContext.Provider>
-  );
+  return <GraphWidget />;
 };

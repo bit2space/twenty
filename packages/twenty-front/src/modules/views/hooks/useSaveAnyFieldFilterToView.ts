@@ -1,52 +1,52 @@
 import { anyFieldFilterValueComponentState } from '@/object-record/record-filter/states/anyFieldFilterValueComponentState';
-import { useRecoilComponentCallbackState } from '@/ui/utilities/state/component-state/hooks/useRecoilComponentCallbackState';
-import { usePersistView } from '@/views/hooks/internal/usePersistView';
+import { useAtomComponentStateCallbackState } from '@/ui/utilities/state/jotai/hooks/useAtomComponentStateCallbackState';
+import { usePerformViewAPIUpdate } from '@/views/hooks/internal/usePerformViewAPIUpdate';
 import { useCanPersistViewChanges } from '@/views/hooks/useCanPersistViewChanges';
 import { useGetCurrentViewOnly } from '@/views/hooks/useGetCurrentViewOnly';
-import { convertUpdateViewInputToCore } from '@/views/utils/convertUpdateViewInputToCore';
-import { useRecoilCallback } from 'recoil';
+import { convertUpdateViewInputToGql } from '@/views/utils/convertUpdateViewInputToGql';
+import { useStore } from 'jotai';
+import { useCallback } from 'react';
 import { isDefined } from 'twenty-shared/utils';
 
 export const useSaveAnyFieldFilterToView = () => {
   const { canPersistChanges } = useCanPersistViewChanges();
-  const { updateView } = usePersistView();
+  const { performViewAPIUpdate } = usePerformViewAPIUpdate();
 
   const { currentView } = useGetCurrentViewOnly();
 
-  const anyFieldFilterValueCallbackState = useRecoilComponentCallbackState(
+  const anyFieldFilterValueCallbackState = useAtomComponentStateCallbackState(
     anyFieldFilterValueComponentState,
   );
 
-  const saveAnyFieldFilterToView = useRecoilCallback(
-    ({ snapshot }) =>
-      async () => {
-        if (!canPersistChanges || !isDefined(currentView)) {
-          return;
-        }
+  const store = useStore();
 
-        const currentViewAnyFieldFilterValue = currentView.anyFieldFilterValue;
+  const saveAnyFieldFilterToView = useCallback(async () => {
+    if (!canPersistChanges || !isDefined(currentView)) {
+      return;
+    }
 
-        const currentAnyFieldFilterValue = snapshot
-          .getLoadable(anyFieldFilterValueCallbackState)
-          .getValue();
+    const currentViewAnyFieldFilterValue = currentView.anyFieldFilterValue;
 
-        if (currentAnyFieldFilterValue !== currentViewAnyFieldFilterValue) {
-          await updateView({
-            id: currentView.id,
-            input: convertUpdateViewInputToCore({
-              ...currentView,
-              anyFieldFilterValue: currentAnyFieldFilterValue,
-            }),
-          });
-        }
-      },
-    [
-      canPersistChanges,
-      updateView,
+    const currentAnyFieldFilterValue = store.get(
       anyFieldFilterValueCallbackState,
-      currentView,
-    ],
-  );
+    );
+
+    if (currentAnyFieldFilterValue !== currentViewAnyFieldFilterValue) {
+      await performViewAPIUpdate({
+        id: currentView.id,
+        input: convertUpdateViewInputToGql({
+          ...currentView,
+          anyFieldFilterValue: currentAnyFieldFilterValue,
+        }),
+      });
+    }
+  }, [
+    store,
+    canPersistChanges,
+    performViewAPIUpdate,
+    anyFieldFilterValueCallbackState,
+    currentView,
+  ]);
 
   return {
     saveAnyFieldFilterToView,

@@ -1,7 +1,8 @@
 import { Field, InputType } from '@nestjs/graphql';
 
+import { ViewFilterGroupLogicalOperator } from 'twenty-shared/types';
+
 import { UUIDScalarType } from 'src/engine/api/graphql/workspace-schema-builder/graphql-types/scalars';
-import { ViewFilterGroupLogicalOperator } from 'src/engine/metadata-modules/view-filter-group/enums/view-filter-group-logical-operator';
 
 @InputType()
 export class CreateViewFilterGroupInput {
@@ -13,7 +14,7 @@ export class CreateViewFilterGroupInput {
 
   @Field(() => ViewFilterGroupLogicalOperator, {
     nullable: true,
-    defaultValue: ViewFilterGroupLogicalOperator.NOT,
+    defaultValue: ViewFilterGroupLogicalOperator.AND,
   })
   logicalOperator?: ViewFilterGroupLogicalOperator;
 

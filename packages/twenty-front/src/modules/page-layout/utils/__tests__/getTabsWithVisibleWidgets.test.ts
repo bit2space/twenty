@@ -1,6 +1,9 @@
 import { type PageLayoutTab } from '@/page-layout/types/PageLayoutTab';
-import { WidgetType } from '~/generated/graphql';
-import { getTabsWithVisibleWidgets } from '../getTabsWithVisibleWidgets';
+import { getTabsWithVisibleWidgets } from '@/page-layout/utils/getTabsWithVisibleWidgets';
+import {
+  WidgetConfigurationType,
+  WidgetType,
+} from '~/generated-metadata/graphql';
 
 describe('getTabsWithVisibleWidgets', () => {
   const createMockWidget = (
@@ -20,7 +23,12 @@ describe('getTabsWithVisibleWidgets', () => {
       rowSpan: 1,
       columnSpan: 1,
     },
-    configuration: null,
+    configuration: {
+      __typename: 'FieldsConfiguration',
+      configurationType: WidgetConfigurationType.FIELDS,
+      viewId: null,
+    },
+    isOverridden: false,
     createdAt: '2024-01-01T00:00:00.000Z',
     updatedAt: '2024-01-01T00:00:00.000Z',
     deletedAt: null,
@@ -32,11 +40,13 @@ describe('getTabsWithVisibleWidgets', () => {
     widgets: PageLayoutTab['widgets'],
   ): PageLayoutTab => ({
     __typename: 'PageLayoutTab',
+    applicationId: '',
     id,
     pageLayoutId: 'page-layout-1',
     title: `Tab ${id}`,
     position: 0,
     widgets,
+    isOverridden: false,
     createdAt: '2024-01-01T00:00:00.000Z',
     updatedAt: '2024-01-01T00:00:00.000Z',
     deletedAt: null,
@@ -57,7 +67,7 @@ describe('getTabsWithVisibleWidgets', () => {
       const result = getTabsWithVisibleWidgets({
         tabs,
         isMobile: false,
-        isInRightDrawer: false,
+        isInSidePanel: false,
         isEditMode: false,
       });
 
@@ -81,7 +91,7 @@ describe('getTabsWithVisibleWidgets', () => {
       const result = getTabsWithVisibleWidgets({
         tabs,
         isMobile: false,
-        isInRightDrawer: false,
+        isInSidePanel: false,
         isEditMode: false,
       });
 
@@ -107,7 +117,7 @@ describe('getTabsWithVisibleWidgets', () => {
       const result = getTabsWithVisibleWidgets({
         tabs,
         isMobile: false,
-        isInRightDrawer: false,
+        isInSidePanel: false,
         isEditMode: false,
       });
 
@@ -125,7 +135,7 @@ describe('getTabsWithVisibleWidgets', () => {
       const result = getTabsWithVisibleWidgets({
         tabs,
         isMobile: false,
-        isInRightDrawer: false,
+        isInSidePanel: false,
         isEditMode: false,
       });
 
@@ -140,7 +150,7 @@ describe('getTabsWithVisibleWidgets', () => {
       const result = getTabsWithVisibleWidgets({
         tabs,
         isMobile: false,
-        isInRightDrawer: false,
+        isInSidePanel: false,
         isEditMode: false,
       });
 
@@ -165,7 +175,7 @@ describe('getTabsWithVisibleWidgets', () => {
       const result = getTabsWithVisibleWidgets({
         tabs,
         isMobile: false,
-        isInRightDrawer: false,
+        isInSidePanel: false,
         isEditMode: true,
       });
 
@@ -186,7 +196,7 @@ describe('getTabsWithVisibleWidgets', () => {
       const result = getTabsWithVisibleWidgets({
         tabs,
         isMobile: false,
-        isInRightDrawer: false,
+        isInSidePanel: false,
         isEditMode: true,
       });
 
@@ -202,7 +212,7 @@ describe('getTabsWithVisibleWidgets', () => {
       const result = getTabsWithVisibleWidgets({
         tabs,
         isMobile: false,
-        isInRightDrawer: false,
+        isInSidePanel: false,
         isEditMode: true,
       });
 
@@ -226,7 +236,7 @@ describe('getTabsWithVisibleWidgets', () => {
       const result = getTabsWithVisibleWidgets({
         tabs,
         isMobile: false,
-        isInRightDrawer: false,
+        isInSidePanel: false,
         isEditMode: true,
       });
 
@@ -241,7 +251,7 @@ describe('getTabsWithVisibleWidgets', () => {
       const result = getTabsWithVisibleWidgets({
         tabs: [],
         isMobile: false,
-        isInRightDrawer: false,
+        isInSidePanel: false,
         isEditMode: false,
       });
 
@@ -262,7 +272,7 @@ describe('getTabsWithVisibleWidgets', () => {
       getTabsWithVisibleWidgets({
         tabs,
         isMobile: false,
-        isInRightDrawer: false,
+        isInSidePanel: false,
         isEditMode: false,
       });
 
@@ -298,7 +308,7 @@ describe('getTabsWithVisibleWidgets', () => {
       const result = getTabsWithVisibleWidgets({
         tabs,
         isMobile: false,
-        isInRightDrawer: false,
+        isInSidePanel: false,
         isEditMode: false,
       });
 

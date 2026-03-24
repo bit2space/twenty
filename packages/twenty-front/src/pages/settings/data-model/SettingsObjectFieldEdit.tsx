@@ -5,7 +5,6 @@ import { FormProvider, useForm } from 'react-hook-form';
 import { useNavigate, useParams } from 'react-router-dom';
 import { type z } from 'zod';
 
-import { currentWorkspaceState } from '@/auth/states/currentWorkspaceState';
 import { useFieldMetadataItem } from '@/object-metadata/hooks/useFieldMetadataItem';
 import { useFilteredObjectMetadataItems } from '@/object-metadata/hooks/useFilteredObjectMetadataItems';
 import { useGetRelationMetadata } from '@/object-metadata/hooks/useGetRelationMetadata';
@@ -13,7 +12,7 @@ import { useUpdateOneFieldMetadataItem } from '@/object-metadata/hooks/useUpdate
 import { CoreObjectNamePlural } from '@/object-metadata/types/CoreObjectNamePlural';
 import { formatFieldMetadataItemInput } from '@/object-metadata/utils/formatFieldMetadataItemInput';
 import { isLabelIdentifierField } from '@/object-metadata/utils/isLabelIdentifierField';
-import { isObjectMetadataSettingsReadOnly } from '@/object-record/read-only/utils/isObjectMetadataSettingsReadOnly';
+import { isObjectMetadataReadOnly } from '@/object-record/read-only/utils/isObjectMetadataReadOnly';
 import { SaveAndCancelButtons } from '@/settings/components/SaveAndCancelButtons/SaveAndCancelButtons';
 import { SettingsPageContainer } from '@/settings/components/SettingsPageContainer';
 import { FIELD_NAME_MAXIMUM_LENGTH } from '@/settings/data-model/constants/FieldNameMaximumLength';
@@ -28,9 +27,9 @@ import { useModal } from '@/ui/layout/modal/hooks/useModal';
 import { SubMenuTopBarContainer } from '@/ui/layout/page/components/SubMenuTopBarContainer';
 import { navigationMemorizedUrlState } from '@/ui/navigation/states/navigationMemorizedUrlState';
 import { shouldNavigateBackToMemorizedUrlOnSaveState } from '@/ui/navigation/states/shouldNavigateBackToMemorizedUrlOnSaveState';
-import styled from '@emotion/styled';
+import { useAtomState } from '@/ui/utilities/state/jotai/hooks/useAtomState';
+import { styled } from '@linaria/react';
 import { useLingui } from '@lingui/react/macro';
-import { useRecoilState, useRecoilValue } from 'recoil';
 import { AppPath, SettingsPath } from 'twenty-shared/types';
 import { getSettingsPath, isDefined } from 'twenty-shared/utils';
 import {
@@ -41,9 +40,11 @@ import {
 } from 'twenty-ui/display';
 import { Button } from 'twenty-ui/input';
 import { Section } from 'twenty-ui/layout';
+import { themeCssVariables } from 'twenty-ui/theme-constants';
 import { FieldMetadataType } from '~/generated-metadata/graphql';
 import { useNavigateApp } from '~/hooks/useNavigateApp';
 import { useNavigateSettings } from '~/hooks/useNavigateSettings';
+import { getFieldMetadataItemInitialValues } from '~/pages/settings/data-model/utils/getFieldMetadataItemInitialValues';
 
 //TODO: fix this type
 export type SettingsDataModelFieldEditFormValues = z.infer<
@@ -54,7 +55,7 @@ export type SettingsDataModelFieldEditFormValues = z.infer<
 const DELETE_FIELD_MODAL_ID = 'delete-field-confirmation-modal';
 const StyledDangerButtons = styled.div`
   display: flex;
-  gap: ${({ theme }) => theme.spacing(2)};
+  gap: ${themeCssVariables.spacing[2]};
 `;
 
 export const SettingsObjectFieldEdit = () => {
@@ -67,27 +68,25 @@ export const SettingsObjectFieldEdit = () => {
 
   const navigate = useNavigate();
 
-  const [navigationMemorizedUrl, setNavigationMemorizedUrl] = useRecoilState(
+  const [navigationMemorizedUrl, setNavigationMemorizedUrl] = useAtomState(
     navigationMemorizedUrlState,
   );
 
   const [
     shouldNavigateBackToMemorizedUrlOnSave,
     setShouldNavigateBackToMemorizedUrlOnSave,
-  ] = useRecoilState(shouldNavigateBackToMemorizedUrlOnSaveState);
+  ] = useAtomState(shouldNavigateBackToMemorizedUrlOnSaveState);
 
   const { objectNamePlural = '', fieldName = '' } = useParams();
+
   const { findObjectMetadataItemByNamePlural } =
     useFilteredObjectMetadataItems();
 
   const objectMetadataItem =
     findObjectMetadataItemByNamePlural(objectNamePlural);
 
-  const currentWorkspace = useRecoilValue(currentWorkspaceState);
-  const readonly = isObjectMetadataSettingsReadOnly({
+  const readonly = isObjectMetadataReadOnly({
     objectMetadataItem,
-    workspaceCustomApplicationId:
-      currentWorkspace?.workspaceCustomApplication?.id,
   });
 
   const {
@@ -110,15 +109,20 @@ export const SettingsObjectFieldEdit = () => {
   const getRelationMetadata = useGetRelationMetadata();
   const { updateOneFieldMetadataItem } = useUpdateOneFieldMetadataItem();
 
+  const { settings, defaultValue } =
+    getFieldMetadataItemInitialValues(fieldMetadataItem);
+
   const formConfig = useForm<SettingsDataModelFieldEditFormValues>({
     mode: 'onTouched',
     resolver: zodResolver(settingsFieldFormSchema()),
-    values: {
+    defaultValues: {
       icon: fieldMetadataItem?.icon ?? 'Icon',
       type: fieldMetadataItem?.type as SettingsFieldType,
       label: fieldMetadataItem?.label ?? '',
       description: fieldMetadataItem?.description,
       isLabelSyncedWithName: fieldMetadataItem?.isLabelSyncedWithName ?? true,
+      settings,
+      defaultValue,
     },
   });
 
@@ -143,6 +147,17 @@ export const SettingsObjectFieldEdit = () => {
     fieldMetadataItem: fieldMetadataItem,
     objectMetadataItem: objectMetadataItem,
   });
+
+  const fieldNamesThatCannotBeDeactivated = [
+    'createdAt',
+    'createdBy',
+    'deletedAt',
+    'updatedAt',
+  ];
+
+  const fieldCanBeDeactivated = !fieldNamesThatCannotBeDeactivated.includes(
+    fieldMetadataItem.name,
+  );
 
   const handleSave = async (
     formValues: SettingsDataModelFieldEditFormValues,
@@ -270,7 +285,6 @@ export const SettingsObjectFieldEdit = () => {
 
     const deleteResult = await deleteMetadataField({
       idToDelete: fieldMetadataItem.id,
-      objectMetadataId: objectMetadataItem.id,
     });
 
     if (deleteResult.status === 'successful') {
@@ -290,7 +304,7 @@ export const SettingsObjectFieldEdit = () => {
 
   return (
     <>
-      {/* eslint-disable-next-line react/jsx-props-no-spreading */}
+      {/* oxlint-disable-next-line react/jsx-props-no-spreading */}
       <FormProvider {...formConfig}>
         <SubMenuTopBarContainer
           title={fieldMetadataItem?.label}
@@ -374,7 +388,7 @@ export const SettingsObjectFieldEdit = () => {
               />
             </Section>
 
-            {!isLabelIdentifier && !readonly && (
+            {!isLabelIdentifier && !readonly && fieldCanBeDeactivated && (
               <Section>
                 <H2Title
                   title={t`Danger zone`}
@@ -414,7 +428,7 @@ export const SettingsObjectFieldEdit = () => {
       </FormProvider>
       {fieldMetadataItem?.isCustom && (
         <ConfirmationModal
-          modalId={DELETE_FIELD_MODAL_ID}
+          modalInstanceId={DELETE_FIELD_MODAL_ID}
           title={t`Delete ${fieldLabel} field?`}
           subtitle={t`This will permanently delete the field and all its data from ${objectLabel}. Type "yes" to confirm.`}
           confirmButtonText={t`Delete`}

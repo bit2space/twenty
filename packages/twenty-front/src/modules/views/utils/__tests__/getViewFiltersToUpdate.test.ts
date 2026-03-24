@@ -1,10 +1,9 @@
 import { type ViewFilter } from '@/views/types/ViewFilter';
 import { ViewFilterOperand } from 'twenty-shared/types';
-import { getViewFiltersToUpdate } from '../getViewFiltersToUpdate';
+import { getViewFiltersToUpdate } from '@/views/utils/getViewFiltersToUpdate';
 
 describe('getViewFiltersToUpdate', () => {
   const baseFilter: ViewFilter = {
-    __typename: 'ViewFilter',
     id: 'filter-1',
     fieldMetadataId: 'field-1',
     operand: ViewFilterOperand.CONTAINS,

@@ -1,26 +1,37 @@
 import { useApolloCoreClient } from '@/object-metadata/hooks/useApolloCoreClient';
-import { useRegisterObjectOperation } from '@/object-record/hooks/useRegisterObjectOperation';
-import { useStopWorkflowRunMutation } from '~/generated-metadata/graphql';
+import { useObjectMetadataItem } from '@/object-metadata/hooks/useObjectMetadataItem';
+import { CoreObjectNameSingular } from 'twenty-shared/types';
+import { dispatchObjectRecordOperationBrowserEvent } from '@/browser-event/utils/dispatchObjectRecordOperationBrowserEvent';
+import { useMutation } from '@apollo/client/react';
+import { StopWorkflowRunDocument } from '~/generated/graphql';
 
 export const useStopWorkflowRun = () => {
   const apolloCoreClient = useApolloCoreClient();
-  const [mutate] = useStopWorkflowRunMutation({
+  const [mutate] = useMutation(StopWorkflowRunDocument, {
     client: apolloCoreClient,
   });
-  const { registerObjectOperation } = useRegisterObjectOperation();
+
+  const { objectMetadataItem } = useObjectMetadataItem({
+    objectNameSingular: CoreObjectNameSingular.WorkflowRun,
+  });
 
   const stopWorkflowRun = async (workflowRunId: string) => {
-    const { data } = await mutate({
+    await mutate({
       variables: {
         workflowRunId,
       },
     });
 
-    registerObjectOperation('workflowRun', {
-      type: 'update-one',
-      result: {
-        updatedRecord: data?.stopWorkflowRun,
-        updateInput: { id: workflowRunId },
+    dispatchObjectRecordOperationBrowserEvent({
+      objectMetadataItem,
+      operation: {
+        type: 'update-one',
+        result: {
+          updateInput: {
+            recordId: workflowRunId,
+            updatedFields: [],
+          },
+        },
       },
     });
   };

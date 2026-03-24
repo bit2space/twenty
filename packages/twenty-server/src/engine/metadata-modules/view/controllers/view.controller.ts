@@ -23,6 +23,7 @@ import { CustomPermissionGuard } from 'src/engine/guards/custom-permission.guard
 import { NoPermissionGuard } from 'src/engine/guards/no-permission.guard';
 import { WorkspaceAuthGuard } from 'src/engine/guards/workspace-auth.guard';
 import { WorkspaceManyOrAllFlatEntityMapsCacheService } from 'src/engine/metadata-modules/flat-entity/services/workspace-many-or-all-flat-entity-maps-cache.service';
+import { findFlatEntityByIdInFlatEntityMaps } from 'src/engine/metadata-modules/flat-entity/utils/find-flat-entity-by-id-in-flat-entity-maps.util';
 import { resolveObjectMetadataStandardOverride } from 'src/engine/metadata-modules/object-metadata/utils/resolve-object-metadata-standard-override.util';
 import { CreateViewPermissionGuard } from 'src/engine/metadata-modules/view-permissions/guards/create-view-permission.guard';
 import { DeleteViewPermissionGuard } from 'src/engine/metadata-modules/view-permissions/guards/delete-view-permission.guard';
@@ -55,16 +56,20 @@ export class ViewController {
   async findMany(
     @RequestLocale() locale: keyof typeof APP_LOCALES | undefined,
     @AuthWorkspace() workspace: WorkspaceEntity,
-    @AuthUserWorkspaceId() userWorkspaceId: string | undefined,
+    @AuthUserWorkspaceId({ allowUndefined: true })
+    userWorkspaceId: string | undefined,
     @Query('objectMetadataId') objectMetadataId?: string,
   ): Promise<ViewDTO[]> {
     const views = objectMetadataId
-      ? await this.viewService.findByObjectMetadataId(
+      ? await this.viewService.findByObjectMetadataIdWithRelations(
           workspace.id,
           objectMetadataId,
           userWorkspaceId,
         )
-      : await this.viewService.findByWorkspaceId(workspace.id, userWorkspaceId);
+      : await this.viewService.findByWorkspaceIdWithRelations(
+          workspace.id,
+          userWorkspaceId,
+        );
 
     return this.processViewsWithTemplates(views, workspace.id, locale);
   }
@@ -76,7 +81,7 @@ export class ViewController {
     @RequestLocale() locale: keyof typeof APP_LOCALES | undefined,
     @AuthWorkspace() workspace: WorkspaceEntity,
   ): Promise<ViewDTO> {
-    const view = await this.viewService.findById(id, workspace.id);
+    const view = await this.viewService.findByIdWithRelations(id, workspace.id);
 
     if (!isDefined(view)) {
       throw new ViewException(
@@ -130,7 +135,8 @@ export class ViewController {
     @Body() input: UpdateViewInput,
     @RequestLocale() locale: keyof typeof APP_LOCALES | undefined,
     @AuthWorkspace() workspace: WorkspaceEntity,
-    @AuthUserWorkspaceId() userWorkspaceId: string | undefined,
+    @AuthUserWorkspaceId({ allowUndefined: true })
+    userWorkspaceId: string | undefined,
   ): Promise<ViewDTO> {
     const updatedView = await this.viewService.updateOne({
       updateViewInput: {
@@ -189,8 +195,10 @@ export class ViewController {
       let processedName = view.name;
 
       if (view.name.includes('{objectLabelPlural}')) {
-        const objectMetadata =
-          flatObjectMetadataMaps.byId[view.objectMetadataId];
+        const objectMetadata = findFlatEntityByIdInFlatEntityMaps({
+          flatEntityId: view.objectMetadataId,
+          flatEntityMaps: flatObjectMetadataMaps,
+        });
 
         if (objectMetadata) {
           const i18n = this.i18nService.getI18nInstance(locale ?? 'en');

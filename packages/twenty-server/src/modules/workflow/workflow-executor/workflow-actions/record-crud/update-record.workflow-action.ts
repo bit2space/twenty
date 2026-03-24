@@ -4,12 +4,8 @@ import { isDefined, isValidUuid, resolveInput } from 'twenty-shared/utils';
 
 import { type WorkflowAction } from 'src/modules/workflow/workflow-executor/interfaces/workflow-action.interface';
 
-import {
-  RecordCrudException,
-  RecordCrudExceptionCode,
-} from 'src/engine/core-modules/record-crud/exceptions/record-crud.exception';
 import { UpdateRecordService } from 'src/engine/core-modules/record-crud/services/update-record.service';
-import { ScopedWorkspaceContextFactory } from 'src/engine/twenty-orm/factories/scoped-workspace-context.factory';
+import { WorkflowCommonWorkspaceService } from 'src/modules/workflow/common/workspace-services/workflow-common.workspace-service';
 import {
   WorkflowStepExecutorException,
   WorkflowStepExecutorExceptionCode,
@@ -17,7 +13,11 @@ import {
 import { WorkflowExecutionContextService } from 'src/modules/workflow/workflow-executor/services/workflow-execution-context.service';
 import { type WorkflowActionInput } from 'src/modules/workflow/workflow-executor/types/workflow-action-input';
 import { type WorkflowActionOutput } from 'src/modules/workflow/workflow-executor/types/workflow-action-output.type';
+import { buildWorkflowActorMetadata } from 'src/modules/workflow/workflow-executor/utils/build-workflow-actor-metadata.util';
+import { filterValidFieldsInRecord } from 'src/modules/workflow/workflow-executor/utils/filter-valid-fields-in-record.util';
+import { formatWorkflowRecordRelationFields } from 'src/modules/workflow/workflow-executor/utils/format-workflow-record-relation-fields.util';
 import { findStepOrThrow } from 'src/modules/workflow/workflow-executor/utils/find-step-or-throw.util';
+import { resolveRichTextFieldsInRecord } from 'src/modules/workflow/workflow-executor/utils/resolve-rich-text-fields-in-record.util';
 import { isWorkflowUpdateRecordAction } from 'src/modules/workflow/workflow-executor/workflow-actions/record-crud/guards/is-workflow-update-record-action.guard';
 import { type WorkflowUpdateRecordActionInput } from 'src/modules/workflow/workflow-executor/workflow-actions/record-crud/types/workflow-record-crud-action-input.type';
 
@@ -25,8 +25,8 @@ import { type WorkflowUpdateRecordActionInput } from 'src/modules/workflow/workf
 export class UpdateRecordWorkflowAction implements WorkflowAction {
   constructor(
     private readonly updateRecordService: UpdateRecordService,
-    private readonly scopedWorkspaceContextFactory: ScopedWorkspaceContextFactory,
     private readonly workflowExecutionContextService: WorkflowExecutionContextService,
+    private readonly workflowCommonWorkspaceService: WorkflowCommonWorkspaceService,
   ) {}
 
   async execute({
@@ -47,8 +47,27 @@ export class UpdateRecordWorkflowAction implements WorkflowAction {
       );
     }
 
+    const { workspaceId } = runInfo;
+
+    const rawInput = step.settings.input as WorkflowUpdateRecordActionInput;
+
+    const objectMetadataInfo =
+      await this.workflowCommonWorkspaceService.getObjectMetadataInfo(
+        rawInput.objectName,
+        workspaceId,
+      );
+
+    const inputWithResolvedRichText = {
+      ...rawInput,
+      objectRecord: resolveRichTextFieldsInRecord(
+        rawInput.objectRecord,
+        objectMetadataInfo,
+        context,
+      ),
+    };
+
     const workflowActionInput = resolveInput(
-      step.settings.input,
+      inputWithResolvedRichText,
       context,
     ) as WorkflowUpdateRecordActionInput;
 
@@ -57,38 +76,51 @@ export class UpdateRecordWorkflowAction implements WorkflowAction {
       !isValidUuid(workflowActionInput.objectRecordId) ||
       !isDefined(workflowActionInput.objectName)
     ) {
-      throw new RecordCrudException(
+      throw new WorkflowStepExecutorException(
         'Failed to update: Object record ID and name are required',
-        RecordCrudExceptionCode.INVALID_REQUEST,
+        WorkflowStepExecutorExceptionCode.INVALID_STEP_INPUT,
       );
     }
 
-    const { workspaceId } = this.scopedWorkspaceContextFactory.create();
+    const formattedObjectRecord = formatWorkflowRecordRelationFields(
+      workflowActionInput.objectRecord,
+      objectMetadataInfo,
+    );
 
-    if (!workspaceId) {
-      throw new RecordCrudException(
-        'Failed to update: Workspace ID is required',
-        RecordCrudExceptionCode.INVALID_REQUEST,
+    const filteredObjectRecord = filterValidFieldsInRecord(
+      formattedObjectRecord,
+      objectMetadataInfo.flatObjectMetadata,
+      objectMetadataInfo.flatFieldMetadataMaps,
+    );
+
+    const filteredFieldsToUpdate = workflowActionInput.fieldsToUpdate?.filter(
+      (fieldName) => fieldName in filteredObjectRecord,
+    );
+
+    if (filteredFieldsToUpdate?.length === 0) {
+      throw new WorkflowStepExecutorException(
+        'Failed to update: No fields to update',
+        WorkflowStepExecutorExceptionCode.INVALID_STEP_INPUT,
       );
     }
 
     const executionContext =
       await this.workflowExecutionContextService.getExecutionContext(runInfo);
 
+    const updatedBy = buildWorkflowActorMetadata(executionContext);
+
     const toolOutput = await this.updateRecordService.execute({
       objectName: workflowActionInput.objectName,
       objectRecordId: workflowActionInput.objectRecordId,
-      objectRecord: workflowActionInput.objectRecord,
-      fieldsToUpdate: workflowActionInput.fieldsToUpdate,
-      workspaceId,
+      objectRecord: filteredObjectRecord,
+      fieldsToUpdate: filteredFieldsToUpdate,
+      authContext: executionContext.authContext,
+      updatedBy,
       rolePermissionConfig: executionContext.rolePermissionConfig,
     });
 
     if (!toolOutput.success) {
-      throw new RecordCrudException(
-        toolOutput.error || toolOutput.message,
-        RecordCrudExceptionCode.RECORD_UPDATE_FAILED,
-      );
+      return { error: toolOutput.error || toolOutput.message };
     }
 
     return {

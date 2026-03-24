@@ -1,11 +1,12 @@
 import { UseFilters, UseGuards, UsePipes } from '@nestjs/common';
-import { Mutation, Resolver } from '@nestjs/graphql';
+import { Mutation } from '@nestjs/graphql';
 
+import { MetadataResolver } from 'src/engine/api/graphql/graphql-config/decorators/metadata-resolver.decorator';
 import { PreventNestToAutoLogGraphqlErrorsFilter } from 'src/engine/core-modules/graphql/filters/prevent-nest-to-auto-log-graphql-errors.filter';
 import { ResolverValidationPipe } from 'src/engine/core-modules/graphql/pipes/resolver-validation.pipe';
 import { OnboardingStepSuccessDTO } from 'src/engine/core-modules/onboarding/dtos/onboarding-step-success.dto';
 import { OnboardingService } from 'src/engine/core-modules/onboarding/onboarding.service';
-import { UserEntity } from 'src/engine/core-modules/user/user.entity';
+import { type AuthContextUser } from 'src/engine/core-modules/auth/types/auth-context.type';
 import { WorkspaceEntity } from 'src/engine/core-modules/workspace/workspace.entity';
 import { AuthUser } from 'src/engine/decorators/auth/auth-user.decorator';
 import { AuthWorkspace } from 'src/engine/decorators/auth/auth-workspace.decorator';
@@ -16,14 +17,14 @@ import { WorkspaceAuthGuard } from 'src/engine/guards/workspace-auth.guard';
 @UseGuards(WorkspaceAuthGuard, UserAuthGuard)
 @UsePipes(ResolverValidationPipe)
 @UseFilters(PreventNestToAutoLogGraphqlErrorsFilter)
-@Resolver()
+@MetadataResolver()
 export class OnboardingResolver {
   constructor(private readonly onboardingService: OnboardingService) {}
 
   @Mutation(() => OnboardingStepSuccessDTO)
   @UseGuards(NoPermissionGuard)
   async skipSyncEmailOnboardingStep(
-    @AuthUser() user: UserEntity,
+    @AuthUser() user: AuthContextUser,
     @AuthWorkspace() workspace: WorkspaceEntity,
   ): Promise<OnboardingStepSuccessDTO> {
     await this.onboardingService.setOnboardingConnectAccountPending({

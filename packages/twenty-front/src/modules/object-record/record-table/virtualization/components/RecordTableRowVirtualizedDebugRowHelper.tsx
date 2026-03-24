@@ -1,40 +1,43 @@
 import { getLabelIdentifierFieldMetadataItem } from '@/object-metadata/utils/getLabelIdentifierFieldMetadataItem';
 import { getLabelIdentifierFieldValue } from '@/object-metadata/utils/getLabelIdentifierFieldValue';
 import { recordStoreFamilyState } from '@/object-record/record-store/states/recordStoreFamilyState';
+import { useAtomFamilyStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomFamilyStateValue';
 import { RECORD_TABLE_ROW_HEIGHT } from '@/object-record/record-table/constants/RecordTableRowHeight';
 import { useRecordTableContextOrThrow } from '@/object-record/record-table/contexts/RecordTableContext';
+import { dataLoadingStatusByRealIndexComponentFamilySelector } from '@/object-record/record-table/virtualization/states/dataLoadingStatusByRealIndexComponentFamilySelector';
 import { realIndexByVirtualIndexComponentFamilyState } from '@/object-record/record-table/virtualization/states/realIndexByVirtualIndexComponentFamilyState';
-import { recordIdByRealIndexComponentFamilyState } from '@/object-record/record-table/virtualization/states/recordIdByRealIndexComponentFamilyState';
+import { recordIdByRealIndexComponentFamilySelector } from '@/object-record/record-table/virtualization/states/recordIdByRealIndexComponentFamilySelector';
 
-import { useRecoilComponentFamilyValue } from '@/ui/utilities/state/component-state/hooks/useRecoilComponentFamilyValue';
-import styled from '@emotion/styled';
-import { useRecoilValue } from 'recoil';
+import { useAtomComponentFamilySelectorValue } from '@/ui/utilities/state/jotai/hooks/useAtomComponentFamilySelectorValue';
+import { useAtomComponentFamilyStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomComponentFamilyStateValue';
+import { styled } from '@linaria/react';
 import { isDefined } from 'twenty-shared/utils';
+import { themeCssVariables } from 'twenty-ui/theme-constants';
 
 const StyledDebugRow = styled.div`
-  position: absolute;
-  left: 250px;
-  top: ${({ theme }) => theme.spacing(1.25)};
-  z-index: 20;
-  color: ${({ theme }) => theme.font.color.primary};
-  background-color: ${({ theme }) => theme.color.gray3};
-  border: 1px solid ${({ theme }) => theme.color.blue8};
-  padding: ${({ theme }) => theme.spacing(0.5)};
+  background-color: ${themeCssVariables.color.gray3};
+  border: 1px solid ${themeCssVariables.color.blue8};
+  color: ${themeCssVariables.font.color.primary};
   display: flex;
-  max-height: ${({ theme }) => theme.spacing(4)};
-
+  left: 250px;
+  max-height: ${themeCssVariables.spacing[4]};
   overflow: hidden;
+  padding: ${themeCssVariables.spacing['0.5']};
+  position: absolute;
+  top: 5px;
+
+  z-index: 20;
 `;
 
 const StyledDebugColumn = styled.div<{ width: number }>`
-  min-width: ${({ width }) => width}px;
-  max-width: ${({ width }) => width}px;
-  overflow: hidden;
-
   display: flex;
+  max-width: ${({ width }) => width}px;
+  min-width: ${({ width }) => width}px;
+
+  overflow: hidden;
+  padding-left: ${themeCssVariables.spacing['0.5']};
+  padding-right: ${themeCssVariables.spacing['0.5']};
   text-wrap-mode: nowrap;
-  padding-right: ${({ theme }) => theme.spacing(0.5)};
-  padding-left: ${({ theme }) => theme.spacing(0.5)};
 `;
 
 type RecordTableRowVirtualizedDebugRowHelperProps = {
@@ -44,40 +47,48 @@ type RecordTableRowVirtualizedDebugRowHelperProps = {
 export const RecordTableRowVirtualizedDebugRowHelper = ({
   virtualIndex,
 }: RecordTableRowVirtualizedDebugRowHelperProps) => {
-  const realIndex = useRecoilComponentFamilyValue(
+  const realIndexByVirtualIndex = useAtomComponentFamilyStateValue(
     realIndexByVirtualIndexComponentFamilyState,
     { virtualIndex },
   );
 
-  const recordId = useRecoilComponentFamilyValue(
-    recordIdByRealIndexComponentFamilyState,
-    { realIndex },
+  const recordId = useAtomComponentFamilySelectorValue(
+    recordIdByRealIndexComponentFamilySelector,
+    realIndexByVirtualIndex,
+  );
+
+  const dataLoadingStatus = useAtomComponentFamilySelectorValue(
+    dataLoadingStatusByRealIndexComponentFamilySelector,
+    realIndexByVirtualIndex,
   );
 
   const pixelsFromTop =
-    (realIndex ?? 0) * (RECORD_TABLE_ROW_HEIGHT + 1) +
+    (realIndexByVirtualIndex ?? 0) * (RECORD_TABLE_ROW_HEIGHT + 1) +
     (RECORD_TABLE_ROW_HEIGHT + 1);
 
-  const record = useRecoilValue(recordStoreFamilyState(recordId ?? ''));
-  const { objectMetadataItem, objectNameSingular } =
-    useRecordTableContextOrThrow();
+  const recordStore = useAtomFamilyStateValue(
+    recordStoreFamilyState,
+    recordId ?? '',
+  );
+  const { objectMetadataItem } = useRecordTableContextOrThrow();
   const labelIdentifierFieldMetadataItem =
     getLabelIdentifierFieldMetadataItem(objectMetadataItem);
 
-  const labelIdentifier = isDefined(record)
+  const labelIdentifier = isDefined(recordStore)
     ? getLabelIdentifierFieldValue(
-        record,
+        recordStore,
         labelIdentifierFieldMetadataItem,
-        objectNameSingular,
       )
     : '-';
 
-  const position = record?.position;
+  const position = recordStore?.position;
 
   return (
     <StyledDebugRow>
       <StyledDebugColumn width={70}>virtual :{virtualIndex}</StyledDebugColumn>
-      <StyledDebugColumn width={70}>real :{realIndex}</StyledDebugColumn>
+      <StyledDebugColumn width={70}>
+        real :{realIndexByVirtualIndex}
+      </StyledDebugColumn>
       <StyledDebugColumn width={100}>pos :{position}</StyledDebugColumn>
       <StyledDebugColumn width={80}>
         px:
@@ -89,6 +100,9 @@ export const RecordTableRowVirtualizedDebugRowHelper = ({
       <StyledDebugColumn width={300}>
         id:
         {recordId}
+      </StyledDebugColumn>
+      <StyledDebugColumn width={100}>
+        status :{isDefined(dataLoadingStatus) ? dataLoadingStatus : 'undefined'}
       </StyledDebugColumn>
     </StyledDebugRow>
   );

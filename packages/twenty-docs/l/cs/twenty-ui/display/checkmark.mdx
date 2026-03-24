@@ -1,16 +1,16 @@
 ---
-title: Checkmark
+title: Zaškrtnutí
 image: /images/user-guide/tasks/tasks_header.png
 ---
 
 <Frame>
-  <img src="/images/user-guide/tasks/tasks_header.png" alt="Header" />
+  <img src="/images/user-guide/tasks/tasks_header.png" alt="Hlavička" />
 </Frame>
 
 Představuje úspěšnou nebo dokončenou akci.
 
 <Tabs>
-<Tab title="Usage">
+<Tab title="Použití">
 
 ```jsx
 import { Checkmark } from 'twenty-ui/display';
@@ -20,9 +20,10 @@ export const MyComponent = () => {
 };
 ```
 
+
 </Tab>
 
-<Tab title="Props">
+<Tab title="Vlastnosti">
 
 Rozšiřuje `React.ComponentPropsWithoutRef<'div'>` a přijímá všechny vlastnosti běžného prvku `div`.
 
@@ -30,13 +31,13 @@ Rozšiřuje `React.ComponentPropsWithoutRef<'div'>` a přijímá všechny vlastn
 
 </Tabs>
 
-## Animated Checkmark
+## Animované zaškrtnutí
 
 Představuje ikonu zaškrtnutí s přidanou funkcí animace.
 
 <Tabs>
 
-<Tab title="Usage">
+<Tab title="Použití">
 
 ```jsx
 import { AnimatedCheckmark } from 'twenty-ui/display';
@@ -55,14 +56,17 @@ export const MyComponent = () => {
 
 </Tab>
 
-<Tab title="Props">
+<Tab title="Vlastnosti">
+
 
 | Vlastnosti | Typ                | Popis                             | Výchozí     |
 | ---------- | ------------------ | --------------------------------- | ----------- |
 | animuje    | booleovská hodnota | Určuje, zda se zaškrtnutí animuje | nepravdivé  |
-| barva      | textový řetězec    | Barva zaškrtnutí                  |             |
+| barva      | řetězec            | Barva zaškrtnutí                  |             |
 | trvání     | číslo              | Doba trvání animace v sekundách   | 0,5 sekundy |
 | velikost   | číslo              | Velikost zaškrtnutí               | 28 pixelů   |
+
+
 
 </Tab>
 

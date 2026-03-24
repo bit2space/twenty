@@ -2,14 +2,15 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 
 import { msg } from '@lingui/core/macro';
-import axios from 'axios';
 import semver from 'semver';
+import { isDefined } from 'twenty-shared/utils';
 import { Repository } from 'typeorm';
 import * as z from 'zod';
+import { FeatureFlagKey } from 'twenty-shared/types';
 
 import { type ConfigVariableDTO } from 'src/engine/core-modules/admin-panel/dtos/config-variable.dto';
 import { type ConfigVariablesGroupDataDTO } from 'src/engine/core-modules/admin-panel/dtos/config-variables-group.dto';
-import { type ConfigVariablesOutput } from 'src/engine/core-modules/admin-panel/dtos/config-variables.output';
+import { type ConfigVariablesDTO } from 'src/engine/core-modules/admin-panel/dtos/config-variables.dto';
 import { type UserLookup } from 'src/engine/core-modules/admin-panel/dtos/user-lookup.dto';
 import { type VersionInfoDTO } from 'src/engine/core-modules/admin-panel/dtos/version-info.dto';
 import {
@@ -17,9 +18,9 @@ import {
   AuthExceptionCode,
 } from 'src/engine/core-modules/auth/auth.exception';
 import { WorkspaceDomainsService } from 'src/engine/core-modules/domain/workspace-domains/services/workspace-domains.service';
-import { FeatureFlagKey } from 'src/engine/core-modules/feature-flag/enums/feature-flag-key.enum';
 import { type FeatureFlagEntity } from 'src/engine/core-modules/feature-flag/feature-flag.entity';
 import { FileService } from 'src/engine/core-modules/file/services/file.service';
+import { SecureHttpClientService } from 'src/engine/core-modules/secure-http-client/secure-http-client.service';
 import { type ConfigVariables } from 'src/engine/core-modules/twenty-config/config-variables';
 import { CONFIG_VARIABLES_GROUP_METADATA } from 'src/engine/core-modules/twenty-config/constants/config-variables-group-metadata';
 import { type ConfigVariablesGroup } from 'src/engine/core-modules/twenty-config/enums/config-variables-group.enum';
@@ -33,6 +34,7 @@ export class AdminPanelService {
     private readonly twentyConfigService: TwentyConfigService,
     private readonly workspaceDomainsService: WorkspaceDomainsService,
     private readonly fileService: FileService,
+    private readonly secureHttpClientService: SecureHttpClientService,
     @InjectRepository(UserEntity)
     private readonly userRepository: Repository<UserEntity>,
   ) {}
@@ -91,12 +93,14 @@ export class AdminPanelService {
           customDomain: userWorkspace.workspace.customDomain,
           isCustomDomainEnabled: userWorkspace.workspace.isCustomDomainEnabled,
         }),
-        users: userWorkspace.workspace.workspaceUsers.map((workspaceUser) => ({
-          id: workspaceUser.user.id,
-          email: workspaceUser.user.email,
-          firstName: workspaceUser.user.firstName,
-          lastName: workspaceUser.user.lastName,
-        })),
+        users: userWorkspace.workspace.workspaceUsers
+          .filter((workspaceUser) => isDefined(workspaceUser.user))
+          .map((workspaceUser) => ({
+            id: workspaceUser.user.id,
+            email: workspaceUser.user.email,
+            firstName: workspaceUser.user.firstName,
+            lastName: workspaceUser.user.lastName,
+          })),
         featureFlags: allFeatureFlagKeys.map((key) => ({
           key,
           value:
@@ -108,7 +112,7 @@ export class AdminPanelService {
     };
   }
 
-  getConfigVariablesGrouped(): ConfigVariablesOutput {
+  getConfigVariablesGrouped(): ConfigVariablesDTO {
     const rawEnvVars = this.twentyConfigService.getAll();
     const groupedData = new Map<ConfigVariablesGroup, ConfigVariableDTO[]>();
 
@@ -116,6 +120,10 @@ export class AdminPanelService {
       rawEnvVars,
     )) {
       const { group, description } = metadata;
+
+      if (metadata.isHiddenInAdminPanel) {
+        continue;
+      }
 
       const envVar: ConfigVariableDTO = {
         name: varName,
@@ -138,6 +146,9 @@ export class AdminPanelService {
     const groups: ConfigVariablesGroupDataDTO[] = Array.from(
       groupedData.entries(),
     )
+      .filter(
+        ([name]) => !CONFIG_VARIABLES_GROUP_METADATA[name].isHiddenInAdminPanel,
+      )
       .sort((a, b) => {
         const positionA = CONFIG_VARIABLES_GROUP_METADATA[a[0]].position;
         const positionB = CONFIG_VARIABLES_GROUP_METADATA[b[0]].position;
@@ -182,7 +193,9 @@ export class AdminPanelService {
     const currentVersion = this.twentyConfigService.get('APP_VERSION');
 
     try {
-      const rawResponse = await axios.get<unknown>(
+      const httpClient = this.secureHttpClientService.getHttpClient();
+
+      const rawResponse = await httpClient.get<unknown>(
         'https://hub.docker.com/v2/repositories/twentycrm/twenty/tags?page_size=100',
       );
       const response = z

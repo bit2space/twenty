@@ -34,7 +34,9 @@ describe('ClientConfigService', () => {
         {
           provide: AiModelRegistryService,
           useValue: {
-            getAvailableModels: jest.fn().mockReturnValue([]),
+            getAdminFilteredModels: jest.fn().mockReturnValue([]),
+            getRecommendedModelIds: jest.fn().mockReturnValue(new Set()),
+            getModelConfig: jest.fn().mockReturnValue(undefined),
           },
         },
       ],
@@ -77,7 +79,6 @@ describe('ClientConfigService', () => {
             SENTRY_FRONT_DSN: 'https://sentry.example.com',
             CAPTCHA_DRIVER: CaptchaDriverType.GOOGLE_RECAPTCHA,
             CAPTCHA_SITE_KEY: 'site-key-123',
-            CHROME_EXTENSION_ID: 'extension-123',
             MUTATION_MAXIMUM_AFFECTED_RECORDS: 1000,
             IS_ATTACHMENT_PREVIEW_ENABLED: true,
             ANALYTICS_ENABLED: true,
@@ -86,7 +87,10 @@ describe('ClientConfigService', () => {
             MESSAGING_PROVIDER_GMAIL_ENABLED: true,
             CALENDAR_PROVIDER_GOOGLE_ENABLED: true,
             IS_CONFIG_VARIABLES_IN_DB_ENABLED: false,
+            IS_IMAP_SMTP_CALDAV_ENABLED: false,
             CALENDAR_BOOKING_PAGE_ID: 'team/twenty/talk-to-us',
+            CLOUDFLARE_API_KEY: undefined,
+            CLOUDFLARE_ZONE_ID: undefined,
           };
 
           return mockValues[key];
@@ -142,7 +146,6 @@ describe('ClientConfigService', () => {
           provider: 'GOOGLE_RECAPTCHA',
           siteKey: 'site-key-123',
         },
-        chromeExtensionId: 'extension-123',
         api: {
           mutationMaximumAffectedRecords: 1000,
         },
@@ -155,7 +158,10 @@ describe('ClientConfigService', () => {
         isGoogleMessagingEnabled: true,
         isGoogleCalendarEnabled: true,
         isConfigVariablesInDbEnabled: false,
+        isImapSmtpCaldavEnabled: false,
         calendarBookingPageId: 'team/twenty/talk-to-us',
+        isCloudflareIntegrationEnabled: false,
+        isClickHouseConfigured: false,
       });
     });
 

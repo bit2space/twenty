@@ -1,9 +1,11 @@
 import { gql } from '@apollo/client';
 
-import { type ObjectMetadataItem } from '@/object-metadata/types/ObjectMetadataItem';
+import { type EnrichedObjectMetadataItem } from '@/object-metadata/types/EnrichedObjectMetadataItem';
 import { mapObjectMetadataToGraphQLQuery } from '@/object-metadata/utils/mapObjectMetadataToGraphQLQuery';
-import { type RecordGqlOperationGqlRecordFields } from '@/object-record/graphql/types/RecordGqlOperationGqlRecordFields';
-import { type ObjectPermissions } from 'twenty-shared/types';
+import {
+  type ObjectPermissions,
+  type RecordGqlOperationGqlRecordFields,
+} from 'twenty-shared/types';
 import { capitalize } from 'twenty-shared/utils';
 
 export const generateGroupByRecordsQuery = ({
@@ -13,8 +15,8 @@ export const generateGroupByRecordsQuery = ({
   computeReferences,
   objectPermissionsByObjectMetadataId,
 }: {
-  objectMetadataItem: ObjectMetadataItem;
-  objectMetadataItems: ObjectMetadataItem[];
+  objectMetadataItem: EnrichedObjectMetadataItem;
+  objectMetadataItems: EnrichedObjectMetadataItem[];
   recordGqlFields?: RecordGqlOperationGqlRecordFields;
   computeReferences?: boolean;
   objectPermissionsByObjectMetadataId: Record<

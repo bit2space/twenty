@@ -4,13 +4,13 @@ image: /images/user-guide/create-workspace/workspace-cover.png
 ---
 
 <Frame>
-  <img src="/images/user-guide/create-workspace/workspace-cover.png" alt="Header" />
+  <img src="/images/user-guide/create-workspace/workspace-cover.png" alt="Hlavička" />
 </Frame>
 
 Používá se, když uživatelé mohou vybrat pouze jednu možnost ze série možností.
 
 <Tabs>
-<Tab title="Usage">
+<Tab title="Použití">
 
 ```jsx
 import { Radio } from "twenty-ui/display";
@@ -41,20 +41,25 @@ export const MyComponent = () => {
 
 ```
 
-</Tab>
-<Tab title="Props">
 
-| Vlastnosti      | Typ                    | Popis                                                                                                              |
-| --------------- | ---------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| styl            | Vlastnosti `React.CSS` | Další inline styly pro komponentu                                                                                  |
-| className       | textový řetězec        | Volitelná CSS třída pro dodatečné stylování.                                                       |
-| zaškrtnuté      | booleovská hodnota     | Indicates whether the radio button is checked                                                                      |
-| hodnota         | textový řetězec        | Označení nebo text spojený s radiobuttonem                                                                         |
-| onChange        | funkce                 | The function called when the selected radio button is changed                                                      |
-| onCheckedChange | funkce                 | The function called when the `checked` state of the radio button changes                                           |
-| velikost        | textový řetězec        | Velikost radiobuttonu. Možnosti zahrnují: `velký` a `malý`                         |
-| neaktivní       | booleovská hodnota     | If `true`, the radio button is disabled and not clickable                                                          |
-| labelPosition   | textový řetězec        | Pozice textu označení vzhledem k radiobuttonu. Má dvě možnosti: `vlevo` a `vpravo` |
+</Tab>
+<Tab title="Vlastnosti">
+
+
+| Vlastnosti      | Typ                    | Popis                                                                              |
+| --------------- | ---------------------- | ---------------------------------------------------------------------------------- |
+| styl            | Vlastnosti `React.CSS` | Další inline styly pro komponentu                                                  |
+| className       | řetězec                | Volitelná CSS třída pro další stylování                                            |
+| zaškrtnuté      | booleovská hodnota     | Indicates whether the radio button is checked                                      |
+| hodnota         | řetězec                | Označení nebo text spojený s radiobuttonem                                         |
+| onChange        | funkce                 | The function called when the selected radio button is changed                      |
+| onCheckedChange | funkce                 | The function called when the `checked` state of the radio button changes           |
+| velikost        | řetězec                | Velikost radiobuttonu. Možnosti zahrnují: `velký` a `malý`                         |
+| neaktivní       | booleovská hodnota     | If `true`, the radio button is disabled and not clickable                          |
+| labelPosition   | řetězec                | Pozice textu označení vzhledem k radiobuttonu. Má dvě možnosti: `vlevo` a `vpravo` |
+
+
+
 
 </Tab>
 </Tabs>
@@ -64,7 +69,7 @@ export const MyComponent = () => {
 Groups together related radio buttons.
 
 <Tabs>
-<Tab title="Usage">
+<Tab title="Použití">
 
 ```jsx
 import React, { useState } from "react";
@@ -90,14 +95,18 @@ export const MyComponent = () => {
 ```
 
 </Tab>
-<Tab title="Props">
+<Tab title="Vlastnosti">
 
-| Vlastnosti      | Typ               | Popis                                                                                                 |
-| --------------- | ----------------- | ----------------------------------------------------------------------------------------------------- |
-| hodnota         | textový řetězec   | Hodnota aktuálně vybraného radiobuttonu                                                               |
-| onChange        | funkce            | The callback function triggered when the radio button is changed                                      |
-| přiZměněHodnoty | funkce            | Funkce spouštěná při změně vybrané hodnoty ve skupině.                                |
+
+| Vlastnosti      | Typ               | Popis                                                                              |
+| --------------- | ----------------- | ---------------------------------------------------------------------------------- |
+| hodnota         | řetězec           | Hodnota aktuálně vybraného radiobuttonu                                            |
+| onChange        | funkce            | The callback function triggered when the radio button is changed                   |
+| přiZměněHodnoty | funkce            | Funkce spouštěná při změně vybrané hodnoty ve skupině.                             |
 | děti            | `React.ReactNode` | Allows you to pass React components (such as Radio) as children to the Radio Group |
+
+
+
 
 </Tab>
 

@@ -1,23 +1,19 @@
-import { useRecoilValue } from 'recoil';
-
 import { currentWorkspaceState } from '@/auth/states/currentWorkspaceState';
-import { FavoritesFolderContent } from '@/favorites/components/FavoritesFolderContent';
-import { useFavoritesByFolder } from '@/favorites/hooks/useFavoritesByFolder';
-import { MainNavigationDrawerFixedItems } from '@/navigation/components/MainNavigationDrawerFixedItems';
-import { MainNavigationDrawerScrollableItems } from '@/navigation/components/MainNavigationDrawerScrollableItems';
-import { SupportDropdown } from '@/support/components/SupportDropdown';
+import { MainNavigationDrawerAIChatContent } from '@/navigation/components/MainNavigationDrawerAIChatContent';
+import { MainNavigationDrawerNavigationContent } from '@/navigation/components/MainNavigationDrawerNavigationContent';
+import { MainNavigationDrawerTabsRow } from '@/navigation/components/MainNavigationDrawerTabsRow';
 import { NavigationDrawer } from '@/ui/navigation/navigation-drawer/components/NavigationDrawer';
 import { NavigationDrawerFixedContent } from '@/ui/navigation/navigation-drawer/components/NavigationDrawerFixedContent';
 import { NavigationDrawerScrollableContent } from '@/ui/navigation/navigation-drawer/components/NavigationDrawerScrollableContent';
-import { currentFavoriteFolderIdState } from '@/ui/navigation/navigation-drawer/states/currentFavoriteFolderIdState';
+import { navigationDrawerActiveTabState } from '@/ui/navigation/states/navigationDrawerActiveTabState';
+import { NAVIGATION_DRAWER_TABS } from '@/ui/navigation/states/navigationDrawerTabs';
+import { useAtomStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomStateValue';
 
 export const MainNavigationDrawer = ({ className }: { className?: string }) => {
-  const currentWorkspace = useRecoilValue(currentWorkspaceState);
-  const currentFavoriteFolderId = useRecoilValue(currentFavoriteFolderIdState);
-  const { favoritesByFolder } = useFavoritesByFolder();
-  const openedFolder = favoritesByFolder.find(
-    (f) => f.folderId === currentFavoriteFolderId,
+  const navigationDrawerActiveTab = useAtomStateValue(
+    navigationDrawerActiveTabState,
   );
+  const currentWorkspace = useAtomStateValue(currentWorkspaceState);
 
   return (
     <NavigationDrawer
@@ -25,24 +21,17 @@ export const MainNavigationDrawer = ({ className }: { className?: string }) => {
       title={currentWorkspace?.displayName ?? ''}
     >
       <NavigationDrawerFixedContent>
-        <MainNavigationDrawerFixedItems />
+        <MainNavigationDrawerTabsRow />
       </NavigationDrawerFixedContent>
 
       <NavigationDrawerScrollableContent>
-        {currentFavoriteFolderId && openedFolder ? (
-          <FavoritesFolderContent
-            folderName={openedFolder.folderName}
-            folderId={openedFolder.folderId}
-            favorites={openedFolder.favorites}
-          />
+        {navigationDrawerActiveTab ===
+        NAVIGATION_DRAWER_TABS.AI_CHAT_HISTORY ? (
+          <MainNavigationDrawerAIChatContent />
         ) : (
-          <MainNavigationDrawerScrollableItems />
+          <MainNavigationDrawerNavigationContent />
         )}
       </NavigationDrawerScrollableContent>
-
-      <NavigationDrawerFixedContent>
-        <SupportDropdown />
-      </NavigationDrawerFixedContent>
     </NavigationDrawer>
   );
 };

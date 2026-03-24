@@ -1,10 +1,10 @@
 import { type WorkflowHttpRequestAction } from '@/workflow/types/Workflow';
+import { type BaseOutputSchemaV2 } from 'twenty-shared/workflow';
 import { parseAndValidateVariableFriendlyStringifiedJson } from '@/workflow/utils/parseAndValidateVariableFriendlyStringifiedJson';
 import { isNonEmptyString } from '@sniptt/guards';
 import { useState } from 'react';
-import { type BaseOutputSchemaV2 } from 'twenty-shared/workflow';
-import { convertOutputSchemaToJson } from '../utils/convertOutputSchemaToJson';
-import { getHttpRequestOutputSchema } from '../utils/getHttpRequestOutputSchema';
+import { convertOutputSchemaToJson } from '@/workflow/workflow-steps/workflow-actions/http-request-action/utils/convertOutputSchemaToJson';
+import { getHttpRequestOutputSchema } from '@/workflow/workflow-steps/workflow-actions/http-request-action/utils/getHttpRequestOutputSchema';
 
 type UseHttpRequestOutputSchemaProps = {
   action: WorkflowHttpRequestAction;

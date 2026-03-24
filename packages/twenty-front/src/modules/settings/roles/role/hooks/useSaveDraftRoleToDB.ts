@@ -1,22 +1,26 @@
+import { useUpsertRowLevelPermissionPredicatesMutation } from '@/settings/roles/graphql/hooks/useUpsertRowLevelPermissionPredicatesMutation';
 import { GET_ROLES } from '@/settings/roles/graphql/queries/getRolesQuery';
 import { useUpdateAgentRole } from '@/settings/roles/hooks/useUpdateAgentRole';
 import { useUpdateApiKeyRole } from '@/settings/roles/hooks/useUpdateApiKeyRole';
 import { useUpdateWorkspaceMemberRole } from '@/settings/roles/hooks/useUpdateWorkspaceMemberRole';
 import { useRemoveFieldPermissionInDraftRole } from '@/settings/roles/role-permissions/object-level-permissions/field-permissions/hooks/useRemoveFieldPermissionInDraftRole';
-import { newFieldPermissionsFilter } from '@/settings/roles/role/hooks/utils/newFieldPermissionsFilter.util';
+import { newFieldPermissionsFilter } from '@/settings/roles/role/utils/newFieldPermissionsFilter';
 import { settingsDraftRoleFamilyState } from '@/settings/roles/states/settingsDraftRoleFamilyState';
 import { settingsPersistedRoleFamilyState } from '@/settings/roles/states/settingsPersistedRoleFamilyState';
-import { getOperationName } from '@apollo/client/utilities';
-import { useRecoilValue } from 'recoil';
+import { useAtomFamilyStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomFamilyStateValue';
+import { getOperationName } from '~/utils/getOperationName';
 import { isDefined, isNonEmptyArray } from 'twenty-shared/utils';
+import { useMutation } from '@apollo/client/react';
 import {
-  useCreateOneRoleMutation,
-  useUpdateOneRoleMutation,
-  useUpsertFieldPermissionsMutation,
-  useUpsertObjectPermissionsMutation,
-  useUpsertPermissionFlagsMutation,
+  type RowLevelPermissionPredicateGroupLogicalOperator,
+  type RowLevelPermissionPredicateOperand,
+  type Role,
+  CreateOneRoleDocument,
+  UpdateOneRoleDocument,
+  UpsertFieldPermissionsDocument,
+  UpsertObjectPermissionsDocument,
+  UpsertPermissionFlagsDocument,
 } from '~/generated-metadata/graphql';
-import { type Role } from '~/generated/graphql';
 import { getDirtyFields } from '~/utils/getDirtyFields';
 
 const ROLE_BASIC_KEYS: Array<keyof Role> = [
@@ -43,21 +47,27 @@ export const useSaveDraftRoleToDB = ({
   isCreateMode: boolean;
   onSuccess?: (savedRoleId: string) => void | Promise<void>;
 }) => {
-  const [createRole] = useCreateOneRoleMutation();
-  const [updateRole] = useUpdateOneRoleMutation();
-  const [upsertPermissionFlags] = useUpsertPermissionFlagsMutation();
-  const [upsertObjectPermissions] = useUpsertObjectPermissionsMutation();
-  const [upsertFieldPermissions] = useUpsertFieldPermissionsMutation();
+  const [createRole] = useMutation(CreateOneRoleDocument);
+  const [updateRole] = useMutation(UpdateOneRoleDocument);
+  const [upsertPermissionFlags] = useMutation(UpsertPermissionFlagsDocument);
+  const [upsertObjectPermissions] = useMutation(
+    UpsertObjectPermissionsDocument,
+  );
+  const [upsertFieldPermissions] = useMutation(UpsertFieldPermissionsDocument);
+  const [upsertRowLevelPermissionPredicates] =
+    useUpsertRowLevelPermissionPredicatesMutation();
   const { addWorkspaceMembersToRole } = useUpdateWorkspaceMemberRole(roleId);
   const { addAgentsToRole } = useUpdateAgentRole(roleId);
   const { addApiKeysToRole } = useUpdateApiKeyRole(roleId);
 
-  const settingsPersistedRole = useRecoilValue(
-    settingsPersistedRoleFamilyState(roleId),
+  const settingsPersistedRole = useAtomFamilyStateValue(
+    settingsPersistedRoleFamilyState,
+    roleId,
   );
 
-  const settingsDraftRole = useRecoilValue(
-    settingsDraftRoleFamilyState(roleId),
+  const settingsDraftRole = useAtomFamilyStateValue(
+    settingsDraftRoleFamilyState,
+    roleId,
   );
 
   const dirtyFields = getDirtyFields(settingsDraftRole, settingsPersistedRole);
@@ -236,6 +246,118 @@ export const useSaveDraftRoleToDB = ({
         refetchQueries: [getOperationName(GET_ROLES) ?? ''],
       });
     }
+
+    if (
+      isDefined(dirtyFields.rowLevelPermissionPredicates) ||
+      isDefined(dirtyFields.rowLevelPermissionPredicateGroups)
+    ) {
+      await upsertRowLevelPermissionPredicatesForRole(roleId);
+    }
+  };
+
+  const upsertRowLevelPermissionPredicatesForRole = async (
+    targetRoleId: string,
+  ) => {
+    const predicates = settingsDraftRole.rowLevelPermissionPredicates ?? [];
+    const predicateGroups =
+      settingsDraftRole.rowLevelPermissionPredicateGroups ?? [];
+
+    const predicatesByObject = predicates.reduce(
+      (acc, predicate) => {
+        const objectMetadataId = predicate.objectMetadataId;
+
+        if (!isDefined(acc[objectMetadataId])) {
+          acc[objectMetadataId] = [];
+        }
+        acc[objectMetadataId].push(predicate);
+
+        return acc;
+      },
+      {} as Record<string, typeof predicates>,
+    );
+
+    const persistedPredicates =
+      settingsPersistedRole?.rowLevelPermissionPredicates ?? [];
+    const persistedObjectIds = new Set(
+      persistedPredicates.map((predicate) => predicate.objectMetadataId),
+    );
+
+    for (const objectMetadataId of persistedObjectIds) {
+      if (!isDefined(predicatesByObject[objectMetadataId])) {
+        predicatesByObject[objectMetadataId] = [];
+      }
+    }
+
+    for (const [objectMetadataId, objectPredicates] of Object.entries(
+      predicatesByObject,
+    )) {
+      const objectUsedGroupIds = new Set(
+        objectPredicates
+          .map((p) => p.rowLevelPermissionPredicateGroupId)
+          .filter(isDefined),
+      );
+
+      const includeParentGroupsForObject = (groupId: string) => {
+        const group = predicateGroups.find((g) => g.id === groupId);
+        if (
+          isDefined(group?.parentRowLevelPermissionPredicateGroupId) &&
+          !objectUsedGroupIds.has(
+            group.parentRowLevelPermissionPredicateGroupId,
+          )
+        ) {
+          objectUsedGroupIds.add(
+            group.parentRowLevelPermissionPredicateGroupId,
+          );
+          includeParentGroupsForObject(
+            group.parentRowLevelPermissionPredicateGroupId,
+          );
+        }
+      };
+
+      for (const groupId of objectUsedGroupIds) {
+        includeParentGroupsForObject(groupId);
+      }
+
+      const objectPredicateGroups = predicateGroups.filter((group) =>
+        objectUsedGroupIds.has(group.id),
+      );
+
+      await upsertRowLevelPermissionPredicates({
+        variables: {
+          input: {
+            roleId: targetRoleId,
+            objectMetadataId,
+            predicates: objectPredicates.map((predicate) => ({
+              id: predicate.id,
+              fieldMetadataId: predicate.fieldMetadataId,
+              operand: predicate.operand as RowLevelPermissionPredicateOperand,
+              value: predicate.value,
+              subFieldName: predicate.subFieldName,
+              workspaceMemberFieldMetadataId:
+                predicate.workspaceMemberFieldMetadataId,
+              workspaceMemberSubFieldName:
+                predicate.workspaceMemberSubFieldName,
+              rowLevelPermissionPredicateGroupId:
+                predicate.rowLevelPermissionPredicateGroupId,
+              positionInRowLevelPermissionPredicateGroup:
+                predicate.positionInRowLevelPermissionPredicateGroup,
+            })),
+            predicateGroups: objectPredicateGroups.map((group) => ({
+              id: group.id,
+              objectMetadataId,
+              parentRowLevelPermissionPredicateGroupId:
+                group.parentRowLevelPermissionPredicateGroupId,
+              logicalOperator:
+                group.logicalOperator as RowLevelPermissionPredicateGroupLogicalOperator,
+              positionInRowLevelPermissionPredicateGroup:
+                group.positionInRowLevelPermissionPredicateGroup,
+            })),
+          },
+        },
+        refetchQueries: [getOperationName(GET_ROLES) ?? ''],
+        awaitRefetchQueries: true,
+      });
+    }
   };
 
   const upsertRolePermissions = async (targetRoleId: string) => {
@@ -291,6 +413,13 @@ export const useSaveDraftRoleToDB = ({
         },
         refetchQueries: [getOperationName(GET_ROLES) ?? ''],
       });
+    }
+
+    if (
+      isDefined(dirtyFields.rowLevelPermissionPredicates) ||
+      isDefined(dirtyFields.rowLevelPermissionPredicateGroups)
+    ) {
+      await upsertRowLevelPermissionPredicatesForRole(targetRoleId);
     }
   };
 

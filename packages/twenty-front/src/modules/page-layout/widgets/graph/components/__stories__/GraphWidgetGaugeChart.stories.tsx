@@ -1,12 +1,20 @@
-import { type Meta, type StoryObj } from '@storybook/react';
+import { type Meta, type StoryObj } from '@storybook/react-vite';
 
+import { GraphWidgetTestWrapper } from '@/page-layout/widgets/graph/__tests__/GraphWidgetTestWrapper';
+import { GraphWidgetGaugeChart } from '@/page-layout/widgets/graph/graph-widget-gauge-chart/components/GraphWidgetGaugeChart';
 import { CatalogDecorator, ComponentDecorator } from 'twenty-ui/testing';
-import { GraphWidgetGaugeChart } from '@/page-layout/widgets/graph/graphWidgetGaugeChart/components/GraphWidgetGaugeChart';
 
 const meta: Meta<typeof GraphWidgetGaugeChart> = {
   title: 'Modules/PageLayout/Widgets/GraphWidgetGaugeChart',
   component: GraphWidgetGaugeChart,
-  decorators: [ComponentDecorator],
+  decorators: [
+    (Story) => (
+      <GraphWidgetTestWrapper>
+        <Story />
+      </GraphWidgetTestWrapper>
+    ),
+    ComponentDecorator,
+  ],
   parameters: {
     layout: 'centered',
   },

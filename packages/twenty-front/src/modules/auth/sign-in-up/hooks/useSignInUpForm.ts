@@ -1,8 +1,8 @@
 import { zodResolver } from '@hookform/resolvers/zod';
+import { t } from '@lingui/core/macro';
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { useSearchParams } from 'react-router-dom';
-import { useRecoilValue } from 'recoil';
 import { z } from 'zod';
 
 import {
@@ -12,6 +12,7 @@ import {
 import { PASSWORD_REGEX } from '@/auth/utils/passwordRegex';
 import { isDeveloperDefaultSignInPrefilledState } from '@/client-config/states/isDeveloperDefaultSignInPrefilledState';
 import { isDefined } from 'twenty-shared/utils';
+import { useAtomStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomStateValue';
 
 const makeValidationSchema = (signInUpStep: SignInUpStep) =>
   z
@@ -20,12 +21,12 @@ const makeValidationSchema = (signInUpStep: SignInUpStep) =>
       email: z
         .string()
         .trim()
-        .pipe(z.email({ error: 'Email must be a valid email' })),
+        .pipe(z.email({ error: t`Email must be a valid email` })),
       password:
         signInUpStep === SignInUpStep.Password
           ? z
               .string()
-              .regex(PASSWORD_REGEX, 'Password must be min. 8 characters')
+              .regex(PASSWORD_REGEX, t`Password must be min. 8 characters`)
           : z.string().optional(),
       captchaToken: z.string().default(''),
     })
@@ -33,11 +34,11 @@ const makeValidationSchema = (signInUpStep: SignInUpStep) =>
 
 export type Form = z.infer<ReturnType<typeof makeValidationSchema>>;
 export const useSignInUpForm = () => {
-  const signInUpStep = useRecoilValue(signInUpStepState);
+  const signInUpStep = useAtomStateValue(signInUpStepState);
 
   const validationSchema = makeValidationSchema(signInUpStep); // Create schema based on the current step
 
-  const isDeveloperDefaultSignInPrefilled = useRecoilValue(
+  const isDeveloperDefaultSignInPrefilled = useAtomStateValue(
     isDeveloperDefaultSignInPrefilledState,
   );
   const [searchParams] = useSearchParams();

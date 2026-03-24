@@ -5,7 +5,6 @@ import { useFieldMetadataItem } from '@/object-metadata/hooks/useFieldMetadataIt
 import { type FieldMetadataItem } from '@/object-metadata/types/FieldMetadataItem';
 import { FieldMetadataType, RelationType } from '~/generated-metadata/graphql';
 
-import { getJestMetadataAndApolloMocksWrapper } from '~/testing/jest/getJestMetadataAndApolloMocksWrapper';
 import {
   FIELD_METADATA_ID,
   FIELD_RELATION_METADATA_ID,
@@ -13,15 +12,16 @@ import {
   queries,
   responseData,
   variables,
-} from '../__mocks__/useFieldMetadataItem';
+} from '@/object-metadata/hooks/__mocks__/useFieldMetadataItem';
+import { getJestMetadataAndApolloMocksWrapper } from '~/testing/jest/getJestMetadataAndApolloMocksWrapper';
 
-import { jestExpectSuccessfulMetadataRequestResult } from '@/object-metadata/hooks/__tests__/utils/jest-expect-metadata-request-status.util';
-import { GET_CURRENT_USER } from '@/users/graphql/queries/getCurrentUser';
-import { mockedUserData } from '~/testing/mock-data/users';
 import {
   query as findManyObjectMetadataItemsQuery,
   responseData as findManyObjectMetadataItemsResponseData,
-} from '../__mocks__/useFindManyObjectMetadataItems';
+} from '@/object-metadata/hooks/__mocks__/useFindManyObjectMetadataItems';
+import { jestExpectSuccessfulMetadataRequestResult } from '@/object-metadata/hooks/__tests__/utils/jest-expect-metadata-request-status.util';
+import { GET_CURRENT_USER } from '@/users/graphql/queries/getCurrentUser';
+import { mockedUserData } from '~/testing/mock-data/users';
 
 jest.mock('@/object-metadata/hooks/useUpdateOneFieldMetadataItem', () => ({
   useUpdateOneFieldMetadataItem: () => ({
@@ -36,8 +36,43 @@ jest.mock('@/object-metadata/hooks/useUpdateOneFieldMetadataItem', () => ({
   }),
 }));
 
+jest.mock('@/object-metadata/hooks/useCreateOneFieldMetadataItem', () => ({
+  useCreateOneFieldMetadataItem: () => ({
+    createOneFieldMetadataItem: jest.fn().mockResolvedValue({
+      status: 'successful',
+      response: {
+        data: {
+          createOneField: responseData.createMetadataField,
+        },
+      },
+    }),
+  }),
+}));
+
+jest.mock('@/object-metadata/hooks/useDeleteOneFieldMetadataItem', () => ({
+  useDeleteOneFieldMetadataItem: () => ({
+    deleteOneFieldMetadataItem: jest
+      .fn()
+      .mockImplementation(({ idToDelete }) => {
+        const data =
+          idToDelete === FIELD_RELATION_METADATA_ID
+            ? responseData.fieldRelation
+            : responseData.default;
+        return Promise.resolve({
+          status: 'successful',
+          response: {
+            data: {
+              deleteOneField: data,
+            },
+          },
+        });
+      }),
+  }),
+}));
+
 const fieldMetadataItem: FieldMetadataItem = {
   id: FIELD_METADATA_ID,
+  universalIdentifier: FIELD_METADATA_ID,
   createdAt: '',
   label: 'label',
   name: 'name',
@@ -48,6 +83,7 @@ const fieldMetadataItem: FieldMetadataItem = {
 
 const fieldRelationMetadataItem: FieldMetadataItem = {
   id: FIELD_RELATION_METADATA_ID,
+  universalIdentifier: FIELD_RELATION_METADATA_ID,
   createdAt: '',
   label: 'label',
   name: 'name',
@@ -208,7 +244,6 @@ describe('useFieldMetadataItem', () => {
     await act(async () => {
       const res = await result.current.deleteMetadataField({
         idToDelete: fieldMetadataItem.id,
-        objectMetadataId,
       });
       jestExpectSuccessfulMetadataRequestResult(res);
 
@@ -228,7 +263,6 @@ describe('useFieldMetadataItem', () => {
     await act(async () => {
       const res = await result.current.deleteMetadataField({
         idToDelete: fieldRelationMetadataItem.id,
-        objectMetadataId,
       });
       jestExpectSuccessfulMetadataRequestResult(res);
 

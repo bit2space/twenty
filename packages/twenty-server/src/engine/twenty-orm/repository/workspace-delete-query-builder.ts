@@ -1,4 +1,5 @@
 import { type ObjectsPermissions } from 'twenty-shared/types';
+import { isDefined } from 'twenty-shared/utils';
 import {
   DeleteQueryBuilder,
   type DeleteResult,
@@ -13,7 +14,7 @@ import { type FeatureFlagMap } from 'src/engine/core-modules/feature-flag/interf
 import { type WorkspaceInternalContext } from 'src/engine/twenty-orm/interfaces/workspace-internal-context.interface';
 
 import { DatabaseEventAction } from 'src/engine/api/graphql/graphql-query-runner/enums/database-event-action';
-import { type AuthContext } from 'src/engine/core-modules/auth/types/auth-context.type';
+import { type WorkspaceAuthContext } from 'src/engine/core-modules/auth/types/workspace-auth-context.type';
 import { computeTwentyORMException } from 'src/engine/twenty-orm/error-handling/compute-twenty-orm-exception';
 import {
   TwentyORMException,
@@ -23,6 +24,7 @@ import { validateQueryIsPermittedOrThrow } from 'src/engine/twenty-orm/repositor
 import { type WorkspaceSelectQueryBuilder } from 'src/engine/twenty-orm/repository/workspace-select-query-builder';
 import { type WorkspaceSoftDeleteQueryBuilder } from 'src/engine/twenty-orm/repository/workspace-soft-delete-query-builder';
 import { type WorkspaceUpdateQueryBuilder } from 'src/engine/twenty-orm/repository/workspace-update-query-builder';
+import { applyRowLevelPermissionPredicates } from 'src/engine/twenty-orm/utils/apply-row-level-permission-predicates.util';
 import { applyTableAliasOnWhereCondition } from 'src/engine/twenty-orm/utils/apply-table-alias-on-where-condition';
 import { computeEventSelectQueryBuilder } from 'src/engine/twenty-orm/utils/compute-event-select-query-builder.util';
 import { formatResult } from 'src/engine/twenty-orm/utils/format-result.util';
@@ -36,14 +38,14 @@ export class WorkspaceDeleteQueryBuilder<
   private objectRecordsPermissions: ObjectsPermissions;
   private shouldBypassPermissionChecks: boolean;
   private internalContext: WorkspaceInternalContext;
-  private authContext: AuthContext;
+  private authContext: WorkspaceAuthContext;
   private featureFlagMap: FeatureFlagMap;
   constructor(
     queryBuilder: DeleteQueryBuilder<T>,
     objectRecordsPermissions: ObjectsPermissions,
     internalContext: WorkspaceInternalContext,
     shouldBypassPermissionChecks: boolean,
-    authContext: AuthContext,
+    authContext: WorkspaceAuthContext,
     featureFlagMap: FeatureFlagMap,
   ) {
     super(queryBuilder);
@@ -57,7 +59,7 @@ export class WorkspaceDeleteQueryBuilder<
   override clone(): this {
     const clonedQueryBuilder = super.clone();
 
-    return new WorkspaceDeleteQueryBuilder(
+    const workspaceDeleteQueryBuilder = new WorkspaceDeleteQueryBuilder(
       clonedQueryBuilder,
       this.objectRecordsPermissions,
       this.internalContext,
@@ -65,10 +67,13 @@ export class WorkspaceDeleteQueryBuilder<
       this.authContext,
       this.featureFlagMap,
     ) as this;
+
+    return workspaceDeleteQueryBuilder;
   }
 
   override async execute(): Promise<DeleteResult & { generatedMaps: T[] }> {
     try {
+      this.applyRowLevelPermissionPredicates();
       validateQueryIsPermittedOrThrow({
         expressionMap: this.expressionMap,
         objectsPermissions: this.objectRecordsPermissions,
@@ -116,12 +121,18 @@ export class WorkspaceDeleteQueryBuilder<
         this.internalContext.flatFieldMetadataMaps,
       );
 
-      const formattedBefore = formatResult<T[]>(
+      const formattedBefore = formatResult<T | null>(
         before,
         objectMetadata,
         this.internalContext.flatObjectMetadataMaps,
         this.internalContext.flatFieldMetadataMaps,
       );
+
+      const recordsBefore = isDefined(formattedBefore)
+        ? Array.isArray(formattedBefore)
+          ? formattedBefore
+          : [formattedBefore]
+        : [];
 
       this.internalContext.eventEmitterService.emitDatabaseBatchEvent(
         formatTwentyOrmEventToDatabaseBatchEvent({
@@ -129,7 +140,7 @@ export class WorkspaceDeleteQueryBuilder<
           objectMetadataItem: objectMetadata,
           flatFieldMetadataMaps: this.internalContext.flatFieldMetadataMaps,
           workspaceId: this.internalContext.workspaceId,
-          entities: formattedBefore,
+          recordsBefore,
           authContext: this.authContext,
         }),
       );
@@ -140,7 +151,7 @@ export class WorkspaceDeleteQueryBuilder<
         affected: result.affected,
       };
     } catch (error) {
-      throw computeTwentyORMException(error);
+      throw await computeTwentyORMException(error);
     }
   }
 
@@ -155,6 +166,27 @@ export class WorkspaceDeleteQueryBuilder<
     }
 
     return mainAliasTarget;
+  }
+
+  private applyRowLevelPermissionPredicates(): void {
+    if (this.shouldBypassPermissionChecks) {
+      return;
+    }
+
+    const mainAliasTarget = this.getMainAliasTarget();
+
+    const objectMetadata = getObjectMetadataFromEntityTarget(
+      mainAliasTarget,
+      this.internalContext,
+    );
+
+    applyRowLevelPermissionPredicates({
+      queryBuilder: this as unknown as WorkspaceSelectQueryBuilder<T>,
+      objectMetadata,
+      internalContext: this.internalContext,
+      authContext: this.authContext,
+      featureFlagMap: this.featureFlagMap,
+    });
   }
 
   override select(): WorkspaceSelectQueryBuilder<T> {

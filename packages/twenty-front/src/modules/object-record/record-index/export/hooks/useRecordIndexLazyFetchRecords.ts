@@ -7,7 +7,7 @@ import { contextStoreFilterGroupsComponentState } from '@/context-store/states/c
 import { contextStoreFiltersComponentState } from '@/context-store/states/contextStoreFiltersComponentState';
 import { contextStoreTargetedRecordsRuleComponentState } from '@/context-store/states/contextStoreTargetedRecordsRuleComponentState';
 import { computeContextStoreFilters } from '@/context-store/utils/computeContextStoreFilters';
-import { type ObjectMetadataItem } from '@/object-metadata/types/ObjectMetadataItem';
+import { type EnrichedObjectMetadataItem } from '@/object-metadata/types/EnrichedObjectMetadataItem';
 import { useLazyFetchAllRecords } from '@/object-record/hooks/useLazyFetchAllRecords';
 import { EXPORT_TABLE_DATA_DEFAULT_PAGE_SIZE } from '@/object-record/object-options-dropdown/constants/ExportTableDataDefaultPageSize';
 import { useObjectOptionsForBoard } from '@/object-record/object-options-dropdown/hooks/useObjectOptionsForBoard';
@@ -16,7 +16,8 @@ import { type RecordField } from '@/object-record/record-field/types/RecordField
 import { useFilterValueDependencies } from '@/object-record/record-filter/hooks/useFilterValueDependencies';
 import { useFindManyRecordIndexTableParams } from '@/object-record/record-index/hooks/useFindManyRecordIndexTableParams';
 import { recordIndexGroupFieldMetadataItemComponentState } from '@/object-record/record-index/states/recordIndexGroupFieldMetadataComponentState';
-import { useRecoilComponentValue } from '@/ui/utilities/state/component-state/hooks/useRecoilComponentValue';
+import { useAtomComponentSelectorValue } from '@/ui/utilities/state/jotai/hooks/useAtomComponentSelectorValue';
+import { useAtomComponentStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomComponentStateValue';
 import { ViewType } from '@/views/types/ViewType';
 import { isDefined } from 'twenty-shared/utils';
 
@@ -30,7 +31,7 @@ export const percentage = (part: number, whole: number): number => {
 export type UseRecordDataOptions = {
   delayMs: number;
   maximumRequests?: number;
-  objectMetadataItem: ObjectMetadataItem;
+  objectMetadataItem: EnrichedObjectMetadataItem;
   pageSize?: number;
   recordIndexId: string;
   callback: (
@@ -50,7 +51,7 @@ export const useRecordIndexLazyFetchRecords = ({
   pageSize = EXPORT_TABLE_DATA_DEFAULT_PAGE_SIZE,
   recordIndexId,
   callback,
-  viewType = ViewType.Table,
+  viewType = ViewType.TABLE,
 }: UseRecordDataOptions) => {
   const { hiddenBoardFields } = useObjectOptionsForBoard({
     objectNameSingular: objectMetadataItem.nameSingular,
@@ -58,28 +59,29 @@ export const useRecordIndexLazyFetchRecords = ({
     viewBarId: recordIndexId,
   });
 
-  const recordGroupFieldMetadata = useRecoilComponentValue(
+  const recordIndexGroupFieldMetadataItem = useAtomComponentStateValue(
     recordIndexGroupFieldMetadataItemComponentState,
     recordIndexId,
   );
 
   const hiddenKanbanFieldColumn = hiddenBoardFields.find(
-    (column) => column.metadata.fieldName === recordGroupFieldMetadata?.name,
+    (column) =>
+      column.metadata.fieldName === recordIndexGroupFieldMetadataItem?.name,
   );
 
-  const contextStoreTargetedRecordsRule = useRecoilComponentValue(
+  const contextStoreTargetedRecordsRule = useAtomComponentStateValue(
     contextStoreTargetedRecordsRuleComponentState,
   );
 
-  const contextStoreFilters = useRecoilComponentValue(
+  const contextStoreFilters = useAtomComponentStateValue(
     contextStoreFiltersComponentState,
   );
 
-  const contextStoreFilterGroups = useRecoilComponentValue(
+  const contextStoreFilterGroups = useAtomComponentStateValue(
     contextStoreFilterGroupsComponentState,
   );
 
-  const contextStoreAnyFieldFilterValue = useRecoilComponentValue(
+  const contextStoreAnyFieldFilterValue = useAtomComponentStateValue(
     contextStoreAnyFieldFilterValueComponentState,
   );
 
@@ -87,6 +89,7 @@ export const useRecordIndexLazyFetchRecords = ({
 
   const findManyRecordsParams = useFindManyRecordIndexTableParams(
     objectMetadataItem.nameSingular,
+    recordIndexId,
   );
 
   const queryFilter = computeContextStoreFilters({
@@ -98,8 +101,9 @@ export const useRecordIndexLazyFetchRecords = ({
     contextStoreAnyFieldFilterValue,
   });
 
-  const visibleRecordFields = useRecoilComponentValue(
+  const visibleRecordFields = useAtomComponentSelectorValue(
     visibleRecordFieldsComponentSelector,
+    recordIndexId,
   );
 
   const finalColumns: Pick<
@@ -127,7 +131,7 @@ export const useRecordIndexLazyFetchRecords = ({
         };
       })
       .filter(isDefined),
-    ...(hiddenKanbanFieldColumn && viewType === ViewType.Kanban
+    ...(hiddenKanbanFieldColumn && viewType === ViewType.KANBAN
       ? [hiddenKanbanFieldColumn]
       : []),
   ];

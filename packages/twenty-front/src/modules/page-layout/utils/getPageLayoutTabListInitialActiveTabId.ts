@@ -4,17 +4,17 @@ import { isDefined } from 'twenty-shared/utils';
 type GetPageLayoutTabListInitialActiveTabIdParams = {
   activeTabId: string | null;
   tabs: PageLayoutTab[];
-  defaultTabIdToFocusOnMobileAndSidePanel?: string;
+  defaultTabToFocusOnMobileAndSidePanelId?: string;
   isMobile: boolean;
-  isInRightDrawer: boolean;
+  isInSidePanel: boolean;
 };
 
 export const getPageLayoutTabListInitialActiveTabId = ({
   activeTabId,
   tabs,
-  defaultTabIdToFocusOnMobileAndSidePanel,
+  defaultTabToFocusOnMobileAndSidePanelId,
   isMobile,
-  isInRightDrawer,
+  isInSidePanel,
 }: GetPageLayoutTabListInitialActiveTabIdParams): string | null => {
   const activeTabExists = tabs.some((tab) => tab.id === activeTabId);
 
@@ -22,18 +22,18 @@ export const getPageLayoutTabListInitialActiveTabId = ({
     return activeTabId;
   }
 
-  const isOnMobileOrSidePanel = isMobile || isInRightDrawer;
+  const isOnMobileOrSidePanel = isMobile || isInSidePanel;
 
   if (
     isOnMobileOrSidePanel &&
-    isDefined(defaultTabIdToFocusOnMobileAndSidePanel)
+    isDefined(defaultTabToFocusOnMobileAndSidePanelId)
   ) {
     const defaultTabExists = tabs.some(
-      (tab) => tab.id === defaultTabIdToFocusOnMobileAndSidePanel,
+      (tab) => tab.id === defaultTabToFocusOnMobileAndSidePanelId,
     );
 
     if (defaultTabExists) {
-      return defaultTabIdToFocusOnMobileAndSidePanel;
+      return defaultTabToFocusOnMobileAndSidePanelId;
     }
   }
 

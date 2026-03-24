@@ -1,18 +1,22 @@
-import styled from '@emotion/styled';
+import { styled } from '@linaria/react';
 import { useEffect } from 'react';
 import { useInView } from 'react-intersection-observer';
 
+import { SKELETON_LOADER_HEIGHT_SIZES } from '@/activities/components/SkeletonLoader';
 import { RECORD_BOARD_COLUMN_PADDING_AND_BORDER_WIDTH } from '@/object-record/record-board/constants/RecordBoardColumnPaddingAndBorderWidth';
 
 import { RECORD_BOARD_COLUMN_WIDTH } from '@/object-record/record-board/constants/RecordBoardColumnWidth';
+import { RECORD_BOARD_QUERY_PAGE_SIZE } from '@/object-record/record-board/constants/RecordBoardQueryPageSize';
 import { recordBoardIsFetchingMoreComponentState } from '@/object-record/record-board/states/recordBoardIsFetchingMoreComponentState';
 import { recordBoardShouldFetchMoreComponentState } from '@/object-record/record-board/states/recordBoardShouldFetchMoreComponentState';
+import { visibleRecordFieldsComponentSelector } from '@/object-record/record-field/states/visibleRecordFieldsComponentSelector';
 import { visibleRecordGroupIdsComponentFamilySelector } from '@/object-record/record-group/states/selectors/visibleRecordGroupIdsComponentFamilySelector';
 import { recordIndexRecordGroupsAreInInitialLoadingComponentState } from '@/object-record/record-index/states/recordIndexRecordGroupsAreInInitialLoadingComponentState';
 import { useScrollWrapperHTMLElement } from '@/ui/utilities/scroll/hooks/useScrollWrapperHTMLElement';
-import { useRecoilComponentFamilyValue } from '@/ui/utilities/state/component-state/hooks/useRecoilComponentFamilyValue';
-import { useRecoilComponentState } from '@/ui/utilities/state/component-state/hooks/useRecoilComponentState';
-import { useRecoilComponentValue } from '@/ui/utilities/state/component-state/hooks/useRecoilComponentValue';
+import { useAtomComponentFamilySelectorValue } from '@/ui/utilities/state/jotai/hooks/useAtomComponentFamilySelectorValue';
+import { useAtomComponentSelectorValue } from '@/ui/utilities/state/jotai/hooks/useAtomComponentSelectorValue';
+import { useAtomComponentState } from '@/ui/utilities/state/jotai/hooks/useAtomComponentState';
+import { useAtomComponentStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomComponentStateValue';
 import { ViewType } from '@/views/types/ViewType';
 
 const StyledFetchMoreTriggerDiv = styled.div<{ width: number }>`
@@ -20,29 +24,49 @@ const StyledFetchMoreTriggerDiv = styled.div<{ width: number }>`
   min-width: ${({ width }) => width}px;
 `;
 
-export const RecordBoardFetchMoreInViewTriggerComponent = () => {
-  const [shouldFetchMore, setShouldFetchMore] = useRecoilComponentState(
-    recordBoardShouldFetchMoreComponentState,
-  );
+// RecordCardHeaderContainer: height (24px) + padding top spacing(2) + padding bottom spacing(1)
+const BOARD_CARD_HEADER_HEIGHT = 24 + 8 + 4;
 
-  const isInitialLoading = useRecoilComponentValue(
+// Per field row: skeleton height + RecordCardBodyContainer padding-bottom spacing(2) + StyledBodyContainer gap spacing(0.5)
+const BOARD_CARD_FIELD_ROW_HEIGHT =
+  SKELETON_LOADER_HEIGHT_SIZES.standard.s + 8 + 2;
+
+// StyledBodyContainer padding (4+4) + card border (2×1px) + StyledSkeletonCardContainer margin-bottom spacing(2)
+const BOARD_CARD_CHROME_HEIGHT = 8 + 2 + 8;
+
+export const RecordBoardFetchMoreInViewTriggerComponent = () => {
+  const [recordBoardShouldFetchMore, setRecordBoardShouldFetchMore] =
+    useAtomComponentState(recordBoardShouldFetchMoreComponentState);
+
+  const recordIndexRecordGroupsAreInInitialLoading = useAtomComponentStateValue(
     recordIndexRecordGroupsAreInInitialLoadingComponentState,
   );
 
-  const isFetchingMore = useRecoilComponentValue(
+  const recordBoardIsFetchingMore = useAtomComponentStateValue(
     recordBoardIsFetchingMoreComponentState,
   );
+
+  const visibleRecordFields = useAtomComponentSelectorValue(
+    visibleRecordFieldsComponentSelector,
+  );
+
+  const estimatedCardHeight =
+    BOARD_CARD_HEADER_HEIGHT +
+    visibleRecordFields.length * BOARD_CARD_FIELD_ROW_HEIGHT +
+    BOARD_CARD_CHROME_HEIGHT;
+
+  const rootMargin = `${estimatedCardHeight * RECORD_BOARD_QUERY_PAGE_SIZE * 2}px`;
 
   const { scrollWrapperHTMLElement } = useScrollWrapperHTMLElement();
 
   const { ref, inView } = useInView({
-    rootMargin: '1600px',
+    rootMargin,
     root: scrollWrapperHTMLElement,
   });
 
-  const visibleRecordGroupIds = useRecoilComponentFamilyValue(
+  const visibleRecordGroupIds = useAtomComponentFamilySelectorValue(
     visibleRecordGroupIdsComponentFamilySelector,
-    ViewType.Kanban,
+    ViewType.KANBAN,
   );
 
   const componentWidth =
@@ -52,19 +76,22 @@ export const RecordBoardFetchMoreInViewTriggerComponent = () => {
     1;
 
   useEffect(() => {
-    if (!isInitialLoading && !isFetchingMore) {
+    if (
+      !recordIndexRecordGroupsAreInInitialLoading &&
+      !recordBoardIsFetchingMore
+    ) {
       const newShouldFetchMore = inView;
 
-      if (shouldFetchMore !== newShouldFetchMore) {
-        setShouldFetchMore(newShouldFetchMore);
+      if (recordBoardShouldFetchMore !== newShouldFetchMore) {
+        setRecordBoardShouldFetchMore(newShouldFetchMore);
       }
     }
   }, [
-    shouldFetchMore,
-    setShouldFetchMore,
+    recordBoardShouldFetchMore,
+    setRecordBoardShouldFetchMore,
     inView,
-    isInitialLoading,
-    isFetchingMore,
+    recordIndexRecordGroupsAreInInitialLoading,
+    recordBoardIsFetchingMore,
   ]);
 
   return (

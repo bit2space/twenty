@@ -1,18 +1,25 @@
+import { useIsPageLayoutInEditMode } from '@/page-layout/hooks/useIsPageLayoutInEditMode';
 import { GraphWidgetLegendDot } from '@/page-layout/widgets/graph/components/GraphWidgetLegendDot';
-import { LEGEND_ITEM_ESTIMATED_WIDTH } from '@/page-layout/widgets/graph/constants/LegendItemEstimatedWidth.constant';
-import { LEGEND_LABEL_MAX_WIDTH } from '@/page-layout/widgets/graph/constants/LegendLabelMaxWidth.constant';
-import { LEGEND_PAGINATION_CONTROLS_WIDTH } from '@/page-layout/widgets/graph/constants/LegendPaginationControlsWidth.constant';
+import { LEGEND_HIGHLIGHT_DIMMED_OPACITY } from '@/page-layout/widgets/graph/constants/LegendHighlightDimmedOpacity.constant';
+import { LEGEND_ITEM_ESTIMATED_WIDTH } from '@/page-layout/widgets/graph/constants/LegendItemEstimatedWidth';
+import { LEGEND_LABEL_MAX_WIDTH } from '@/page-layout/widgets/graph/constants/LegendLabelMaxWidth';
+import { LEGEND_PAGINATION_CONTROLS_WIDTH } from '@/page-layout/widgets/graph/constants/LegendPaginationControlsWidth';
+import { useLegendItemToggle } from '@/page-layout/widgets/graph/hooks/useLegendItemToggle';
+import { graphWidgetHiddenLegendIdsComponentState } from '@/page-layout/widgets/graph/states/graphWidgetHiddenLegendIdsComponentState';
+import { graphWidgetHighlightedLegendIdComponentState } from '@/page-layout/widgets/graph/states/graphWidgetHighlightedLegendIdComponentState';
 import { NodeDimensionEffect } from '@/ui/utilities/dimensions/components/NodeDimensionEffect';
-import { useTheme } from '@emotion/react';
-import styled from '@emotion/styled';
+import { useAtomComponentState } from '@/ui/utilities/state/jotai/hooks/useAtomComponentState';
+import { useSetAtomComponentState } from '@/ui/utilities/state/jotai/hooks/useSetAtomComponentState';
+import { styled } from '@linaria/react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { useRef, useState } from 'react';
+import { useContext, useRef, useState } from 'react';
 import {
   IconChevronLeft,
   IconChevronRight,
   OverflowingTextWithTooltip,
 } from 'twenty-ui/display';
 import { LightIconButton } from 'twenty-ui/input';
+import { ThemeContext, themeCssVariables } from 'twenty-ui/theme-constants';
 
 export type GraphWidgetLegendItem = {
   id: string;
@@ -34,45 +41,69 @@ const StyledAnimationClipContainer = styled.div`
   position: relative;
 `;
 
-const StyledLegendMotionWrapper = styled(motion.div)`
+const StyledLegendMotionWrapperBase = styled.div`
   width: 100%;
 `;
+const StyledLegendMotionWrapper = motion.create(StyledLegendMotionWrapperBase);
 
-const StyledItemsWrapper = styled(motion.div)<{ centered?: boolean }>`
+const StyledItemsWrapperBase = styled.div<{ centered?: boolean }>`
   display: flex;
-  gap: ${({ theme }) => theme.spacing(3)};
-  flex-wrap: nowrap;
   flex: 1;
-  min-width: 0;
+  flex-wrap: nowrap;
+  gap: ${themeCssVariables.spacing[3]};
   justify-content: ${({ centered }) => (centered ? 'center' : 'flex-start')};
+  min-width: 0;
 `;
+const StyledItemsWrapper = motion.create(StyledItemsWrapperBase);
 
 const StyledLegendContainer = styled.div<{ needsPagination: boolean }>`
+  align-items: center;
   display: flex;
   flex-wrap: nowrap;
-  gap: ${({ theme }) => theme.spacing(3)};
+  gap: ${themeCssVariables.spacing[3]};
   justify-content: ${({ needsPagination }) =>
     needsPagination ? 'flex-start' : 'center'};
-  padding-top: ${({ theme }) => theme.spacing(3)};
   overflow: hidden;
+  padding-top: ${themeCssVariables.spacing[3]};
   width: 100%;
-  align-items: center;
 `;
 
-const StyledLegendItem = styled.div<{ canShrink?: boolean }>`
+const StyledLegendItem = styled.div<{
+  canShrink?: boolean;
+  isHidden?: boolean;
+  isInteractive?: boolean;
+}>`
   align-items: center;
+  cursor: ${({ isInteractive }) => (isInteractive ? 'pointer' : 'default')};
   display: flex;
-  gap: ${({ theme }) => theme.spacing(1)};
-  font-size: ${({ theme }) => theme.font.size.xs};
-  font-weight: ${({ theme }) => theme.font.weight.semiBold};
   flex-shrink: ${({ canShrink }) => (canShrink ? 1 : 0)};
+  font-size: ${themeCssVariables.font.size.xs};
+  font-weight: ${themeCssVariables.font.weight.semiBold};
+  gap: ${themeCssVariables.spacing[1]};
   min-width: 0;
 `;
 
-const StyledLegendLabel = styled.div<{ fixedWidth?: boolean }>`
-  color: ${({ theme }) => theme.font.color.secondary};
-  ${({ fixedWidth }) => fixedWidth && `width: ${LEGEND_LABEL_MAX_WIDTH}px;`}
+const StyledLegendLabel = styled.div<{
+  fixedWidth?: boolean;
+  isHidden?: boolean;
+}>`
+  color: ${themeCssVariables.font.color.secondary};
+  opacity: ${({ isHidden }) =>
+    isHidden ? LEGEND_HIGHLIGHT_DIMMED_OPACITY : 1};
   overflow: hidden;
+  text-decoration: ${({ isHidden }) => (isHidden ? 'line-through' : 'none')};
+  width: ${({ fixedWidth }) =>
+    fixedWidth ? `${LEGEND_LABEL_MAX_WIDTH}px` : 'auto'};
+
+  :hover {
+    opacity: 1;
+  }
+`;
+
+const StyledLegendDotWrapper = styled.div<{ isHidden?: boolean }>`
+  display: flex;
+  opacity: ${({ isHidden }) =>
+    isHidden ? LEGEND_HIGHLIGHT_DIMMED_OPACITY : 1};
 `;
 
 const StyledPaginationContainer = styled.div`
@@ -80,12 +111,12 @@ const StyledPaginationContainer = styled.div`
   display: flex;
   flex-direction: row;
   flex-shrink: 0;
-  gap: ${({ theme }) => theme.spacing(0.5)};
+  gap: ${themeCssVariables.spacing[0.5]};
 `;
 
 const StyledPaginationIndicator = styled.span`
-  color: ${({ theme }) => theme.font.color.light};
-  font-size: ${({ theme }) => theme.font.size.xs};
+  color: ${themeCssVariables.font.color.light};
+  font-size: ${themeCssVariables.font.size.xs};
 `;
 
 const legendEnterExitVariants = {
@@ -107,6 +138,8 @@ export const GraphWidgetLegend = ({
   items,
   show = true,
 }: GraphWidgetLegendProps) => {
+  const { theme } = useContext(ThemeContext);
+
   const containerRef = useRef<HTMLDivElement>(null);
 
   const [currentPage, setCurrentPage] = useState(0);
@@ -116,7 +149,41 @@ export const GraphWidgetLegend = ({
   const [animationDirection, setAnimationDirection] =
     useState<AnimationDirection>('forward');
 
-  const theme = useTheme();
+  const isPageLayoutInEditMode = useIsPageLayoutInEditMode();
+
+  const isInteractive = !isPageLayoutInEditMode;
+
+  const setGraphWidgetHighlightedLegendId = useSetAtomComponentState(
+    graphWidgetHighlightedLegendIdComponentState,
+  );
+
+  const [graphWidgetHiddenLegendIds, setGraphWidgetHiddenLegendIds] =
+    useAtomComponentState(graphWidgetHiddenLegendIdsComponentState);
+
+  const itemIds = items.map((item) => item.id);
+
+  const { toggleLegendItem } = useLegendItemToggle({
+    itemIds,
+    isInteractive,
+  });
+
+  if (isPageLayoutInEditMode && graphWidgetHiddenLegendIds.length > 0) {
+    setGraphWidgetHiddenLegendIds([]);
+  }
+
+  const handleLegendItemMouseEnter = (itemId: string) => {
+    if (!isInteractive) {
+      return;
+    }
+    setGraphWidgetHighlightedLegendId(itemId);
+  };
+
+  const handleLegendItemMouseLeave = () => {
+    if (!isInteractive) {
+      return;
+    }
+    setGraphWidgetHighlightedLegendId(null);
+  };
 
   const shouldShowLegend = show && items.length > 1;
 
@@ -234,17 +301,32 @@ export const GraphWidgetLegend = ({
                   }}
                   centered={!needsPagination}
                 >
-                  {visibleItems.map((item) => (
-                    <StyledLegendItem
-                      key={item.id}
-                      canShrink={!needsPagination}
-                    >
-                      <GraphWidgetLegendDot color={item.color} />
-                      <StyledLegendLabel fixedWidth={needsPagination}>
-                        <OverflowingTextWithTooltip text={item.label} />
-                      </StyledLegendLabel>
-                    </StyledLegendItem>
-                  ))}
+                  {visibleItems.map((item) => {
+                    const isHidden = graphWidgetHiddenLegendIds.includes(
+                      item.id,
+                    );
+                    return (
+                      <StyledLegendItem
+                        key={item.id}
+                        canShrink={!needsPagination}
+                        isHidden={isHidden}
+                        isInteractive={isInteractive}
+                        onClick={() => toggleLegendItem(item.id)}
+                        onMouseEnter={() => handleLegendItemMouseEnter(item.id)}
+                        onMouseLeave={handleLegendItemMouseLeave}
+                      >
+                        <StyledLegendDotWrapper isHidden={isHidden}>
+                          <GraphWidgetLegendDot color={item.color} />
+                        </StyledLegendDotWrapper>
+                        <StyledLegendLabel
+                          fixedWidth={needsPagination}
+                          isHidden={isHidden}
+                        >
+                          <OverflowingTextWithTooltip text={item.label} />
+                        </StyledLegendLabel>
+                      </StyledLegendItem>
+                    );
+                  })}
                 </StyledItemsWrapper>
               </AnimatePresence>
             </StyledAnimationClipContainer>

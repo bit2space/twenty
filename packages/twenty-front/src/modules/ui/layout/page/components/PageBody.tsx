@@ -1,8 +1,8 @@
-import styled from '@emotion/styled';
+import { styled } from '@linaria/react';
 import { type ReactNode } from 'react';
 
-import { MOBILE_VIEWPORT } from 'twenty-ui/theme';
 import { PagePanel } from './PagePanel';
+import { themeCssVariables } from 'twenty-ui/theme-constants';
 
 type PageBodyProps = {
   children: ReactNode;
@@ -10,26 +10,21 @@ type PageBodyProps = {
 };
 
 const StyledMainContainer = styled.div`
-  background: ${({ theme }) => theme.background.noisy};
+  background: ${themeCssVariables.background.noisy};
   box-sizing: border-box;
   display: flex;
   flex: 1 1 auto;
   flex-direction: row;
-  gap: ${({ theme }) => theme.spacing(2)};
+  gap: ${themeCssVariables.spacing[2]};
   min-height: 0;
-  padding-bottom: ${({ theme }) => theme.spacing(3)};
-  padding-right: ${({ theme }) => theme.spacing(3)};
+  padding-bottom: ${themeCssVariables.spacing[3]};
   padding-left: 0;
+  padding-right: ${themeCssVariables.spacing[3]};
   width: 100%;
-
-  @media (max-width: ${MOBILE_VIEWPORT}px) {
-    padding-left: ${({ theme }) => theme.spacing(3)};
-    padding-bottom: 0;
-  }
 `;
 
 type LeftContainerProps = {
-  isRightDrawerOpen?: boolean;
+  isSidePanelOpen?: boolean;
 };
 
 const StyledLeftContainer = styled.div<LeftContainerProps>`

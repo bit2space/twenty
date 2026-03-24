@@ -1,36 +1,41 @@
-import { type ObjectMetadataItem } from '@/object-metadata/types/ObjectMetadataItem';
+import { type EnrichedObjectMetadataItem } from '@/object-metadata/types/EnrichedObjectMetadataItem';
+import { isHiddenSystemField } from '@/object-metadata/utils/isHiddenSystemField';
 import { type FieldMetadata } from '@/object-record/record-field/ui/types/FieldMetadata';
 import { type ColumnDefinition } from '@/object-record/record-table/types/ColumnDefinition';
 import { filterAvailableTableColumns } from '@/object-record/utils/filterAvailableTableColumns';
 
 import { availableFieldMetadataItemsForFilterFamilySelector } from '@/object-metadata/states/availableFieldMetadataItemsForFilterFamilySelector';
 import { availableFieldMetadataItemsForSortFamilySelector } from '@/object-metadata/states/availableFieldMetadataItemsForSortFamilySelector';
-import { useRecoilValue } from 'recoil';
-import { formatFieldMetadataItemAsColumnDefinition } from '../utils/formatFieldMetadataItemAsColumnDefinition';
+import { formatFieldMetadataItemAsColumnDefinition } from '@/object-metadata/utils/formatFieldMetadataItemAsColumnDefinition';
+import { useAtomFamilySelectorValue } from '@/ui/utilities/state/jotai/hooks/useAtomFamilySelectorValue';
+import { useMemo } from 'react';
 
 export const useColumnDefinitionsFromObjectMetadata = (
-  objectMetadataItem: ObjectMetadataItem,
+  objectMetadataItem: EnrichedObjectMetadataItem,
 ) => {
-  const activeFieldMetadataItems = objectMetadataItem.readableFields.filter(
-    ({ isActive, isSystem }) => isActive && !isSystem,
-  );
-
-  const filterableFieldMetadataItems = useRecoilValue(
-    availableFieldMetadataItemsForFilterFamilySelector({
+  const filterableFieldMetadataItems = useAtomFamilySelectorValue(
+    availableFieldMetadataItemsForFilterFamilySelector,
+    {
       objectMetadataItemId: objectMetadataItem.id,
-    }),
+    },
   );
 
-  const sortableFieldMetadataItems = useRecoilValue(
-    availableFieldMetadataItemsForSortFamilySelector({
+  const sortableFieldMetadataItems = useAtomFamilySelectorValue(
+    availableFieldMetadataItemsForSortFamilySelector,
+    {
       objectMetadataItemId: objectMetadataItem.id,
-    }),
+    },
   );
 
-  const restrictedFieldMetadataIds: string[] = [];
+  const columnDefinitions: ColumnDefinition<FieldMetadata>[] = useMemo(() => {
+    const activeFieldMetadataItems = objectMetadataItem.readableFields.filter(
+      (field) =>
+        field.isActive &&
+        (!isHiddenSystemField(field) ||
+          field.id === objectMetadataItem.labelIdentifierFieldMetadataId),
+    );
 
-  const columnDefinitions: ColumnDefinition<FieldMetadata>[] =
-    activeFieldMetadataItems
+    return activeFieldMetadataItems
       .map((field, index) =>
         formatFieldMetadataItemAsColumnDefinition({
           position: index,
@@ -40,6 +45,7 @@ export const useColumnDefinitionsFromObjectMetadata = (
       )
       .filter(filterAvailableTableColumns)
       .filter((column) => {
+        const restrictedFieldMetadataIds: string[] = [];
         return !restrictedFieldMetadataIds.includes(column.fieldMetadataId);
       })
       .map((column) => {
@@ -58,6 +64,11 @@ export const useColumnDefinitionsFromObjectMetadata = (
           isSortable: existsInSortDefinitions,
         };
       });
+  }, [
+    filterableFieldMetadataItems,
+    sortableFieldMetadataItems,
+    objectMetadataItem,
+  ]);
 
   return {
     columnDefinitions,

@@ -1,16 +1,17 @@
 import { useParams } from 'react-router-dom';
 
-import { RecordShowActionMenu } from '@/action-menu/components/RecordShowActionMenu';
-import { ActionMenuComponentInstanceContext } from '@/action-menu/states/contexts/ActionMenuComponentInstanceContext';
+import { RecordShowCommandMenu } from '@/command-menu-item/components/RecordShowCommandMenu';
+import { CommandMenuComponentInstanceContext } from '@/command-menu/states/contexts/CommandMenuComponentInstanceContext';
 import { TimelineActivityContext } from '@/activities/timeline-activities/contexts/TimelineActivityContext';
 import { MAIN_CONTEXT_STORE_INSTANCE_ID } from '@/context-store/constants/MainContextStoreInstanceId';
 import { ContextStoreComponentInstanceContext } from '@/context-store/states/contexts/ContextStoreComponentInstanceContext';
-import { CommandMenuPageLayout } from '@/object-record/components/CommandMenuPageLayout';
+import { MainContainerLayoutWithSidePanel } from '@/object-record/components/MainContainerLayoutWithSidePanel';
 import { RecordComponentInstanceContextsWrapper } from '@/object-record/components/RecordComponentInstanceContextsWrapper';
-import { PageLayoutDispatcher } from '@/object-record/record-show/components/PageLayoutDispatcher';
+import { PageLayoutRecordPageRenderer } from '@/object-record/record-show/components/PageLayoutRecordPageRenderer';
+import { RecordShowPageSSESubscribeEffect } from '@/object-record/record-show/components/RecordShowPageSSESubscribeEffect';
 import { useRecordShowPage } from '@/object-record/record-show/hooks/useRecordShowPage';
 import { computeRecordShowComponentInstanceId } from '@/object-record/record-show/utils/computeRecordShowComponentInstanceId';
-import { PageHeaderToggleCommandMenuButton } from '@/ui/layout/page-header/components/PageHeaderToggleCommandMenuButton';
+import { PageHeaderToggleSidePanelButton } from '@/ui/layout/page-header/components/PageHeaderToggleSidePanelButton';
 import { PageContainer } from '@/ui/layout/page/components/PageContainer';
 import { RecordShowPageHeader } from '~/pages/object-record/RecordShowPageHeader';
 import { RecordShowPageTitle } from '~/pages/object-record/RecordShowPageTitle';
@@ -36,7 +37,7 @@ export const RecordShowPage = () => {
       <ContextStoreComponentInstanceContext.Provider
         value={{ instanceId: MAIN_CONTEXT_STORE_INSTANCE_ID }}
       >
-        <ActionMenuComponentInstanceContext.Provider
+        <CommandMenuComponentInstanceContext.Provider
           value={{ instanceId: recordShowComponentInstanceId }}
         >
           <PageContainer>
@@ -48,25 +49,30 @@ export const RecordShowPage = () => {
               objectNameSingular={objectNameSingular}
               objectRecordId={objectRecordId}
             >
-              <RecordShowActionMenu />
-              <PageHeaderToggleCommandMenuButton />
+              <RecordShowCommandMenu />
+              <PageHeaderToggleSidePanelButton />
             </RecordShowPageHeader>
-            <CommandMenuPageLayout>
+            <MainContainerLayoutWithSidePanel>
               <TimelineActivityContext.Provider
                 value={{
                   recordId: objectRecordId,
                 }}
               >
-                <PageLayoutDispatcher
+                <PageLayoutRecordPageRenderer
                   targetRecordIdentifier={{
                     id: objectRecordId,
                     targetObjectNameSingular: objectNameSingular,
                   }}
+                  isInSidePanel={false}
+                />
+                <RecordShowPageSSESubscribeEffect
+                  objectNameSingular={objectNameSingular}
+                  recordId={objectRecordId}
                 />
               </TimelineActivityContext.Provider>
-            </CommandMenuPageLayout>
+            </MainContainerLayoutWithSidePanel>
           </PageContainer>
-        </ActionMenuComponentInstanceContext.Provider>
+        </CommandMenuComponentInstanceContext.Provider>
       </ContextStoreComponentInstanceContext.Provider>
     </RecordComponentInstanceContextsWrapper>
   );

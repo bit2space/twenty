@@ -4,7 +4,7 @@ image: /images/user-guide/what-is-twenty/20.png
 ---
 
 <Frame>
-  <img src="/images/user-guide/what-is-twenty/20.png" alt="Header" />
+  <img src="/images/user-guide/what-is-twenty/20.png" alt="Intestazione" />
 </Frame>
 
 ## Collegamento di Contatto
@@ -12,7 +12,7 @@ image: /images/user-guide/what-is-twenty/20.png
 Un componente di collegamento stilizzato per visualizzare le informazioni di contatto.
 
 <Tabs>
-<Tab title="Usage">
+<Tab title="Utilizzo">
 
 ```jsx
 import { BrowserRouter as Router } from 'react-router-dom';
@@ -38,15 +38,20 @@ export const MyComponent = () => {
 };
 ```
 
-</Tab>
-<Tab title="Props">
 
-| Props      | Tipo              | Descrizione                                                         |
+</Tab>
+<Tab title="Proprietà">
+
+
+| Proprietà  | Tipo              | Descrizione                                                         |
 | ---------- | ----------------- | ------------------------------------------------------------------- |
-| nomeClasse | string            | Nome opzionale per stile aggiuntivo                                 |
-| href       | string            | L'URL di destinazione o il percorso per il link                     |
+| nomeClasse | stringa           | Nome opzionale per lo stile aggiuntivo                              |
+| href       | stringa           | L'URL di destinazione o il percorso per il link                     |
 | onClick    | funzione          | Funzione di callback da attivare quando si fa clic sul collegamento |
 | figli      | `React.ReactNode` | Il contenuto da visualizzare all'interno del collegamento           |
+
+
+
 
 </Tab>
 
@@ -57,7 +62,7 @@ export const MyComponent = () => {
 Un componente di collegamento stilizzato per visualizzare collegamenti.
 
 <Tabs>
-<Tab title="Usage">
+<Tab title="Utilizzo">
 
 ```jsx
 import { RawLink } from "/navigation";
@@ -79,15 +84,20 @@ export const MyComponent = () => {
 
 ```
 
-</Tab>
-<Tab title="Props">
 
-| Props      | Tipo              | Descrizione                                                         |
+</Tab>
+<Tab title="Proprietà">
+
+
+| Proprietà  | Tipo              | Descrizione                                                         |
 | ---------- | ----------------- | ------------------------------------------------------------------- |
-| nomeClasse | string            | Nome opzionale per stile aggiuntivo                                 |
-| href       | string            | L'URL di destinazione o il percorso per il link                     |
+| nomeClasse | stringa           | Nome opzionale per lo stile aggiuntivo                              |
+| href       | stringa           | L'URL di destinazione o il percorso per il link                     |
 | onClick    | funzione          | Funzione di callback da attivare quando si fa clic sul collegamento |
 | figli      | `React.ReactNode` | Il contenuto da visualizzare all'interno del collegamento           |
+
+
+
 
 </Tab>
 </Tabs>
@@ -97,7 +107,7 @@ export const MyComponent = () => {
 Un collegamento stilizzato arrotondato con un componente Chip per i collegamenti.
 
 <Tabs>
-<Tab title="Usage">
+<Tab title="Utilizzo">
 
 ```jsx
 import { RoundedLink } from "/navigation";
@@ -120,13 +130,16 @@ export const MyComponent = () => {
 
 </Tab>
 
-<Tab title="Props">
+<Tab title="Proprietà">
 
-| Props   | Tipo              | Descrizione                                                         |
-| ------- | ----------------- | ------------------------------------------------------------------- |
-| href    | string            | L'URL di destinazione o il percorso per il link                     |
-| figli   | `React.ReactNode` | Il contenuto da visualizzare all'interno del collegamento           |
-| onClick | funzione          | Funzione di callback da attivare quando si fa clic sul collegamento |
+
+| Proprietà | Tipo              | Descrizione                                                         |
+| --------- | ----------------- | ------------------------------------------------------------------- |
+| href      | stringa           | L'URL di destinazione o il percorso per il link                     |
+| figli     | `React.ReactNode` | Il contenuto da visualizzare all'interno del collegamento           |
+| onClick   | funzione          | Funzione di callback da attivare quando si fa clic sul collegamento |
+
+
 
 </Tab>
 </Tabs>
@@ -136,7 +149,7 @@ export const MyComponent = () => {
 Collegamenti social stilizzati, con supporto per vari tipi di collegamenti social, come URL, LinkedIn e X (o Twitter).
 
 <Tabs>
-<Tab title="Usage">
+<Tab title="Utilizzo">
 
 ```jsx
 import { SocialLink } from "twenty-ui/navigation";
@@ -155,14 +168,18 @@ export const MyComponent = () => {
 ```
 
 </Tab>
-<Tab title="Props">
+<Tab title="Proprietà">
 
-| Props   | Tipo              | Descrizione                                                                                                          |
-| ------- | ----------------- | -------------------------------------------------------------------------------------------------------------------- |
-| href    | string            | L'URL di destinazione o il percorso per il link                                                                      |
-| figli   | `React.ReactNode` | Il contenuto da visualizzare all'interno del collegamento                                                            |
-| tipo    | string            | Il tipo di collegamenti social. Le opzioni includono: `url`, `LinkedIn`, e `Twitter` |
-| onClick | funzione          | Funzione di callback da attivare quando si fa clic sul collegamento                                                  |
+
+| Proprietà | Tipo              | Descrizione                                                                          |
+| --------- | ----------------- | ------------------------------------------------------------------------------------ |
+| href      | stringa           | L'URL di destinazione o il percorso per il link                                      |
+| figli     | `React.ReactNode` | Il contenuto da visualizzare all'interno del collegamento                            |
+| tipo      | stringa           | Il tipo di collegamenti social. Le opzioni includono: `url`, `LinkedIn`, e `Twitter` |
+| onClick   | funzione          | Funzione di callback da attivare quando si fa clic sul collegamento                  |
+
+
+
 
 </Tab>
 </Tabs>

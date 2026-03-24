@@ -7,13 +7,18 @@ import { CreateCalendarChannelService } from 'src/engine/core-modules/auth/servi
 import { CreateConnectedAccountService } from 'src/engine/core-modules/auth/services/create-connected-account.service';
 import { CreateMessageChannelService } from 'src/engine/core-modules/auth/services/create-message-channel.service';
 import { GoogleAPIScopesService } from 'src/engine/core-modules/auth/services/google-apis-scopes';
+import { GoogleApisServiceAvailabilityService } from 'src/engine/core-modules/auth/services/google-apis-service-availability.service';
 import { GoogleAPIsService } from 'src/engine/core-modules/auth/services/google-apis.service';
 import { UpdateConnectedAccountOnReconnectService } from 'src/engine/core-modules/auth/services/update-connected-account-on-reconnect.service';
+import { FeatureFlagService } from 'src/engine/core-modules/feature-flag/services/feature-flag.service';
+import { CalendarChannelDataAccessService } from 'src/engine/metadata-modules/calendar-channel/data-access/services/calendar-channel-data-access.service';
+import { ConnectedAccountDataAccessService } from 'src/engine/metadata-modules/connected-account/data-access/services/connected-account-data-access.service';
+import { MessageChannelDataAccessService } from 'src/engine/metadata-modules/message-channel/data-access/services/message-channel-data-access.service';
 import { MessageQueue } from 'src/engine/core-modules/message-queue/message-queue.constants';
 import { getQueueToken } from 'src/engine/core-modules/message-queue/utils/get-queue-token.util';
 import { TwentyConfigService } from 'src/engine/core-modules/twenty-config/twenty-config.service';
 import { ObjectMetadataEntity } from 'src/engine/metadata-modules/object-metadata/object-metadata.entity';
-import { TwentyORMGlobalManager } from 'src/engine/twenty-orm/twenty-orm-global.manager';
+import { GlobalWorkspaceOrmManager } from 'src/engine/twenty-orm/global-workspace-datasource/global-workspace-orm.manager';
 import { CalendarChannelSyncStatusService } from 'src/modules/calendar/common/services/calendar-channel-sync-status.service';
 import {
   CalendarChannelSyncStage,
@@ -34,22 +39,16 @@ describe('GoogleAPIsService', () => {
   let messagingChannelSyncStatusService: MessageChannelSyncStatusService;
   let createMessageChannelService: CreateMessageChannelService;
 
-  const mockConnectedAccountRepository = {
+  const mockConnectedAccountDataAccessService = {
     findOne: jest.fn(),
-    find: jest.fn(),
-    update: jest.fn(),
   };
 
-  const mockCalendarChannelRepository = {
-    findOne: jest.fn(),
+  const mockMessageChannelDataAccessService = {
     find: jest.fn(),
-    update: jest.fn(),
   };
 
-  const mockMessageChannelRepository = {
-    findOne: jest.fn(),
+  const mockCalendarChannelDataAccessService = {
     find: jest.fn(),
-    update: jest.fn(),
   };
 
   const mockWorkspaceMemberRepository = {
@@ -77,25 +76,22 @@ describe('GoogleAPIsService', () => {
       providers: [
         GoogleAPIsService,
         {
-          provide: TwentyORMGlobalManager,
+          provide: GlobalWorkspaceOrmManager,
           useValue: {
-            getRepositoryForWorkspace: jest
+            getRepository: jest
               .fn()
               .mockImplementation((_workspaceId, entity) => {
-                if (entity === 'connectedAccount')
-                  return mockConnectedAccountRepository;
-                if (entity === 'calendarChannel')
-                  return mockCalendarChannelRepository;
-                if (entity === 'messageChannel')
-                  return mockMessageChannelRepository;
                 if (entity === 'workspaceMember')
                   return mockWorkspaceMemberRepository;
 
                 return {};
               }),
-            getDataSourceForWorkspace: jest
+            getGlobalWorkspaceDataSource: jest
               .fn()
-              .mockImplementation(() => mockWorkspaceDataSource),
+              .mockResolvedValue(mockWorkspaceDataSource),
+            executeInWorkspaceContext: jest
+              .fn()
+              .mockImplementation((fn: () => any, _authContext?: any) => fn()),
           },
         },
         {
@@ -122,6 +118,15 @@ describe('GoogleAPIsService', () => {
                 scopes: [],
                 isValid: true,
               }),
+          },
+        },
+        {
+          provide: GoogleApisServiceAvailabilityService,
+          useValue: {
+            checkServicesAvailability: jest.fn().mockResolvedValue({
+              isMessagingAvailable: true,
+              isCalendarAvailable: true,
+            }),
           },
         },
         {
@@ -168,6 +173,24 @@ describe('GoogleAPIsService', () => {
           provide: getQueueToken(MessageQueue.calendarQueue),
           useValue: mockCalendarQueueService,
         },
+        {
+          provide: FeatureFlagService,
+          useValue: {
+            isFeatureEnabled: jest.fn().mockResolvedValue(false),
+          },
+        },
+        {
+          provide: ConnectedAccountDataAccessService,
+          useValue: mockConnectedAccountDataAccessService,
+        },
+        {
+          provide: MessageChannelDataAccessService,
+          useValue: mockMessageChannelDataAccessService,
+        },
+        {
+          provide: CalendarChannelDataAccessService,
+          useValue: mockCalendarChannelDataAccessService,
+        },
       ],
     }).compile();
 
@@ -201,7 +224,7 @@ describe('GoogleAPIsService', () => {
         provider: ConnectedAccountProvider.GOOGLE,
       } as ConnectedAccountWorkspaceEntity;
 
-      mockConnectedAccountRepository.findOne.mockResolvedValue(
+      mockConnectedAccountDataAccessService.findOne.mockResolvedValue(
         existingConnectedAccount,
       );
 
@@ -217,11 +240,11 @@ describe('GoogleAPIsService', () => {
         syncStage: CalendarChannelSyncStage.FAILED,
       };
 
-      mockCalendarChannelRepository.find.mockResolvedValue([
+      mockCalendarChannelDataAccessService.find.mockResolvedValue([
         failedCalendarChannel,
       ]);
 
-      mockMessageChannelRepository.find.mockResolvedValue([]);
+      mockMessageChannelDataAccessService.find.mockResolvedValue([]);
 
       await service.refreshGoogleRefreshToken({
         handle: 'test@example.com',
@@ -235,15 +258,15 @@ describe('GoogleAPIsService', () => {
 
       expect(
         calendarChannelSyncStatusService.resetAndMarkAsCalendarEventListFetchPending,
-      ).toHaveBeenCalledWith([existingConnectedAccount.id], 'workspace-id');
+      ).toHaveBeenCalledWith([failedCalendarChannel.id], 'workspace-id');
 
       expect(
         messagingChannelSyncStatusService.resetAndMarkAsMessagesListFetchPending,
-      ).toHaveBeenCalledWith([existingConnectedAccount.id], 'workspace-id');
+      ).not.toHaveBeenCalled();
 
       expect(
         createMessageChannelService.createMessageChannel,
-      ).not.toHaveBeenCalled();
+      ).toHaveBeenCalled();
     });
   });
 });

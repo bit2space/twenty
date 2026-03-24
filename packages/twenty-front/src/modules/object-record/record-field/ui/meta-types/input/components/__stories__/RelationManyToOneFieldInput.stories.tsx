@@ -1,7 +1,10 @@
-import { type Decorator, type Meta, type StoryObj } from '@storybook/react';
-import { expect, userEvent, waitFor, within } from '@storybook/test';
+import {
+  type Decorator,
+  type Meta,
+  type StoryObj,
+} from '@storybook/react-vite';
 import { useEffect } from 'react';
-import { useSetRecoilState } from 'recoil';
+import { expect, userEvent, waitFor, within } from 'storybook/test';
 
 import { currentWorkspaceMemberState } from '@/auth/states/currentWorkspaceMemberState';
 import { currentWorkspaceState } from '@/auth/states/currentWorkspaceState';
@@ -13,39 +16,43 @@ import {
   mockedWorkspaceMemberData,
 } from '~/testing/mock-data/users';
 
-import { CoreObjectNameSingular } from '@/object-metadata/types/CoreObjectNameSingular';
+import { CoreObjectNameSingular, FieldMetadataType } from 'twenty-shared/types';
 import { FieldContext } from '@/object-record/record-field/ui/contexts/FieldContext';
 import { RecordFieldComponentInstanceContext } from '@/object-record/record-field/ui/states/contexts/RecordFieldComponentInstanceContext';
 import { recordFieldInputLayoutDirectionLoadingComponentState } from '@/object-record/record-field/ui/states/recordFieldInputLayoutDirectionLoadingComponentState';
 import { usePushFocusItemToFocusStack } from '@/ui/utilities/focus/hooks/usePushFocusItemToFocusStack';
 import { FocusComponentType } from '@/ui/utilities/focus/types/FocusComponentType';
-import { useSetRecoilComponentState } from '@/ui/utilities/state/component-state/hooks/useSetRecoilComponentState';
-import { FieldMetadataType } from 'twenty-shared/types';
-import { getCanvasElementForDropdownTesting } from 'twenty-ui/testing';
+import { jotaiStore } from '@/ui/utilities/state/jotai/jotaiStore';
+import { useSetAtomComponentState } from '@/ui/utilities/state/jotai/hooks/useSetAtomComponentState';
 
 import { RelationManyToOneFieldInput } from '@/object-record/record-field/ui/meta-types/input/components/RelationManyToOneFieldInput';
-import { I18nFrontDecorator } from '~/testing/decorators/I18nFrontDecorator';
+import { mockedCompanyRecords } from '~/testing/mock-data/generated/data/companies/mock-companies-data';
+import { getMockFieldMetadataItemOrThrow } from '~/testing/utils/getMockFieldMetadataItemOrThrow';
+import { getMockObjectMetadataItemOrThrow } from '~/testing/utils/getMockObjectMetadataItemOrThrow';
 import { getFieldInputEventContextProviderWithJestMocks } from './utils/getFieldInputEventContextProviderWithJestMocks';
 
+const personMetadata = getMockObjectMetadataItemOrThrow('person');
+const companyMetadata = getMockObjectMetadataItemOrThrow('company');
+const companyFieldOnPerson = getMockFieldMetadataItemOrThrow({
+  objectMetadataItem: personMetadata,
+  fieldName: 'company',
+});
+const peopleFieldOnCompany = getMockFieldMetadataItemOrThrow({
+  objectMetadataItem: companyMetadata,
+  fieldName: 'people',
+});
+
 const RelationWorkspaceSetterEffect = () => {
-  const setCurrentWorkspace = useSetRecoilState(currentWorkspaceState);
-  const setCurrentWorkspaceMember = useSetRecoilState(
-    currentWorkspaceMemberState,
-  );
-  const setRecordFieldInputLayoutDirectionLoading = useSetRecoilComponentState(
+  const setRecordFieldInputLayoutDirectionLoading = useSetAtomComponentState(
     recordFieldInputLayoutDirectionLoadingComponentState,
-    'relation-to-one-field-input-123-Relation',
+    'relation-to-one-field-input-123-company',
   );
 
   useEffect(() => {
-    setCurrentWorkspace(mockCurrentWorkspace);
-    setCurrentWorkspaceMember(mockedWorkspaceMemberData);
+    jotaiStore.set(currentWorkspaceState.atom, mockCurrentWorkspace);
+    jotaiStore.set(currentWorkspaceMemberState.atom, mockedWorkspaceMemberData);
     setRecordFieldInputLayoutDirectionLoading(false);
-  }, [
-    setCurrentWorkspace,
-    setCurrentWorkspaceMember,
-    setRecordFieldInputLayoutDirectionLoading,
-  ]);
+  }, [setRecordFieldInputLayoutDirectionLoading]);
 
   return <></>;
 };
@@ -81,18 +88,18 @@ const RelationManyToOneFieldInputWithContext = ({
       <FieldContext.Provider
         value={{
           fieldDefinition: {
-            fieldMetadataId: 'e82262eb-7f58-4167-a23c-fc51ec584d1b',
-            label: 'Relation',
+            fieldMetadataId: companyFieldOnPerson.id,
+            label: 'Company',
             type: FieldMetadataType.RELATION,
             iconName: 'IconLink',
             metadata: {
-              fieldName: 'Relation',
+              fieldName: 'company',
               relationObjectMetadataNamePlural: 'companies',
               relationObjectMetadataNameSingular:
                 CoreObjectNameSingular.Company,
-              relationObjectMetadataId: '4a45f524-b8cb-40e8-8450-28e402b442cf',
+              relationObjectMetadataId: companyMetadata.id,
               objectMetadataNameSingular: 'person',
-              relationFieldMetadataId: '3c211c59-02a1-4904-ad0f-5bb30b736461',
+              relationFieldMetadataId: peopleFieldOnCompany.id,
             },
           },
           recordId: recordId,
@@ -102,7 +109,7 @@ const RelationManyToOneFieldInputWithContext = ({
       >
         <RecordFieldComponentInstanceContext.Provider
           value={{
-            instanceId: 'relation-to-one-field-input-123-Relation',
+            instanceId: 'relation-to-one-field-input-123-company',
           }}
         >
           <FieldInputEventContextProviderWithJestMocks>
@@ -141,7 +148,6 @@ const meta: Meta = {
     clearMocksDecorator,
     ObjectMetadataItemsDecorator,
     SnackBarDecorator,
-    I18nFrontDecorator,
   ],
   parameters: {
     clearMocks: true,
@@ -156,14 +162,18 @@ type Story = StoryObj<typeof RelationManyToOneFieldInputWithContext>;
 export const Default: Story = {};
 
 export const Submit: Story = {
-  play: async () => {
-    const canvas = within(getCanvasElementForDropdownTesting());
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
 
     expect(handleSubmitMocked).toHaveBeenCalledTimes(0);
 
-    const item = await canvas.findByText('Linkedin', undefined, {
-      timeout: 3000,
-    });
+    const item = await canvas.findByText(
+      mockedCompanyRecords[0].name,
+      undefined,
+      {
+        timeout: 3000,
+      },
+    );
 
     await userEvent.click(item);
 
@@ -174,11 +184,13 @@ export const Submit: Story = {
 };
 
 export const Cancel: Story = {
-  play: async () => {
-    const canvas = within(getCanvasElementForDropdownTesting());
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
 
     expect(handleCancelMocked).toHaveBeenCalledTimes(0);
-    await canvas.findByText('Linkedin', undefined, { timeout: 3000 });
+    await canvas.findByText(mockedCompanyRecords[0].name, undefined, {
+      timeout: 3000,
+    });
 
     const emptyDiv = canvas.getByTestId('data-field-input-click-outside-div');
 

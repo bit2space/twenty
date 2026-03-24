@@ -8,8 +8,8 @@ import { useObjectMetadataItems } from '@/object-metadata/hooks/useObjectMetadat
 import { useGetRecordFromCache } from '@/object-record/cache/hooks/useGetRecordFromCache';
 import { useDestroyOneRecordMutation } from '@/object-record/hooks/useDestroyOneRecordMutation';
 import { useObjectPermissions } from '@/object-record/hooks/useObjectPermissions';
-import { useRegisterObjectOperation } from '@/object-record/hooks/useRegisterObjectOperation';
 import { useUpsertRecordsInStore } from '@/object-record/record-store/hooks/useUpsertRecordsInStore';
+import { dispatchObjectRecordOperationBrowserEvent } from '@/browser-event/utils/dispatchObjectRecordOperationBrowserEvent';
 import { getDestroyOneRecordMutationResponseField } from '@/object-record/utils/getDestroyOneRecordMutationResponseField';
 import { capitalize, isDefined } from 'twenty-shared/utils';
 
@@ -21,7 +21,6 @@ type useDestroyOneRecordProps = {
 export const useDestroyOneRecord = ({
   objectNameSingular,
 }: useDestroyOneRecordProps) => {
-  const { registerObjectOperation } = useRegisterObjectOperation();
   const { upsertRecordsInStore } = useUpsertRecordsInStore();
 
   const apolloCoreClient = useApolloCoreClient();
@@ -59,7 +58,9 @@ export const useDestroyOneRecord = ({
             },
           },
           update: (cache, { data }) => {
-            const record = data?.[mutationResponseField];
+            const record = (data as Record<string, any>)?.[
+              mutationResponseField
+            ];
             if (!isDefined(record)) return;
 
             const cachedRecord = getRecordFromCache(record.id, cache);
@@ -89,11 +90,17 @@ export const useDestroyOneRecord = ({
           throw error;
         });
 
-      registerObjectOperation(objectMetadataItem.nameSingular, {
-        type: 'destroy-one',
+      dispatchObjectRecordOperationBrowserEvent({
+        objectMetadataItem,
+        operation: {
+          type: 'destroy-one',
+        },
       });
 
-      return deletedRecord.data?.[mutationResponseField] ?? null;
+      return (
+        (deletedRecord.data as Record<string, any>)?.[mutationResponseField] ??
+        null
+      );
     },
     [
       getRecordFromCache,
@@ -101,7 +108,6 @@ export const useDestroyOneRecord = ({
       destroyOneRecordMutation,
       mutationResponseField,
       objectNameSingular,
-      registerObjectOperation,
       objectMetadataItem,
       objectMetadataItems,
       upsertRecordsInStore,

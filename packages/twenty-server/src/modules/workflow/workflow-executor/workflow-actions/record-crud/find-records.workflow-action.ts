@@ -1,23 +1,20 @@
 import { Injectable } from '@nestjs/common';
 
 import {
-  FieldMetadataComplexOption,
-  FieldMetadataDefaultOption,
+  type FieldMetadataComplexOption,
+  type FieldMetadataDefaultOption,
 } from 'twenty-shared/types';
 import {
   computeRecordGqlOperationFilter,
   isDefined,
+  isRecordFilterValueValid,
   resolveInput,
 } from 'twenty-shared/utils';
 
 import { type WorkflowAction } from 'src/modules/workflow/workflow-executor/interfaces/workflow-action.interface';
 
-import {
-  RecordCrudException,
-  RecordCrudExceptionCode,
-} from 'src/engine/core-modules/record-crud/exceptions/record-crud.exception';
 import { FindRecordsService } from 'src/engine/core-modules/record-crud/services/find-records.service';
-import { ScopedWorkspaceContextFactory } from 'src/engine/twenty-orm/factories/scoped-workspace-context.factory';
+import { findFlatEntityByIdInFlatEntityMaps } from 'src/engine/metadata-modules/flat-entity/utils/find-flat-entity-by-id-in-flat-entity-maps.util';
 import { WorkflowCommonWorkspaceService } from 'src/modules/workflow/common/workspace-services/workflow-common.workspace-service';
 import {
   WorkflowStepExecutorException,
@@ -34,7 +31,6 @@ import { type WorkflowFindRecordsActionInput } from 'src/modules/workflow/workfl
 export class FindRecordsWorkflowAction implements WorkflowAction {
   constructor(
     private readonly findRecordsService: FindRecordsService,
-    private readonly scopedWorkspaceContextFactory: ScopedWorkspaceContextFactory,
     private readonly workflowExecutionContextService: WorkflowExecutionContextService,
     private readonly workflowCommonWorkspaceService: WorkflowCommonWorkspaceService,
   ) {}
@@ -62,14 +58,7 @@ export class FindRecordsWorkflowAction implements WorkflowAction {
       context,
     ) as WorkflowFindRecordsActionInput;
 
-    const { workspaceId } = this.scopedWorkspaceContextFactory.create();
-
-    if (!workspaceId) {
-      throw new RecordCrudException(
-        'Failed to read: Workspace ID is required',
-        RecordCrudExceptionCode.INVALID_REQUEST,
-      );
-    }
+    const { workspaceId } = runInfo;
 
     const executionContext =
       await this.workflowExecutionContextService.getExecutionContext(runInfo);
@@ -80,9 +69,12 @@ export class FindRecordsWorkflowAction implements WorkflowAction {
         workspaceId,
       );
 
-    const fields = flatObjectMetadata.fieldMetadataIds
+    const fields = flatObjectMetadata.fieldIds
       .map((fieldId) => {
-        const field = flatFieldMetadataMaps.byId[fieldId];
+        const field = findFlatEntityByIdInFlatEntityMaps({
+          flatEntityId: fieldId,
+          flatEntityMaps: flatFieldMetadataMaps,
+        });
 
         if (!field) {
           return null;
@@ -103,6 +95,17 @@ export class FindRecordsWorkflowAction implements WorkflowAction {
       })
       .filter(isDefined);
 
+    if (workflowActionInput.filter?.recordFilters) {
+      for (const filter of workflowActionInput.filter.recordFilters) {
+        if (!isRecordFilterValueValid(filter)) {
+          throw new WorkflowStepExecutorException(
+            `Filter condition has an empty value after variable resolution. This likely means a workflow variable could not be resolved. Filter field: ${filter.fieldMetadataId}, operand: ${filter.operand}`,
+            WorkflowStepExecutorExceptionCode.INVALID_STEP_INPUT,
+          );
+        }
+      }
+    }
+
     const gqlOperationFilter =
       workflowActionInput.filter?.recordFilters &&
       workflowActionInput.filter?.recordFilterGroups
@@ -110,7 +113,9 @@ export class FindRecordsWorkflowAction implements WorkflowAction {
             fields,
             recordFilters: workflowActionInput.filter.recordFilters,
             recordFilterGroups: workflowActionInput.filter.recordFilterGroups,
-            filterValueDependencies: {},
+            filterValueDependencies: {
+              timeZone: 'UTC',
+            },
           })
         : {};
 
@@ -119,15 +124,12 @@ export class FindRecordsWorkflowAction implements WorkflowAction {
       filter: gqlOperationFilter,
       orderBy: workflowActionInput.orderBy?.gqlOperationOrderBy,
       limit: workflowActionInput.limit,
-      workspaceId,
+      authContext: executionContext.authContext,
       rolePermissionConfig: executionContext.rolePermissionConfig,
     });
 
     if (!toolOutput.success) {
-      throw new RecordCrudException(
-        toolOutput.error || toolOutput.message,
-        RecordCrudExceptionCode.QUERY_FAILED,
-      );
+      return { error: toolOutput.error || toolOutput.message };
     }
 
     const records = toolOutput.result?.records ?? [];

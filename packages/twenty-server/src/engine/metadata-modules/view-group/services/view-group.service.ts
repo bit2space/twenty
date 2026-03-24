@@ -6,7 +6,8 @@ import { IsNull, Repository } from 'typeorm';
 
 import { ApplicationService } from 'src/engine/core-modules/application/application.service';
 import { WorkspaceManyOrAllFlatEntityMapsCacheService } from 'src/engine/metadata-modules/flat-entity/services/workspace-many-or-all-flat-entity-maps-cache.service';
-import { findFlatEntityByIdInFlatEntityMapsOrThrow } from 'src/engine/metadata-modules/flat-entity/utils/find-flat-entity-by-id-in-flat-entity-maps-or-throw.util';
+import { findFlatEntityByIdInFlatEntityMaps } from 'src/engine/metadata-modules/flat-entity/utils/find-flat-entity-by-id-in-flat-entity-maps.util';
+import { findFlatEntityByUniversalIdentifierOrThrow } from 'src/engine/metadata-modules/flat-entity/utils/find-flat-entity-by-universal-identifier-or-throw.util';
 import { findManyFlatEntityByIdInFlatEntityMapsOrThrow } from 'src/engine/metadata-modules/flat-entity/utils/find-many-flat-entity-by-id-in-flat-entity-maps-or-throw.util';
 import { fromCreateViewGroupInputToFlatViewGroupToCreate } from 'src/engine/metadata-modules/flat-view-group/utils/from-create-view-group-input-to-flat-view-group-to-create.util';
 import { fromDeleteViewGroupInputToFlatViewGroupOrThrow } from 'src/engine/metadata-modules/flat-view-group/utils/from-delete-view-group-input-to-flat-view-group-or-throw.util';
@@ -22,8 +23,9 @@ import {
   ViewGroupException,
   ViewGroupExceptionCode,
 } from 'src/engine/metadata-modules/view-group/exceptions/view-group.exception';
-import { WorkspaceMigrationBuilderExceptionV2 } from 'src/engine/workspace-manager/workspace-migration-v2/exceptions/workspace-migration-builder-exception-v2';
-import { WorkspaceMigrationValidateBuildAndRunService } from 'src/engine/workspace-manager/workspace-migration-v2/services/workspace-migration-validate-build-and-run-service';
+import { fromFlatViewGroupToViewGroupDto } from 'src/engine/metadata-modules/view-group/utils/from-flat-view-group-to-view-group-dto.util';
+import { WorkspaceMigrationBuilderException } from 'src/engine/workspace-manager/workspace-migration/exceptions/workspace-migration-builder-exception';
+import { WorkspaceMigrationValidateBuildAndRunService } from 'src/engine/workspace-manager/workspace-migration/services/workspace-migration-validate-build-and-run-service';
 
 @Injectable()
 export class ViewGroupService {
@@ -85,9 +87,10 @@ export class ViewGroupService {
 
     const flatViewGroupsToCreate = createViewGroupInputs.map(
       (createViewGroupInput) => {
-        const mainGroupByFieldMetadataId =
-          flatViewMaps.byId[createViewGroupInput.viewId]
-            ?.mainGroupByFieldMetadataId;
+        const mainGroupByFieldMetadataId = findFlatEntityByIdInFlatEntityMaps({
+          flatEntityId: createViewGroupInput.viewId,
+          flatEntityMaps: flatViewMaps,
+        })?.mainGroupByFieldMetadataId;
 
         if (!isDefined(mainGroupByFieldMetadataId)) {
           throw new ViewGroupException(
@@ -98,9 +101,8 @@ export class ViewGroupService {
 
         return fromCreateViewGroupInputToFlatViewGroupToCreate({
           createViewGroupInput,
-          workspaceId,
-          workspaceCustomApplicationId: workspaceCustomFlatApplication.id,
-          mainGroupByFieldMetadataId,
+          flatApplication: workspaceCustomFlatApplication,
+          flatViewMaps,
         });
       },
     );
@@ -117,11 +119,13 @@ export class ViewGroupService {
           },
           workspaceId,
           isSystemBuild: false,
+          applicationUniversalIdentifier:
+            workspaceCustomFlatApplication.universalIdentifier,
         },
       );
 
-    if (isDefined(validateAndBuildResult)) {
-      throw new WorkspaceMigrationBuilderExceptionV2(
+    if (validateAndBuildResult.status === 'fail') {
+      throw new WorkspaceMigrationBuilderException(
         validateAndBuildResult,
         'Multiple validation errors occurred while creating view groups',
       );
@@ -138,7 +142,7 @@ export class ViewGroupService {
     return findManyFlatEntityByIdInFlatEntityMapsOrThrow({
       flatEntityIds: flatViewGroupsToCreate.map((el) => el.id),
       flatEntityMaps: recomputedExistingFlatViewGroupMaps,
-    });
+    }).map(fromFlatViewGroupToViewGroupDto);
   }
 
   async updateOne({
@@ -148,6 +152,13 @@ export class ViewGroupService {
     workspaceId: string;
     updateViewGroupInput: UpdateViewGroupInput;
   }): Promise<ViewGroupDTO> {
+    const { workspaceCustomFlatApplication } =
+      await this.applicationService.findWorkspaceTwentyStandardAndCustomApplicationOrThrow(
+        {
+          workspaceId,
+        },
+      );
+
     const { flatViewGroupMaps: existingFlatViewGroupMaps } =
       await this.flatEntityMapsCacheService.getOrRecomputeManyOrAllFlatEntityMaps(
         {
@@ -174,11 +185,13 @@ export class ViewGroupService {
           },
           workspaceId,
           isSystemBuild: false,
+          applicationUniversalIdentifier:
+            workspaceCustomFlatApplication.universalIdentifier,
         },
       );
 
-    if (isDefined(validateAndBuildResult)) {
-      throw new WorkspaceMigrationBuilderExceptionV2(
+    if (validateAndBuildResult.status === 'fail') {
+      throw new WorkspaceMigrationBuilderException(
         validateAndBuildResult,
         'Multiple validation errors occurred while updating view group',
       );
@@ -192,10 +205,13 @@ export class ViewGroupService {
         },
       );
 
-    return findFlatEntityByIdInFlatEntityMapsOrThrow({
-      flatEntityId: optimisticallyUpdatedFlatViewGroup.id,
-      flatEntityMaps: recomputedExistingFlatViewGroupMaps,
-    });
+    return fromFlatViewGroupToViewGroupDto(
+      findFlatEntityByUniversalIdentifierOrThrow({
+        universalIdentifier:
+          optimisticallyUpdatedFlatViewGroup.universalIdentifier,
+        flatEntityMaps: recomputedExistingFlatViewGroupMaps,
+      }),
+    );
   }
 
   async deleteOne({
@@ -205,6 +221,13 @@ export class ViewGroupService {
     deleteViewGroupInput: DeleteViewGroupInput;
     workspaceId: string;
   }): Promise<ViewGroupDTO> {
+    const { workspaceCustomFlatApplication } =
+      await this.applicationService.findWorkspaceTwentyStandardAndCustomApplicationOrThrow(
+        {
+          workspaceId,
+        },
+      );
+
     const { flatViewGroupMaps: existingFlatViewGroupMaps } =
       await this.flatEntityMapsCacheService.getOrRecomputeManyOrAllFlatEntityMaps(
         {
@@ -233,11 +256,13 @@ export class ViewGroupService {
           },
           workspaceId,
           isSystemBuild: false,
+          applicationUniversalIdentifier:
+            workspaceCustomFlatApplication.universalIdentifier,
         },
       );
 
-    if (isDefined(validateAndBuildResult)) {
-      throw new WorkspaceMigrationBuilderExceptionV2(
+    if (validateAndBuildResult.status === 'fail') {
+      throw new WorkspaceMigrationBuilderException(
         validateAndBuildResult,
         'Multiple validation errors occurred while deleting view group',
       );
@@ -251,10 +276,13 @@ export class ViewGroupService {
         },
       );
 
-    return findFlatEntityByIdInFlatEntityMapsOrThrow({
-      flatEntityId: optimisticallyUpdatedFlatViewGroupWithDeletedAt.id,
-      flatEntityMaps: recomputedExistingFlatViewGroupMaps,
-    });
+    return fromFlatViewGroupToViewGroupDto(
+      findFlatEntityByUniversalIdentifierOrThrow({
+        universalIdentifier:
+          optimisticallyUpdatedFlatViewGroupWithDeletedAt.universalIdentifier,
+        flatEntityMaps: recomputedExistingFlatViewGroupMaps,
+      }),
+    );
   }
 
   async destroyOne({
@@ -264,6 +292,13 @@ export class ViewGroupService {
     destroyViewGroupInput: DestroyViewGroupInput;
     workspaceId: string;
   }): Promise<ViewGroupDTO> {
+    const { workspaceCustomFlatApplication } =
+      await this.applicationService.findWorkspaceTwentyStandardAndCustomApplicationOrThrow(
+        {
+          workspaceId,
+        },
+      );
+
     const { flatViewGroupMaps: existingFlatViewGroupMaps } =
       await this.flatEntityMapsCacheService.getOrRecomputeManyOrAllFlatEntityMaps(
         {
@@ -278,6 +313,11 @@ export class ViewGroupService {
         flatViewGroupMaps: existingFlatViewGroupMaps,
       });
 
+    const existingFlatViewGroup = findFlatEntityByUniversalIdentifierOrThrow({
+      universalIdentifier: existingViewGroupToDelete.universalIdentifier,
+      flatEntityMaps: existingFlatViewGroupMaps,
+    });
+
     const validateAndBuildResult =
       await this.workspaceMigrationValidateBuildAndRunService.validateBuildAndRunWorkspaceMigration(
         {
@@ -290,17 +330,22 @@ export class ViewGroupService {
           },
           workspaceId,
           isSystemBuild: false,
+          applicationUniversalIdentifier:
+            workspaceCustomFlatApplication.universalIdentifier,
         },
       );
 
-    if (isDefined(validateAndBuildResult)) {
-      throw new WorkspaceMigrationBuilderExceptionV2(
+    if (validateAndBuildResult.status === 'fail') {
+      throw new WorkspaceMigrationBuilderException(
         validateAndBuildResult,
         'Multiple validation errors occurred while destroying view group',
       );
     }
 
-    return existingViewGroupToDelete;
+    return fromFlatViewGroupToViewGroupDto({
+      ...existingFlatViewGroup,
+      deletedAt: new Date().toISOString(),
+    });
   }
 
   async findByWorkspaceId(workspaceId: string): Promise<ViewGroupEntity[]> {

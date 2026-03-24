@@ -5,6 +5,7 @@ import { ObjectFilterDropdownRatingInput } from '@/object-record/object-filter-d
 import { ObjectFilterDropdownRecordSelect } from '@/object-record/object-filter-dropdown/components/ObjectFilterDropdownRecordSelect';
 import { ObjectFilterDropdownSearchInput } from '@/object-record/object-filter-dropdown/components/ObjectFilterDropdownSearchInput';
 import { DropdownMenuSeparator } from '@/ui/layout/dropdown/components/DropdownMenuSeparator';
+import { useFeatureFlagsMap } from '@/workspace/hooks/useFeatureFlagsMap';
 
 import { ViewFilterOperand } from 'twenty-shared/types';
 
@@ -12,12 +13,12 @@ import { ObjectFilterDropdownBooleanSelect } from '@/object-record/object-filter
 import { ObjectFilterDropdownDateTimeInput } from '@/object-record/object-filter-dropdown/components/ObjectFilterDropdownDateTimeInput';
 import { ObjectFilterDropdownInnerSelectOperandDropdown } from '@/object-record/object-filter-dropdown/components/ObjectFilterDropdownInnerSelectOperandDropdown';
 import { ObjectFilterDropdownTextInput } from '@/object-record/object-filter-dropdown/components/ObjectFilterDropdownTextInput';
-import { ObjectFilterDropdownVectorSearchInput } from '@/object-record/object-filter-dropdown/components/ObjectFilterDropdownVectorSearchInput';
 import { NUMBER_FILTER_TYPES } from '@/object-record/object-filter-dropdown/constants/NumberFilterTypes';
 import { TEXT_FILTER_TYPES } from '@/object-record/object-filter-dropdown/constants/TextFilterTypes';
 import { fieldMetadataItemUsedInDropdownComponentSelector } from '@/object-record/object-filter-dropdown/states/fieldMetadataItemUsedInDropdownComponentSelector';
 import { selectedOperandInDropdownComponentState } from '@/object-record/object-filter-dropdown/states/selectedOperandInDropdownComponentState';
-import { useRecoilComponentValue } from '@/ui/utilities/state/component-state/hooks/useRecoilComponentValue';
+import { useAtomComponentSelectorValue } from '@/ui/utilities/state/jotai/hooks/useAtomComponentSelectorValue';
+import { useAtomComponentStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomComponentStateValue';
 import { getFilterTypeFromFieldType, isDefined } from 'twenty-shared/utils';
 
 type ObjectFilterDropdownFilterInputProps = {
@@ -29,14 +30,16 @@ export const ObjectFilterDropdownFilterInput = ({
   filterDropdownId,
   recordFilterId,
 }: ObjectFilterDropdownFilterInputProps) => {
-  const fieldMetadataItemUsedInDropdown = useRecoilComponentValue(
+  const featureFlags = useFeatureFlagsMap();
+  const isWholeDayFilterEnabled =
+    featureFlags.IS_DATE_TIME_WHOLE_DAY_FILTER_ENABLED ?? false;
+
+  const fieldMetadataItemUsedInDropdown = useAtomComponentSelectorValue(
     fieldMetadataItemUsedInDropdownComponentSelector,
-    filterDropdownId,
   );
 
-  const selectedOperandInDropdown = useRecoilComponentValue(
+  const selectedOperandInDropdown = useAtomComponentStateValue(
     selectedOperandInDropdownComponentState,
-    filterDropdownId,
   );
 
   const isOperandWithFilterValue =
@@ -53,13 +56,6 @@ export const ObjectFilterDropdownFilterInput = ({
       ViewFilterOperand.DOES_NOT_CONTAIN,
       ViewFilterOperand.IS_RELATIVE,
     ].includes(selectedOperandInDropdown);
-
-  const isVectorSearchFilter =
-    selectedOperandInDropdown === ViewFilterOperand.VECTOR_SEARCH;
-
-  if (isVectorSearchFilter && isDefined(filterDropdownId)) {
-    return <ObjectFilterDropdownVectorSearchInput />;
-  }
 
   if (!isDefined(fieldMetadataItemUsedInDropdown)) {
     return null;
@@ -82,15 +78,27 @@ export const ObjectFilterDropdownFilterInput = ({
       <>
         <ObjectFilterDropdownInnerSelectOperandDropdown />
         <DropdownMenuSeparator />
-        <ObjectFilterDropdownDateInput instanceId={filterDropdownId} />
+        <ObjectFilterDropdownDateInput />
       </>
     );
   } else if (filterType === 'DATE_TIME') {
+    if (
+      isWholeDayFilterEnabled &&
+      selectedOperandInDropdown === ViewFilterOperand.IS
+    ) {
+      return (
+        <>
+          <ObjectFilterDropdownInnerSelectOperandDropdown />
+          <DropdownMenuSeparator />
+          <ObjectFilterDropdownDateInput />
+        </>
+      );
+    }
     return (
       <>
         <ObjectFilterDropdownInnerSelectOperandDropdown />
         <DropdownMenuSeparator />
-        <ObjectFilterDropdownDateTimeInput instanceId={filterDropdownId} />
+        <ObjectFilterDropdownDateTimeInput />
       </>
     );
   } else {
@@ -99,10 +107,12 @@ export const ObjectFilterDropdownFilterInput = ({
         <ObjectFilterDropdownInnerSelectOperandDropdown />
         <DropdownMenuSeparator />
         {TEXT_FILTER_TYPES.includes(filterType) && (
-          <ObjectFilterDropdownTextInput />
+          <ObjectFilterDropdownTextInput filterDropdownId={filterDropdownId} />
         )}
         {NUMBER_FILTER_TYPES.includes(filterType) && (
-          <ObjectFilterDropdownNumberInput />
+          <ObjectFilterDropdownNumberInput
+            filterDropdownId={filterDropdownId}
+          />
         )}
         {filterType === 'RATING' && <ObjectFilterDropdownRatingInput />}
         {filterType === 'RELATION' && (
@@ -115,9 +125,17 @@ export const ObjectFilterDropdownFilterInput = ({
             />
           </>
         )}
-        {filterType === 'ACTOR' && <ObjectFilterDropdownTextInput />}
-        {filterType === 'ADDRESS' && <ObjectFilterDropdownTextInput />}
-        {filterType === 'CURRENCY' && <ObjectFilterDropdownNumberInput />}
+        {filterType === 'ACTOR' && (
+          <ObjectFilterDropdownTextInput filterDropdownId={filterDropdownId} />
+        )}
+        {filterType === 'ADDRESS' && (
+          <ObjectFilterDropdownTextInput filterDropdownId={filterDropdownId} />
+        )}
+        {filterType === 'CURRENCY' && (
+          <ObjectFilterDropdownNumberInput
+            filterDropdownId={filterDropdownId}
+          />
+        )}
         {['SELECT', 'MULTI_SELECT'].includes(filterType) && (
           <>
             <ObjectFilterDropdownSearchInput />

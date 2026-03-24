@@ -1,14 +1,17 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
 
-import { isDefined } from 'twenty-shared/utils';
+import { ALL_METADATA_NAME } from 'twenty-shared/metadata';
+import { FeatureFlagKey } from 'twenty-shared/types';
 import { DataSource } from 'typeorm';
 
+import { ApplicationRegistrationService } from 'src/engine/core-modules/application/application-registration/application-registration.service';
 import { ApplicationService } from 'src/engine/core-modules/application/application.service';
-import { FeatureFlagKey } from 'src/engine/core-modules/feature-flag/enums/feature-flag-key.enum';
-import { FeatureFlagService } from 'src/engine/core-modules/feature-flag/services/feature-flag.service';
+import { SdkClientGenerationService } from 'src/engine/core-modules/sdk-client/sdk-client-generation.service';
 import { TwentyConfigService } from 'src/engine/core-modules/twenty-config/twenty-config.service';
 import { DataSourceService } from 'src/engine/metadata-modules/data-source/data-source.service';
+import { getMetadataFlatEntityMapsKey } from 'src/engine/metadata-modules/flat-entity/utils/get-metadata-flat-entity-maps-key.util';
+import { getMetadataRelatedMetadataNames } from 'src/engine/metadata-modules/flat-entity/utils/get-metadata-related-metadata-names.util';
 import { ObjectMetadataEntity } from 'src/engine/metadata-modules/object-metadata/object-metadata.entity';
 import { WorkspaceCacheStorageService } from 'src/engine/workspace-cache-storage/workspace-cache-storage.service';
 import { WorkspaceCacheService } from 'src/engine/workspace-cache/services/workspace-cache.service';
@@ -21,28 +24,34 @@ import { seedPageLayoutWidgets } from 'src/engine/workspace-manager/dev-seeder/c
 import { seedPageLayouts } from 'src/engine/workspace-manager/dev-seeder/core/utils/seed-page-layouts.util';
 import { DevSeederDataService } from 'src/engine/workspace-manager/dev-seeder/data/services/dev-seeder-data.service';
 import { DevSeederMetadataService } from 'src/engine/workspace-manager/dev-seeder/metadata/services/dev-seeder-metadata.service';
-import { TWENTY_STANDARD_APPLICATION } from 'src/engine/workspace-manager/twenty-standard-application/constants/twenty-standard-applications';
-import { WorkspaceSyncMetadataService } from 'src/engine/workspace-manager/workspace-sync-metadata/workspace-sync-metadata.service';
+import { TwentyStandardApplicationService } from 'src/engine/workspace-manager/twenty-standard-application/services/twenty-standard-application.service';
 
 @Injectable()
 export class DevSeederService {
+  private readonly logger = new Logger(DevSeederService.name);
+
   constructor(
     private readonly workspaceCacheStorageService: WorkspaceCacheStorageService,
     private readonly twentyConfigService: TwentyConfigService,
     private readonly workspaceDataSourceService: WorkspaceDataSourceService,
     private readonly dataSourceService: DataSourceService,
-    private readonly featureFlagService: FeatureFlagService,
-    private readonly workspaceSyncMetadataService: WorkspaceSyncMetadataService,
+    private readonly twentyStandardApplicationService: TwentyStandardApplicationService,
     private readonly devSeederMetadataService: DevSeederMetadataService,
     private readonly devSeederPermissionsService: DevSeederPermissionsService,
     private readonly devSeederDataService: DevSeederDataService,
     private readonly applicationService: ApplicationService,
+    private readonly applicationRegistrationService: ApplicationRegistrationService,
     private readonly workspaceCacheService: WorkspaceCacheService,
+    private readonly sdkClientGenerationService: SdkClientGenerationService,
     @InjectDataSource()
     private readonly coreDataSource: DataSource,
   ) {}
 
-  public async seedDev(workspaceId: SeededWorkspacesIds): Promise<void> {
+  public async seedDev(
+    workspaceId: SeededWorkspacesIds,
+    options?: { light?: boolean },
+  ): Promise<void> {
+    const light = options?.light ?? false;
     const isBillingEnabled = this.twentyConfigService.get('IS_BILLING_ENABLED');
     const appVersion = this.twentyConfigService.get('APP_VERSION');
 
@@ -53,6 +62,8 @@ export class DevSeederService {
       seedBilling: isBillingEnabled,
       appVersion,
     });
+
+    await this.applicationRegistrationService.createCliRegistrationIfNotExists();
 
     const schemaName =
       await this.workspaceDataSourceService.createWorkspaceDBSchema(
@@ -70,48 +81,57 @@ export class DevSeederService {
         schemaName,
       );
 
-    const twentyStandardApplication =
-      await this.applicationService.findByUniversalIdentifier({
-        workspaceId,
-        universalIdentifier: TWENTY_STANDARD_APPLICATION.universalIdentifier,
-      });
-
-    if (!isDefined(twentyStandardApplication)) {
-      throw new Error(
-        'Seeder failed to find twenty standard application, should never occur',
-      );
-    }
-
-    const { twentyStandardFlatApplication, workspaceCustomFlatApplication } =
+    const { workspaceCustomFlatApplication, twentyStandardFlatApplication } =
       await this.applicationService.findWorkspaceTwentyStandardAndCustomApplicationOrThrow(
         {
           workspaceId,
         },
       );
 
-    await this.workspaceSyncMetadataService.synchronize({
-      workspaceId: workspaceId,
-      dataSourceId: dataSourceMetadata.id,
-      featureFlags: featureFlagsMap,
+    await this.twentyStandardApplicationService.synchronizeTwentyStandardApplicationOrThrow(
+      {
+        workspaceId,
+      },
+    );
+
+    await this.sdkClientGenerationService.generateSdkClientForApplication({
+      workspaceId,
+      applicationId: twentyStandardFlatApplication.id,
+      applicationUniversalIdentifier:
+        twentyStandardFlatApplication.universalIdentifier,
     });
 
     await this.devSeederMetadataService.seed({
       dataSourceMetadata,
       workspaceId,
-      featureFlags: featureFlagsMap,
-      twentyStandardFlatApplication,
+      light,
+    });
+
+    await this.sdkClientGenerationService.generateSdkClientForApplication({
+      workspaceId,
+      applicationId: workspaceCustomFlatApplication.id,
+      applicationUniversalIdentifier:
+        workspaceCustomFlatApplication.universalIdentifier,
     });
 
     await this.devSeederMetadataService.seedRelations({
       workspaceId,
+      light,
     });
 
     await this.devSeederPermissionsService.initPermissions({
       workspaceId,
-      twentyStandardApplication,
+      twentyStandardFlatApplication,
+      workspaceCustomFlatApplication,
+      light,
     });
 
-    await seedPageLayouts(this.coreDataSource, 'core', workspaceId);
+    await seedPageLayouts(
+      this.coreDataSource,
+      'core',
+      workspaceId,
+      workspaceCustomFlatApplication.id,
+    );
     await seedPageLayoutTabs({
       applicationId: workspaceCustomFlatApplication.id,
       workspaceId,
@@ -138,10 +158,22 @@ export class DevSeederService {
       workspaceCustomApplicationId: workspaceCustomFlatApplication.id,
     });
 
+    const relatedPageLayoutCacheKeysToInvalidate = [
+      ...getMetadataRelatedMetadataNames(ALL_METADATA_NAME.pageLayout),
+      ...getMetadataRelatedMetadataNames(ALL_METADATA_NAME.pageLayoutTab),
+      ...getMetadataRelatedMetadataNames(ALL_METADATA_NAME.pageLayoutWidget),
+    ].map(getMetadataFlatEntityMapsKey);
+
+    await this.workspaceCacheService.invalidateAndRecompute(
+      workspaceId,
+      relatedPageLayoutCacheKeysToInvalidate,
+    );
+
     await this.devSeederDataService.seed({
       schemaName: dataSourceMetadata.schema,
       workspaceId,
       featureFlags: featureFlagsMap,
+      light,
     });
 
     await this.workspaceCacheStorageService.flush(workspaceId, undefined);

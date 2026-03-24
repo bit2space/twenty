@@ -14,6 +14,7 @@ export const fromFlatFieldMetadataToFieldMetadataDto = (
     isUnique,
     settings,
     id,
+    universalIdentifier,
     label,
     name,
     objectMetadataId,
@@ -26,10 +27,13 @@ export const fromFlatFieldMetadataToFieldMetadataDto = (
     isSystem,
     isUIReadOnly,
     options,
+    morphId,
+    applicationId,
   } = flatFieldMetadata;
 
   return {
     id,
+    universalIdentifier,
     label,
     name,
     objectMetadataId,
@@ -50,5 +54,7 @@ export const fromFlatFieldMetadataToFieldMetadataDto = (
     isNullable: isNullable ?? false,
     isUnique: isUnique ?? false,
     settings: settings ?? undefined,
+    morphId: morphId ?? undefined,
+    applicationId: applicationId ?? undefined,
   };
 };

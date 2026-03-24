@@ -1,7 +1,7 @@
+import { type ObjectRecordUpdateEvent } from 'twenty-shared/database-events';
 import { FieldMetadataType } from 'twenty-shared/types';
 
 import { DatabaseEventAction } from 'src/engine/api/graphql/graphql-query-runner/enums/database-event-action';
-import { type ObjectRecordUpdateEvent } from 'src/engine/core-modules/event-emitter/types/object-record-update.event';
 import { type FlatEntityMaps } from 'src/engine/metadata-modules/flat-entity/types/flat-entity-maps.type';
 import { type FlatFieldMetadata } from 'src/engine/metadata-modules/flat-field-metadata/types/flat-field-metadata.type';
 import { type FlatObjectMetadata } from 'src/engine/metadata-modules/flat-object-metadata/types/flat-object-metadata.type';
@@ -48,10 +48,10 @@ describe('formatTwentyOrmEventToDatabaseBatchEvent', () => {
   });
 
   const flatFieldMetadataMaps: FlatEntityMaps<FlatFieldMetadata> = {
-    byId: {
+    byUniversalIdentifier: {
       'name-id': nameField,
     },
-    idByUniversalIdentifier: {
+    universalIdentifierById: {
       'name-id': 'name-id',
     },
     universalIdentifiersByApplicationId: {},
@@ -71,8 +71,9 @@ describe('formatTwentyOrmEventToDatabaseBatchEvent', () => {
     createdAt: new Date(),
     updatedAt: new Date(),
     universalIdentifier: objectMetadataId,
-    fieldMetadataIds: ['name-id'],
+    fieldIds: ['name-id'],
     indexMetadataIds: [],
+    objectPermissionIds: [],
     viewIds: [],
     applicationId: null,
   } as unknown as FlatObjectMetadata;
@@ -114,8 +115,8 @@ describe('formatTwentyOrmEventToDatabaseBatchEvent', () => {
           flatFieldMetadataMaps,
           workspaceId: mockWorkspaceId,
           authContext: mockAuthContext,
-          entities: afterEntities,
-          beforeEntities: beforeEntities,
+          recordsAfter: afterEntities,
+          recordsBefore: beforeEntities,
         });
       } catch (error) {
         expect(error).toBeInstanceOf(TwentyORMException);
@@ -157,8 +158,8 @@ describe('formatTwentyOrmEventToDatabaseBatchEvent', () => {
         flatFieldMetadataMaps,
         workspaceId: mockWorkspaceId,
         authContext: mockAuthContext,
-        entities: afterEntities,
-        beforeEntities: beforeEntities,
+        recordsAfter: afterEntities,
+        recordsBefore: beforeEntities,
       });
 
       expect(result).toBeDefined();
@@ -179,33 +180,6 @@ describe('formatTwentyOrmEventToDatabaseBatchEvent', () => {
       expect(updateEvent1.properties?.after?.name).toBe('John Doe Updated');
       expect(updateEvent2.properties?.before?.name).toBe('Jane Doe');
       expect(updateEvent2.properties?.after?.name).toBe('Jane Doe Updated');
-    });
-
-    it('should handle single entity (non-array) for both before and after', () => {
-      const afterEntity = {
-        id: 'record-1',
-        name: 'John Doe Updated',
-      };
-
-      const beforeEntity = {
-        id: 'record-1',
-        name: 'John Doe',
-      };
-
-      const result = formatTwentyOrmEventToDatabaseBatchEvent({
-        action: DatabaseEventAction.UPDATED,
-        objectMetadataItem: flatObjectMetadata,
-        flatFieldMetadataMaps,
-        workspaceId: mockWorkspaceId,
-        authContext: mockAuthContext,
-        entities: afterEntity,
-        beforeEntities: beforeEntity,
-      });
-
-      expect(result).toBeDefined();
-      expect(result?.action).toBe(DatabaseEventAction.UPDATED);
-      expect(result?.events).toHaveLength(1);
-      expect(result?.events[0].recordId).toBe('record-1');
     });
   });
 });

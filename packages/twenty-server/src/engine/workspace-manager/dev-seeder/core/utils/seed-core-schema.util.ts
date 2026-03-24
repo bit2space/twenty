@@ -1,4 +1,5 @@
 import { type DataSource } from 'typeorm';
+import { v4 } from 'uuid';
 
 import { type ApplicationService } from 'src/engine/core-modules/application/application.service';
 import { seedBillingCustomers } from 'src/engine/workspace-manager/dev-seeder/core/billing/utils/seed-billing-customers.util';
@@ -9,7 +10,10 @@ import {
 } from 'src/engine/workspace-manager/dev-seeder/core/constants/seeder-workspaces.constant';
 import { seedAgents } from 'src/engine/workspace-manager/dev-seeder/core/utils/seed-agents.util';
 import { seedApiKeys } from 'src/engine/workspace-manager/dev-seeder/core/utils/seed-api-keys.util';
+
 import { seedFeatureFlags } from 'src/engine/workspace-manager/dev-seeder/core/utils/seed-feature-flags.util';
+import { seedMetadataEntities } from 'src/engine/workspace-manager/dev-seeder/core/utils/seed-metadata-entities.util';
+import { seedServerId } from 'src/engine/workspace-manager/dev-seeder/core/utils/seed-server-id.util';
 import { seedUserWorkspaces } from 'src/engine/workspace-manager/dev-seeder/core/utils/seed-user-workspaces.util';
 import { seedUsers } from 'src/engine/workspace-manager/dev-seeder/core/utils/seed-users.util';
 import { createWorkspace } from 'src/engine/workspace-manager/dev-seeder/core/utils/seed-workspace.util';
@@ -42,14 +46,7 @@ export const seedCoreSchema = async ({
   await queryRunner.startTransaction();
 
   try {
-    const customWorkspaceApplication =
-      await applicationService.createWorkspaceCustomApplication(
-        {
-          workspaceId,
-          workspaceDisplayName: createWorkspaceStaticInput.displayName,
-        },
-        queryRunner,
-      );
+    const workspaceCustomApplicationId = v4();
 
     await createWorkspace({
       queryRunner,
@@ -57,9 +54,20 @@ export const seedCoreSchema = async ({
       createWorkspaceInput: {
         ...createWorkspaceStaticInput,
         version,
-        workspaceCustomApplicationId: customWorkspaceApplication.id,
+        workspaceCustomApplicationId,
       },
     });
+
+    await applicationService.createWorkspaceCustomApplication(
+      {
+        workspaceId,
+        applicationId: workspaceCustomApplicationId,
+        workspaceDisplayName: createWorkspaceStaticInput.displayName,
+      },
+      queryRunner,
+    );
+
+    await seedServerId({ queryRunner, schemaName });
 
     await seedUsers({ queryRunner, schemaName });
 
@@ -85,6 +93,8 @@ export const seedCoreSchema = async ({
       await seedBillingCustomers({ queryRunner, schemaName, workspaceId });
       await seedBillingSubscriptions({ queryRunner, schemaName, workspaceId });
     }
+
+    await seedMetadataEntities({ queryRunner, schemaName, workspaceId });
 
     await queryRunner.commitTransaction();
   } catch (error) {

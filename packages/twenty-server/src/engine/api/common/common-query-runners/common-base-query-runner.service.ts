@@ -1,18 +1,19 @@
 import { Inject, Injectable } from '@nestjs/common';
 
-import { msg } from '@lingui/core/macro';
+import { type PermissionFlagType } from 'twenty-shared/constants';
 import { isDefined } from 'twenty-shared/utils';
-import { Omit } from 'zod/v4/core/util.cjs';
 
-import { WorkspaceAuthContext } from 'src/engine/api/common/interfaces/workspace-auth-context.interface';
 import { QueryResultFieldValue } from 'src/engine/api/graphql/workspace-query-runner/factories/query-result-getters/interfaces/query-result-field-value';
 
-import { DataArgProcessor } from 'src/engine/api/common/common-args-processors/data-arg-processor/data-arg.processor';
+import { DataArgProcessorService } from 'src/engine/api/common/common-args-processors/data-arg-processor/data-arg-processor.service';
+import { FilterArgProcessorService } from 'src/engine/api/common/common-args-processors/filter-arg-processor/filter-arg-processor.service';
 import { QueryRunnerArgsFactory } from 'src/engine/api/common/common-args-processors/query-runner-args.factory';
+import { ProcessNestedRelationsHelper } from 'src/engine/api/common/common-nested-relations-processor/process-nested-relations.helper';
 import {
   CommonQueryRunnerException,
   CommonQueryRunnerExceptionCode,
 } from 'src/engine/api/common/common-query-runners/errors/common-query-runner.exception';
+import { STANDARD_ERROR_MESSAGE } from 'src/engine/api/common/common-query-runners/errors/standard-error-message.constant';
 import { CommonResultGettersService } from 'src/engine/api/common/common-result-getters/common-result-getters.service';
 import { CommonBaseQueryRunnerContext } from 'src/engine/api/common/types/common-base-query-runner-context.type';
 import { CommonExtendedQueryRunnerContext } from 'src/engine/api/common/types/common-extended-query-runner-context.type';
@@ -24,14 +25,15 @@ import {
 } from 'src/engine/api/common/types/common-query-args.type';
 import { CommonQueryResult } from 'src/engine/api/common/types/common-query-result.type';
 import { CommonSelectedFieldsResult } from 'src/engine/api/common/types/common-selected-fields-result.type';
-import { isWorkspaceAuthContext } from 'src/engine/api/common/utils/is-workspace-auth-context.util';
 import { OBJECTS_WITH_SETTINGS_PERMISSIONS_REQUIREMENTS } from 'src/engine/api/graphql/graphql-query-runner/constants/objects-with-settings-permissions-requirements';
 import { GraphqlQueryParser } from 'src/engine/api/graphql/graphql-query-runner/graphql-query-parsers/graphql-query.parser';
-import { ProcessNestedRelationsHelper } from 'src/engine/api/graphql/graphql-query-runner/helpers/process-nested-relations.helper';
 import { WorkspacePreQueryHookPayload } from 'src/engine/api/graphql/workspace-query-runner/workspace-query-hook/types/workspace-query-hook.type';
 import { WorkspaceQueryHookService } from 'src/engine/api/graphql/workspace-query-runner/workspace-query-hook/workspace-query-hook.service';
 import { ApiKeyRoleService } from 'src/engine/core-modules/api-key/services/api-key-role.service';
-import { AuthContext } from 'src/engine/core-modules/auth/types/auth-context.type';
+import { isApiKeyAuthContext } from 'src/engine/core-modules/auth/guards/is-api-key-auth-context.guard';
+import { isApplicationAuthContext } from 'src/engine/core-modules/auth/guards/is-application-auth-context.guard';
+import { isUserAuthContext } from 'src/engine/core-modules/auth/guards/is-user-auth-context.guard';
+import { WorkspaceAuthContext } from 'src/engine/core-modules/auth/types/workspace-auth-context.type';
 import { FeatureFlagService } from 'src/engine/core-modules/feature-flag/services/feature-flag.service';
 import { MetricsService } from 'src/engine/core-modules/metrics/metrics.service';
 import { MetricsKeys } from 'src/engine/core-modules/metrics/types/metrics-keys.type';
@@ -40,7 +42,6 @@ import { TwentyConfigService } from 'src/engine/core-modules/twenty-config/twent
 import { FlatEntityMaps } from 'src/engine/metadata-modules/flat-entity/types/flat-entity-maps.type';
 import { FlatFieldMetadata } from 'src/engine/metadata-modules/flat-field-metadata/types/flat-field-metadata.type';
 import { FlatObjectMetadata } from 'src/engine/metadata-modules/flat-object-metadata/types/flat-object-metadata.type';
-import { type PermissionFlagType } from 'src/engine/metadata-modules/permissions/constants/permission-flag-type.constants';
 import {
   PermissionsException,
   PermissionsExceptionCode,
@@ -48,9 +49,8 @@ import {
 } from 'src/engine/metadata-modules/permissions/permissions.exception';
 import { PermissionsService } from 'src/engine/metadata-modules/permissions/permissions.service';
 import { UserRoleService } from 'src/engine/metadata-modules/user-role/user-role.service';
-import { WorkspaceDataSource } from 'src/engine/twenty-orm/datasource/workspace.datasource';
 import { GlobalWorkspaceOrmManager } from 'src/engine/twenty-orm/global-workspace-datasource/global-workspace-orm.manager';
-import { TwentyORMGlobalManager } from 'src/engine/twenty-orm/twenty-orm-global.manager';
+import type { RolePermissionConfig } from 'src/engine/twenty-orm/types/role-permission-config';
 import { WorkspaceCacheService } from 'src/engine/workspace-cache/services/workspace-cache.service';
 
 @Injectable()
@@ -63,9 +63,9 @@ export abstract class CommonBaseQueryRunnerService<
   @Inject()
   protected readonly queryRunnerArgsFactory: QueryRunnerArgsFactory;
   @Inject()
-  protected readonly dataArgProcessor: DataArgProcessor;
+  protected readonly dataArgProcessor: DataArgProcessorService;
   @Inject()
-  protected readonly twentyORMGlobalManager: TwentyORMGlobalManager;
+  protected readonly filterArgProcessor: FilterArgProcessorService;
   @Inject()
   protected readonly globalWorkspaceOrmManager: GlobalWorkspaceOrmManager;
   @Inject()
@@ -91,6 +91,8 @@ export abstract class CommonBaseQueryRunnerService<
 
   protected abstract readonly operationName: CommonQueryNames;
 
+  protected readonly isReadOnly: boolean = false;
+
   public async execute(
     args: CommonInput<Args>,
     queryRunnerContext: CommonBaseQueryRunnerContext,
@@ -101,13 +103,6 @@ export abstract class CommonBaseQueryRunnerService<
       flatObjectMetadataMaps,
       flatFieldMetadataMaps,
     } = queryRunnerContext;
-
-    if (!isWorkspaceAuthContext(authContext)) {
-      throw new CommonQueryRunnerException(
-        'Invalid auth context',
-        CommonQueryRunnerExceptionCode.INVALID_AUTH_CONTEXT,
-      );
-    }
 
     await this.throttleQueryExecution(authContext);
 
@@ -130,7 +125,11 @@ export abstract class CommonBaseQueryRunnerService<
       args.selectedFields,
     );
 
-    this.validateQueryComplexity(selectedFieldsResult, args);
+    this.validateQueryComplexity(
+      selectedFieldsResult,
+      args,
+      queryRunnerContext,
+    );
 
     const processedArgs = {
       ...(await this.processArgs(args, queryRunnerContext, this.operationName)),
@@ -138,7 +137,6 @@ export abstract class CommonBaseQueryRunnerService<
     } as CommonExtendedInput<Args>;
 
     return this.globalWorkspaceOrmManager.executeInWorkspaceContext(
-      authContext,
       async () =>
         this.executeQueryAndEnrichResults(
           processedArgs,
@@ -146,6 +144,7 @@ export abstract class CommonBaseQueryRunnerService<
           queryRunnerContext,
           commonQueryParser,
         ),
+      authContext,
     );
   }
 
@@ -175,6 +174,7 @@ export abstract class CommonBaseQueryRunnerService<
   protected computeQueryComplexity(
     selectedFieldsResult: CommonSelectedFieldsResult,
     _args: CommonInput<Args>,
+    _queryRunnerContext: CommonBaseQueryRunnerContext,
   ): number {
     const simpleFieldsComplexity = 1;
     const selectedFieldsComplexity =
@@ -283,10 +283,14 @@ export abstract class CommonBaseQueryRunnerService<
 
       const userHasPermission =
         await this.permissionsService.userHasWorkspaceSettingPermission({
-          userWorkspaceId: authContext.userWorkspaceId,
+          userWorkspaceId: isUserAuthContext(authContext)
+            ? authContext.userWorkspaceId
+            : undefined,
           setting: permissionRequired,
           workspaceId: workspace.id,
-          apiKeyId: authContext.apiKey?.id,
+          apiKeyId: isApiKeyAuthContext(authContext)
+            ? authContext.apiKey.id
+            : undefined,
         });
 
       if (!userHasPermission) {
@@ -299,27 +303,35 @@ export abstract class CommonBaseQueryRunnerService<
   }
 
   private async getRoleIdOrThrow(
-    authContext: AuthContext,
+    authContext: WorkspaceAuthContext,
     workspaceId: string,
   ): Promise<string> {
-    if (isDefined(authContext.apiKey)) {
-      return this.apiKeyRoleService.getRoleIdForApiKey(
+    if (isApiKeyAuthContext(authContext)) {
+      return this.apiKeyRoleService.getRoleIdForApiKeyId(
         authContext.apiKey.id,
         workspaceId,
       );
     }
 
-    if (!isDefined(authContext.userWorkspaceId)) {
-      throw new CommonQueryRunnerException(
-        'Invalid auth context',
-        CommonQueryRunnerExceptionCode.INVALID_AUTH_CONTEXT,
-      );
+    if (
+      isApplicationAuthContext(authContext) &&
+      isDefined(authContext.application.defaultRoleId)
+    ) {
+      return authContext.application.defaultRoleId;
     }
 
-    return this.userRoleService.getRoleIdForUserWorkspace({
-      userWorkspaceId: authContext.userWorkspaceId,
-      workspaceId,
-    });
+    if (isUserAuthContext(authContext)) {
+      return this.userRoleService.getRoleIdForUserWorkspace({
+        userWorkspaceId: authContext.userWorkspaceId,
+        workspaceId,
+      });
+    }
+
+    throw new CommonQueryRunnerException(
+      'Invalid auth context',
+      CommonQueryRunnerExceptionCode.INVALID_AUTH_CONTEXT,
+      { userFriendlyMessage: STANDARD_ERROR_MESSAGE },
+    );
   }
 
   private async prepareExtendedQueryRunnerContextWithGlobalDatasource(
@@ -330,22 +342,23 @@ export abstract class CommonBaseQueryRunnerService<
 
     const roleId = await this.getRoleIdOrThrow(authContext, workspaceId);
 
-    const rolePermissionConfig = { unionOf: [roleId] };
+    const rolePermissionConfig: RolePermissionConfig = {
+      intersectionOf: [roleId],
+    };
 
-    const repository = await this.globalWorkspaceOrmManager.getRepository(
-      workspaceId,
+    const globalWorkspaceDataSource = this.isReadOnly
+      ? await this.globalWorkspaceOrmManager.getGlobalWorkspaceDataSourceReplica()
+      : await this.globalWorkspaceOrmManager.getGlobalWorkspaceDataSource();
+
+    const repository = globalWorkspaceDataSource.getRepository(
       queryRunnerContext.flatObjectMetadata.nameSingular,
       rolePermissionConfig,
     );
 
-    const globalWorkspaceDataSource =
-      await this.globalWorkspaceOrmManager.getGlobalWorkspaceDataSource();
-
     return {
       ...queryRunnerContext,
       authContext,
-      workspaceDataSource:
-        globalWorkspaceDataSource as unknown as WorkspaceDataSource,
+      workspaceDataSource: globalWorkspaceDataSource,
       rolePermissionConfig,
       repository,
     };
@@ -353,7 +366,7 @@ export abstract class CommonBaseQueryRunnerService<
 
   private async throttleQueryExecution(authContext: WorkspaceAuthContext) {
     try {
-      if (!isDefined(authContext.apiKey)) return;
+      if (!isApiKeyAuthContext(authContext)) return;
 
       const workspaceId = authContext.workspace.id;
 
@@ -401,6 +414,7 @@ export abstract class CommonBaseQueryRunnerService<
   private validateQueryComplexity(
     selectedFieldsResult: CommonSelectedFieldsResult,
     args: CommonInput<Args>,
+    queryRunnerContext: CommonBaseQueryRunnerContext,
   ) {
     const maximumComplexity = this.twentyConfigService.get(
       'COMMON_QUERY_COMPLEXITY_LIMIT',
@@ -411,7 +425,7 @@ export abstract class CommonBaseQueryRunnerService<
         `Query complexity is too high. One-to-Many relation cannot be nested in another One-to-Many relation.`,
         CommonQueryRunnerExceptionCode.TOO_COMPLEX_QUERY,
         {
-          userFriendlyMessage: msg`Query complexity is too high. One-to-Many relation cannot be nested in another One-to-Many relation.`,
+          userFriendlyMessage: STANDARD_ERROR_MESSAGE,
         },
       );
     }
@@ -419,6 +433,7 @@ export abstract class CommonBaseQueryRunnerService<
     const queryComplexity = this.computeQueryComplexity(
       selectedFieldsResult,
       args,
+      queryRunnerContext,
     );
 
     if (queryComplexity > maximumComplexity) {
@@ -426,7 +441,7 @@ export abstract class CommonBaseQueryRunnerService<
         `Query complexity is too high. Please, reduce the amount of relation fields requested. Query complexity: ${queryComplexity}. Maximum complexity: ${maximumComplexity}.`,
         CommonQueryRunnerExceptionCode.TOO_COMPLEX_QUERY,
         {
-          userFriendlyMessage: msg`Query complexity is too high. Please, reduce the amount of relation fields requested. Query complexity: ${queryComplexity}. Maximum complexity: ${maximumComplexity}.`,
+          userFriendlyMessage: STANDARD_ERROR_MESSAGE,
         },
       );
     }

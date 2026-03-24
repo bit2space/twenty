@@ -1,338 +1,179 @@
 import { FieldMetadataType } from 'twenty-shared/types';
 import { v4 } from 'uuid';
 
-import { type FlatFieldMetadata } from 'src/engine/metadata-modules/flat-field-metadata/types/flat-field-metadata.type';
-import { type FlatObjectMetadata } from 'src/engine/metadata-modules/flat-object-metadata/types/flat-object-metadata.type';
-import {
-  BASE_OBJECT_STANDARD_FIELD_IDS,
-  CUSTOM_OBJECT_STANDARD_FIELD_IDS,
-} from 'src/engine/workspace-manager/workspace-sync-metadata/constants/standard-field-ids';
-import { getTsVectorColumnExpressionFromFields } from 'src/engine/workspace-manager/workspace-sync-metadata/utils/get-ts-vector-column-expression.util';
+import { PARTIAL_SYSTEM_FLAT_FIELD_METADATAS } from 'src/engine/metadata-modules/object-metadata/constants/partial-system-flat-field-metadatas.constant';
+import { getTsVectorColumnExpressionFromFields } from 'src/engine/workspace-manager/utils/get-ts-vector-column-expression.util';
+import { type UniversalFlatFieldMetadata } from 'src/engine/workspace-manager/workspace-migration/universal-flat-entity/types/universal-flat-field-metadata.type';
+import { type UniversalFlatObjectMetadata } from 'src/engine/workspace-manager/workspace-migration/universal-flat-entity/types/universal-flat-object-metadata.type';
 
 type BuildDefaultFlatFieldMetadataForCustomObjectArgs = {
-  workspaceId: string;
-  flatObjectMetadata: Pick<FlatObjectMetadata, 'id' | 'applicationId'>;
+  flatObjectMetadata: Pick<
+    UniversalFlatObjectMetadata,
+    'universalIdentifier' | 'applicationUniversalIdentifier'
+  >;
+  skipNameField?: boolean;
 };
 
 export type DefaultFlatFieldForCustomObjectMaps = ReturnType<
   typeof buildDefaultFlatFieldMetadatasForCustomObject
 >;
+
+const buildObjectSystemFlatFieldMetadatas = ({
+  applicationUniversalIdentifier,
+  objectMetadataUniversalIdentifier,
+  now,
+  searchVectorUniversalSettings,
+}: {
+  applicationUniversalIdentifier: string;
+  objectMetadataUniversalIdentifier: string;
+  now: string;
+  searchVectorUniversalSettings: UniversalFlatFieldMetadata<FieldMetadataType.TS_VECTOR>['universalSettings'];
+}) => {
+  const {
+    createdAt,
+    createdBy,
+    deletedAt,
+    id,
+    position,
+    searchVector,
+    updatedAt,
+    updatedBy,
+  } = PARTIAL_SYSTEM_FLAT_FIELD_METADATAS;
+
+  return {
+    id: {
+      ...id,
+      universalIdentifier: v4(),
+      applicationUniversalIdentifier,
+      objectMetadataUniversalIdentifier,
+      createdAt: now,
+      updatedAt: now,
+    },
+    createdAt: {
+      ...createdAt,
+      universalIdentifier: v4(),
+      applicationUniversalIdentifier,
+      objectMetadataUniversalIdentifier,
+      createdAt: now,
+      updatedAt: now,
+    },
+    createdBy: {
+      ...createdBy,
+      universalIdentifier: v4(),
+      applicationUniversalIdentifier,
+      objectMetadataUniversalIdentifier,
+      createdAt: now,
+      updatedAt: now,
+    },
+    deletedAt: {
+      ...deletedAt,
+      universalIdentifier: v4(),
+      applicationUniversalIdentifier,
+      objectMetadataUniversalIdentifier,
+      createdAt: now,
+      updatedAt: now,
+    },
+    position: {
+      ...position,
+      universalIdentifier: v4(),
+      applicationUniversalIdentifier,
+      objectMetadataUniversalIdentifier,
+      createdAt: now,
+      updatedAt: now,
+    },
+    searchVector: {
+      ...searchVector,
+      universalIdentifier: v4(),
+      applicationUniversalIdentifier,
+      objectMetadataUniversalIdentifier,
+      createdAt: now,
+      updatedAt: now,
+      universalSettings: searchVectorUniversalSettings,
+    },
+    updatedAt: {
+      ...updatedAt,
+      universalIdentifier: v4(),
+      applicationUniversalIdentifier,
+      objectMetadataUniversalIdentifier,
+      createdAt: now,
+      updatedAt: now,
+    },
+    updatedBy: {
+      ...updatedBy,
+      universalIdentifier: v4(),
+      applicationUniversalIdentifier,
+      objectMetadataUniversalIdentifier,
+      createdAt: now,
+      updatedAt: now,
+    },
+  } as const satisfies Record<string, UniversalFlatFieldMetadata>;
+};
+
 // This could be replaced totally by an import schema + its transpilation when it's ready
 export const buildDefaultFlatFieldMetadatasForCustomObject = ({
-  workspaceId,
-  flatObjectMetadata: { id: objectMetadataId, applicationId },
+  flatObjectMetadata: {
+    applicationUniversalIdentifier,
+    universalIdentifier: objectMetadataUniversalIdentifier,
+  },
+  skipNameField = false,
 }: BuildDefaultFlatFieldMetadataForCustomObjectArgs) => {
-  const createdAt = new Date();
-  const idFieldId = v4();
-  const idField: FlatFieldMetadata<FieldMetadataType.UUID> = {
-    type: FieldMetadataType.UUID,
-    id: idFieldId,
-    viewFieldIds: [],
-    kanbanAggregateOperationViewIds: [],
-    calendarViewIds: [],
-    mainGroupByFieldMetadataViewIds: [],
-    isLabelSyncedWithName: false,
-    isUnique: true,
-    objectMetadataId,
-    universalIdentifier: idFieldId,
-    workspaceId,
-    standardId: BASE_OBJECT_STANDARD_FIELD_IDS.id,
-    name: 'id',
-    label: 'Id',
-    icon: 'Icon123',
-    description: 'Id',
-    isNullable: false,
-    isActive: true,
-    isCustom: false,
-    isSystem: true,
-    isUIReadOnly: true,
-    defaultValue: 'uuid',
-    viewFilterIds: [],
+  const now = new Date().toISOString();
 
-    createdAt,
-    updatedAt: createdAt,
-    options: null,
-    standardOverrides: null,
-    relationTargetFieldMetadataId: null,
-    relationTargetObjectMetadataId: null,
-    settings: null,
-    morphId: null,
-    applicationId: applicationId ?? null,
-  };
+  const nameField: UniversalFlatFieldMetadata<FieldMetadataType.TEXT> | null =
+    skipNameField
+      ? null
+      : {
+          type: FieldMetadataType.TEXT,
+          isLabelSyncedWithName: false,
+          isUnique: false,
+          universalIdentifier: v4(),
+          name: 'name',
+          label: 'Name',
+          icon: 'IconAbc',
+          description: 'Name',
+          isNullable: true,
+          isActive: true,
+          isCustom: false,
+          isSystem: false,
+          isUIReadOnly: false,
+          defaultValue: null,
+          createdAt: now,
+          updatedAt: now,
+          options: null,
+          standardOverrides: null,
+          morphId: null,
+          applicationUniversalIdentifier,
+          objectMetadataUniversalIdentifier,
+          relationTargetObjectMetadataUniversalIdentifier: null,
+          relationTargetFieldMetadataUniversalIdentifier: null,
+          viewFilterUniversalIdentifiers: [],
+          viewFieldUniversalIdentifiers: [],
+          kanbanAggregateOperationViewUniversalIdentifiers: [],
+          calendarViewUniversalIdentifiers: [],
+          mainGroupByFieldMetadataViewUniversalIdentifiers: [],
+          universalSettings: null,
+          viewSortUniversalIdentifiers: [],
+        };
 
-  const nameFieldId = v4();
-  const nameField: FlatFieldMetadata<FieldMetadataType.TEXT> = {
-    type: FieldMetadataType.TEXT,
-    id: nameFieldId,
-    viewFieldIds: [],
-    mainGroupByFieldMetadataViewIds: [],
-    kanbanAggregateOperationViewIds: [],
-    calendarViewIds: [],
-    isLabelSyncedWithName: false,
-    isUnique: false,
-    objectMetadataId,
-    universalIdentifier: nameFieldId,
-    workspaceId,
-    standardId: CUSTOM_OBJECT_STANDARD_FIELD_IDS.name,
-    name: 'name',
-    label: 'Name',
-    icon: 'IconAbc',
-    description: 'Name',
-    isNullable: true,
-    isActive: true,
-    isCustom: false,
-    isSystem: false,
-    isUIReadOnly: false,
-    defaultValue: null,
-    viewFilterIds: [],
-
-    createdAt,
-    updatedAt: createdAt,
-    options: null,
-    standardOverrides: null,
-    relationTargetFieldMetadataId: null,
-    relationTargetObjectMetadataId: null,
-    settings: null,
-    morphId: null,
-    applicationId: applicationId ?? null,
-  };
-
-  const createdAtFieldId = v4();
-  const createdAtField: FlatFieldMetadata<FieldMetadataType.DATE_TIME> = {
-    type: FieldMetadataType.DATE_TIME,
-    id: createdAtFieldId,
-    viewFieldIds: [],
-    mainGroupByFieldMetadataViewIds: [],
-    kanbanAggregateOperationViewIds: [],
-    calendarViewIds: [],
-    isLabelSyncedWithName: false,
-    isUnique: false,
-    objectMetadataId,
-    universalIdentifier: createdAtFieldId,
-    workspaceId,
-    standardId: BASE_OBJECT_STANDARD_FIELD_IDS.createdAt,
-    name: 'createdAt',
-    label: 'Creation date',
-    icon: 'IconCalendar',
-    description: 'Creation date',
-    isNullable: false,
-    isActive: true,
-    isCustom: false,
-    isSystem: false,
-    isUIReadOnly: true,
-    defaultValue: 'now',
-    viewFilterIds: [],
-
-    createdAt,
-    updatedAt: createdAt,
-    options: null,
-    standardOverrides: null,
-    relationTargetFieldMetadataId: null,
-    relationTargetObjectMetadataId: null,
-    settings: null,
-    morphId: null,
-    applicationId: applicationId ?? null,
-  };
-
-  const updatedAtFieldId = v4();
-  const updatedAtField: FlatFieldMetadata<FieldMetadataType.DATE_TIME> = {
-    type: FieldMetadataType.DATE_TIME,
-    id: updatedAtFieldId,
-    viewFieldIds: [],
-    mainGroupByFieldMetadataViewIds: [],
-    kanbanAggregateOperationViewIds: [],
-    calendarViewIds: [],
-    isLabelSyncedWithName: false,
-    isUnique: false,
-    objectMetadataId,
-    universalIdentifier: updatedAtFieldId,
-    workspaceId,
-    standardId: BASE_OBJECT_STANDARD_FIELD_IDS.updatedAt,
-    name: 'updatedAt',
-    label: 'Last update',
-    icon: 'IconCalendarClock',
-    description: 'Last time the record was changed',
-    isNullable: false,
-    isActive: true,
-    isCustom: false,
-    isSystem: false,
-    isUIReadOnly: true,
-    defaultValue: 'now',
-    viewFilterIds: [],
-
-    createdAt,
-    updatedAt: createdAt,
-    options: null,
-    standardOverrides: null,
-    relationTargetFieldMetadataId: null,
-    relationTargetObjectMetadataId: null,
-    settings: null,
-    morphId: null,
-    applicationId: applicationId ?? null,
-  };
-
-  const deletedAtFieldId = v4();
-  const deletedAtField: FlatFieldMetadata<FieldMetadataType.DATE_TIME> = {
-    type: FieldMetadataType.DATE_TIME,
-    id: deletedAtFieldId,
-    viewFieldIds: [],
-    mainGroupByFieldMetadataViewIds: [],
-    kanbanAggregateOperationViewIds: [],
-    calendarViewIds: [],
-    isLabelSyncedWithName: false,
-    isUnique: false,
-    objectMetadataId,
-    universalIdentifier: deletedAtFieldId,
-    workspaceId,
-    standardId: BASE_OBJECT_STANDARD_FIELD_IDS.deletedAt,
-    name: 'deletedAt',
-    label: 'Deleted at',
-    icon: 'IconCalendarClock',
-    description: 'Deletion date',
-    isNullable: true,
-    isActive: true,
-    isCustom: false,
-    isSystem: false,
-    isUIReadOnly: true,
-    defaultValue: null,
-    viewFilterIds: [],
-
-    createdAt,
-    updatedAt: createdAt,
-    options: null,
-    standardOverrides: null,
-    relationTargetFieldMetadataId: null,
-    relationTargetObjectMetadataId: null,
-    settings: null,
-    morphId: null,
-    applicationId: applicationId ?? null,
-  };
-
-  const createdByFieldId = v4();
-  const createdByField: FlatFieldMetadata<FieldMetadataType.ACTOR> = {
-    type: FieldMetadataType.ACTOR,
-    id: createdByFieldId,
-    viewFieldIds: [],
-    mainGroupByFieldMetadataViewIds: [],
-    kanbanAggregateOperationViewIds: [],
-    calendarViewIds: [],
-    isLabelSyncedWithName: false,
-    isUnique: false,
-    objectMetadataId,
-    universalIdentifier: createdByFieldId,
-    workspaceId,
-    standardId: CUSTOM_OBJECT_STANDARD_FIELD_IDS.createdBy,
-    name: 'createdBy',
-    label: 'Created by',
-    icon: 'IconCreativeCommonsSa',
-    description: 'The creator of the record',
-    isNullable: false,
-    isActive: true,
-    isCustom: false,
-    isSystem: false,
-    isUIReadOnly: true,
-    defaultValue: { name: "''", source: "'MANUAL'" },
-    viewFilterIds: [],
-    createdAt,
-    updatedAt: createdAt,
-    options: null,
-    standardOverrides: null,
-    relationTargetFieldMetadataId: null,
-    relationTargetObjectMetadataId: null,
-    settings: null,
-    morphId: null,
-    applicationId: applicationId ?? null,
-  };
-
-  const positionFieldId = v4();
-  const positionField: FlatFieldMetadata<FieldMetadataType.POSITION> = {
-    type: FieldMetadataType.POSITION,
-    id: positionFieldId,
-    viewFieldIds: [],
-    mainGroupByFieldMetadataViewIds: [],
-    kanbanAggregateOperationViewIds: [],
-    calendarViewIds: [],
-    isLabelSyncedWithName: false,
-    isUnique: false,
-    objectMetadataId,
-    universalIdentifier: positionFieldId,
-    workspaceId,
-    standardId: CUSTOM_OBJECT_STANDARD_FIELD_IDS.position,
-    name: 'position',
-    label: 'Position',
-    icon: 'IconHierarchy2',
-    description: 'Position',
-    isNullable: false,
-    isActive: true,
-    isCustom: false,
-    isSystem: true,
-    isUIReadOnly: true,
-    defaultValue: 0,
-    viewFilterIds: [],
-
-    createdAt,
-    updatedAt: createdAt,
-    options: null,
-    standardOverrides: null,
-    relationTargetFieldMetadataId: null,
-    relationTargetObjectMetadataId: null,
-    settings: null,
-    morphId: null,
-    applicationId: applicationId ?? null,
-  };
-
-  const searchVectorFieldId = v4();
-  const searchVectorField: FlatFieldMetadata<FieldMetadataType.TS_VECTOR> = {
-    type: FieldMetadataType.TS_VECTOR,
-    mainGroupByFieldMetadataViewIds: [],
-    viewFieldIds: [],
-    kanbanAggregateOperationViewIds: [],
-    calendarViewIds: [],
-    id: searchVectorFieldId,
-    isLabelSyncedWithName: false,
-    isUnique: false,
-    objectMetadataId,
-    universalIdentifier: searchVectorFieldId,
-    workspaceId,
-    standardId: CUSTOM_OBJECT_STANDARD_FIELD_IDS.searchVector,
-    name: 'searchVector',
-    label: 'Search vector',
-    icon: 'IconSearch',
-    description: 'Search vector',
-    isNullable: true,
-    isActive: true,
-    isCustom: false,
-    isSystem: true,
-    isUIReadOnly: true,
-    defaultValue: null,
-    viewFilterIds: [],
-
-    createdAt,
-    updatedAt: createdAt,
-    options: null,
-    standardOverrides: null,
-    relationTargetFieldMetadataId: null,
-    relationTargetObjectMetadataId: null,
-    settings: {
-      asExpression: getTsVectorColumnExpressionFromFields([nameField]),
+  const searchVectorUniversalSettings: UniversalFlatFieldMetadata<FieldMetadataType.TS_VECTOR>['universalSettings'] =
+    {
+      asExpression: getTsVectorColumnExpressionFromFields(
+        nameField ? [nameField] : [],
+      ),
       generatedType: 'STORED',
-    },
-    morphId: null,
-    applicationId: applicationId ?? null,
-  };
+    };
 
   return {
     fields: {
-      idField,
-      nameField,
-      createdAtField,
-      updatedAtField,
-      deletedAtField,
-      createdByField,
-      positionField,
-      searchVectorField,
+      ...(nameField && { nameField }),
+      ...buildObjectSystemFlatFieldMetadatas({
+        applicationUniversalIdentifier,
+        objectMetadataUniversalIdentifier,
+        now,
+        searchVectorUniversalSettings,
+      }),
     },
   } as const satisfies {
-    fields: Record<string, FlatFieldMetadata>;
+    fields: Record<string, UniversalFlatFieldMetadata>;
   };
 };

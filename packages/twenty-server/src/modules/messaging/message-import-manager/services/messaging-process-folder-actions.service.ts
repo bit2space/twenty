@@ -3,8 +3,9 @@ import { Injectable, Logger } from '@nestjs/common';
 import { isDefined } from 'twenty-shared/utils';
 import { In } from 'typeorm';
 
-import { type WorkspaceEntityManager } from 'src/engine/twenty-orm/entity-manager/workspace-entity-manager';
-import { TwentyORMManager } from 'src/engine/twenty-orm/twenty-orm.manager';
+import { MessageFolderDataAccessService } from 'src/engine/metadata-modules/message-folder/data-access/services/message-folder-data-access.service';
+import { GlobalWorkspaceOrmManager } from 'src/engine/twenty-orm/global-workspace-datasource/global-workspace-orm.manager';
+import { buildSystemAuthContext } from 'src/engine/twenty-orm/utils/build-system-auth-context.util';
 import { type MessageChannelWorkspaceEntity } from 'src/modules/messaging/common/standard-objects/message-channel.workspace-entity';
 import {
   MessageFolderPendingSyncAction,
@@ -19,7 +20,8 @@ export class MessagingProcessFolderActionsService {
   );
 
   constructor(
-    private readonly twentyORMManager: TwentyORMManager,
+    private readonly globalWorkspaceOrmManager: GlobalWorkspaceOrmManager,
+    private readonly messageFolderDataAccessService: MessageFolderDataAccessService,
     private readonly messagingDeleteFolderMessagesService: MessagingDeleteFolderMessagesService,
   ) {}
 
@@ -48,7 +50,7 @@ export class MessagingProcessFolderActionsService {
 
     for (const folder of foldersWithPendingActions) {
       try {
-        this.logger.log(
+        this.logger.debug(
           `WorkspaceId: ${workspaceId}, MessageChannelId: ${messageChannel.id}, FolderId: ${folder.id} - Processing folder action: ${folder.pendingSyncAction}`,
         );
 
@@ -64,7 +66,7 @@ export class MessagingProcessFolderActionsService {
 
           folderIdsToDelete.push(folder.id);
 
-          this.logger.log(
+          this.logger.debug(
             `WorkspaceId: ${workspaceId}, MessageChannelId: ${messageChannel.id}, FolderId: ${folder.id} - Completed FOLDER_DELETION action`,
           );
         }
@@ -86,38 +88,33 @@ export class MessagingProcessFolderActionsService {
     }
 
     if (processedFolderIds.length > 0 || folderIdsToDelete.length > 0) {
-      const workspaceDataSource = await this.twentyORMManager.getDatasource();
+      const authContext = buildSystemAuthContext(workspaceId);
 
-      await workspaceDataSource?.transaction(
-        async (transactionManager: WorkspaceEntityManager) => {
-          const messageFolderRepository =
-            await this.twentyORMManager.getRepository<MessageFolderWorkspaceEntity>(
-              'messageFolder',
-            );
-
+      await this.globalWorkspaceOrmManager.executeInWorkspaceContext(
+        async () => {
           if (processedFolderIds.length > 0) {
-            await messageFolderRepository.update(
+            await this.messageFolderDataAccessService.update(
+              workspaceId,
               { id: In(processedFolderIds) },
               { pendingSyncAction: MessageFolderPendingSyncAction.NONE },
-              transactionManager,
             );
 
-            this.logger.log(
+            this.logger.debug(
               `WorkspaceId: ${workspaceId}, MessageChannelId: ${messageChannel.id} - Reset pendingSyncAction to NONE for ${processedFolderIds.length} folders`,
             );
           }
 
           if (folderIdsToDelete.length > 0) {
-            await messageFolderRepository.delete(
-              { id: In(folderIdsToDelete) },
-              transactionManager,
-            );
+            await this.messageFolderDataAccessService.delete(workspaceId, {
+              id: In(folderIdsToDelete),
+            });
 
             this.logger.log(
               `WorkspaceId: ${workspaceId}, MessageChannelId: ${messageChannel.id} - Deleted ${folderIdsToDelete.length} folders`,
             );
           }
         },
+        authContext,
       );
     }
   }

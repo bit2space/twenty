@@ -1,5 +1,10 @@
+import { isDefined } from 'twenty-shared/utils';
+
 import { COMPANY_DATA_SEED_IDS } from 'src/engine/workspace-manager/dev-seeder/data/constants/company-data-seeds.constant';
-import { WORKSPACE_MEMBER_DATA_SEED_IDS } from 'src/engine/workspace-manager/dev-seeder/data/constants/workspace-member-data-seeds.constant';
+import {
+  WORKSPACE_MEMBER_DATA_SEED_IDS,
+  WORKSPACE_MEMBER_DATA_SEEDS,
+} from 'src/engine/workspace-manager/dev-seeder/data/constants/workspace-member-data-seeds.constant';
 
 type PersonDataSeed = {
   id: string;
@@ -11,12 +16,15 @@ type PersonDataSeed = {
   linkedinLinkPrimaryLinkUrl: string;
   jobTitle: string;
   companyId: string;
-  createdBySource: string;
-  createdByWorkspaceMemberId: string;
-  createdByName: string;
   phonesPrimaryPhoneNumber: string;
   phonesPrimaryPhoneCountryCode: string;
   phonesPrimaryPhoneCallingCode: string;
+  createdBySource: string;
+  createdByWorkspaceMemberId: string;
+  createdByName: string;
+  updatedBySource: string;
+  updatedByWorkspaceMemberId: string;
+  updatedByName: string;
   position: number;
 };
 
@@ -30,12 +38,15 @@ export const PERSON_DATA_SEED_COLUMNS: (keyof PersonDataSeed)[] = [
   'linkedinLinkPrimaryLinkUrl',
   'jobTitle',
   'companyId',
-  'createdBySource',
-  'createdByWorkspaceMemberId',
-  'createdByName',
   'phonesPrimaryPhoneNumber',
   'phonesPrimaryPhoneCountryCode',
   'phonesPrimaryPhoneCallingCode',
+  'createdBySource',
+  'createdByWorkspaceMemberId',
+  'createdByName',
+  'updatedBySource',
+  'updatedByWorkspaceMemberId',
+  'updatedByName',
   'position',
 ];
 
@@ -21648,10 +21659,37 @@ const PERSON_DATA_SEEDS_RAW = [
 ];
 
 export const PERSON_DATA_SEEDS: PersonDataSeed[] = PERSON_DATA_SEEDS_RAW.map(
-  (person, index) => ({
-    ...person,
-    position: index + 1,
-  }),
+  (person, index) => {
+    const workspaceMemberId = Object.values(WORKSPACE_MEMBER_DATA_SEED_IDS)[
+      index % 4
+    ];
+    const workspaceMember = WORKSPACE_MEMBER_DATA_SEEDS.find(
+      (workspaceMember) => workspaceMember.id === workspaceMemberId,
+    );
+    const workspaceMemberName = isDefined(workspaceMember)
+      ? `${workspaceMember?.nameFirstName} ${workspaceMember?.nameLastName}`
+      : 'Unkonwn';
+
+    const dataSeed: PersonDataSeed = {
+      ...person,
+      createdBySource: person.createdBySource,
+      createdByWorkspaceMemberId: workspaceMemberId,
+      createdByName: workspaceMemberName,
+      updatedBySource: person.createdBySource,
+      updatedByWorkspaceMemberId: workspaceMemberId,
+      updatedByName: workspaceMemberName,
+      position: index + 1,
+    };
+
+    const personDataSeedWithSQLColumnOrder: PersonDataSeed = Object.fromEntries(
+      PERSON_DATA_SEED_COLUMNS.map((column) => [
+        column,
+        dataSeed[column as keyof PersonDataSeed],
+      ]),
+    ) as PersonDataSeed;
+
+    return personDataSeedWithSQLColumnOrder;
+  },
 );
 
 // Map for O(1) lookups by person ID

@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 
 import { type ImapFlow } from 'imapflow';
 import { Address, type Email as ParsedMail } from 'postal-mime';
+import { MessageParticipantRole } from 'twenty-shared/types';
 
 import { type ConnectedAccountWorkspaceEntity } from 'src/modules/connected-account/standard-objects/connected-account.workspace-entity';
 import { computeMessageDirection } from 'src/modules/messaging/message-import-manager/drivers/gmail/utils/compute-message-direction.util';
@@ -43,13 +44,11 @@ export class ImapGetMessagesService {
     const client = await this.imapClientProvider.getClient(connectedAccount);
 
     try {
-      const messages = await this.fetchFromAllFolders(
+      return await this.fetchFromAllFolders(
         messagesByFolder,
         client,
         connectedAccount,
       );
-
-      return messages;
     } finally {
       await this.imapClientProvider.closeClient(client);
     }
@@ -106,16 +105,21 @@ export class ImapGetMessagesService {
     client: ImapFlow,
     connectedAccount: ConnectedAccount,
   ): Promise<MessageWithParticipants[]> {
-    this.logger.log(
+    this.logger.debug(
       `Fetching ${messageUids.length} messages from ${folderPath}`,
     );
     const startTime = Date.now();
 
-    const results = await this.messageParser.parseMessagesFromFolder(
-      messageUids,
-      folderPath,
-      client,
-    );
+    const { messages: results, uidValidity } =
+      await this.messageParser.parseMessagesFromFolder(
+        messageUids,
+        folderPath,
+        client,
+      );
+
+    const folderExternalId = uidValidity
+      ? `${folderPath}:${uidValidity}`
+      : folderPath;
 
     const messages: MessageWithParticipants[] = [];
 
@@ -140,12 +144,13 @@ export class ImapGetMessagesService {
           result.parsed,
           result.uid,
           folderPath,
+          folderExternalId,
           connectedAccount,
         ),
       );
     }
 
-    this.logger.log(
+    this.logger.debug(
       `Parsed ${messages.length}/${results.length} messages from ${folderPath} in ${Date.now() - startTime}ms`,
     );
 
@@ -156,6 +161,7 @@ export class ImapGetMessagesService {
     parsed: ParsedMail,
     uid: number,
     folderPath: string,
+    folderExternalId: string,
     connectedAccount: Pick<
       ConnectedAccountWorkspaceEntity,
       'handle' | 'handleAliases'
@@ -178,6 +184,7 @@ export class ImapGetMessagesService {
       direction: computeMessageDirection(senderAddress, connectedAccount),
       attachments: this.extractAttachments(parsed),
       participants: this.extractParticipants(parsed),
+      messageFolderExternalIds: [folderExternalId],
     };
   }
 
@@ -203,11 +210,11 @@ export class ImapGetMessagesService {
 
   private extractParticipants(parsed: ParsedMail) {
     const addressFields = [
-      { field: parsed.from, role: 'from' as const },
-      { field: parsed.to, role: 'to' as const },
-      { field: parsed.cc, role: 'cc' as const },
-      { field: parsed.bcc, role: 'bcc' as const },
-    ];
+      { field: parsed.from, role: MessageParticipantRole.FROM },
+      { field: parsed.to, role: MessageParticipantRole.TO },
+      { field: parsed.cc, role: MessageParticipantRole.CC },
+      { field: parsed.bcc, role: MessageParticipantRole.BCC },
+    ] as const;
 
     return addressFields.flatMap(({ field, role }) =>
       formatAddressObjectAsParticipants(this.extractAddresses(field), role),

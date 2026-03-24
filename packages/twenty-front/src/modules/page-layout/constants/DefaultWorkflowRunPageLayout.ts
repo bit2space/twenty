@@ -1,6 +1,11 @@
 import { DEFAULT_WORKFLOW_RUN_PAGE_LAYOUT_ID } from '@/page-layout/constants/DefaultWorkflowRunPageLayoutId';
 import { type PageLayout } from '@/page-layout/types/PageLayout';
-import { PageLayoutType, WidgetType } from '~/generated/graphql';
+import {
+  PageLayoutTabLayoutMode,
+  PageLayoutType,
+  WidgetConfigurationType,
+  WidgetType,
+} from '~/generated-metadata/graphql';
 
 /**
  * Default WorkflowRun PageLayout.
@@ -15,17 +20,19 @@ export const DEFAULT_WORKFLOW_RUN_PAGE_LAYOUT: PageLayout = {
   createdAt: new Date().toISOString(),
   updatedAt: new Date().toISOString(),
   deletedAt: null,
-  defaultTabIdToFocusOnMobileAndSidePanel: 'workflow-run-tab-flow',
+  defaultTabToFocusOnMobileAndSidePanelId: 'workflow-run-tab-flow',
   tabs: [
     // Fields tab (position 100)
     {
       __typename: 'PageLayoutTab',
+      applicationId: '',
       id: 'workflow-run-tab-fields',
-      title: 'Fields',
+      title: 'Home',
       position: 100,
-      layoutMode: 'vertical-list',
-      icon: 'IconList',
+      layoutMode: PageLayoutTabLayoutMode.VERTICAL_LIST,
+      icon: 'IconHome',
       pageLayoutId: DEFAULT_WORKFLOW_RUN_PAGE_LAYOUT_ID,
+      isOverridden: false,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       deletedAt: null,
@@ -44,7 +51,12 @@ export const DEFAULT_WORKFLOW_RUN_PAGE_LAYOUT: PageLayout = {
             rowSpan: 12,
             columnSpan: 12,
           },
-          configuration: null,
+          configuration: {
+            __typename: 'FieldsConfiguration',
+            configurationType: WidgetConfigurationType.FIELDS,
+            viewId: null,
+          },
+          isOverridden: false,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
           deletedAt: null,
@@ -54,12 +66,14 @@ export const DEFAULT_WORKFLOW_RUN_PAGE_LAYOUT: PageLayout = {
     // Flow tab (position 200)
     {
       __typename: 'PageLayoutTab',
+      applicationId: '',
       id: 'workflow-run-tab-flow',
       title: 'Flow',
       position: 200,
-      layoutMode: 'canvas',
+      layoutMode: PageLayoutTabLayoutMode.CANVAS,
       icon: 'IconSettings',
       pageLayoutId: DEFAULT_WORKFLOW_RUN_PAGE_LAYOUT_ID,
+      isOverridden: false,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       deletedAt: null,
@@ -78,7 +92,12 @@ export const DEFAULT_WORKFLOW_RUN_PAGE_LAYOUT: PageLayout = {
             rowSpan: 12,
             columnSpan: 12,
           },
-          configuration: null,
+          configuration: {
+            __typename: 'FieldsConfiguration',
+            configurationType: WidgetConfigurationType.FIELDS,
+            viewId: null,
+          },
+          isOverridden: false,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
           deletedAt: null,

@@ -1,8 +1,7 @@
-import styled from '@emotion/styled';
-import { useRecoilValue } from 'recoil';
+import { styled } from '@linaria/react';
 
 import { currentWorkspaceMemberState } from '@/auth/states/currentWorkspaceMemberState';
-import { CalendarStartDay } from 'twenty-shared';
+import { useAtomStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomStateValue';
 import { DateFormat } from '@/localization/constants/DateFormat';
 import { NumberFormat } from '@/localization/constants/NumberFormat';
 import { TimeFormat } from '@/localization/constants/TimeFormat';
@@ -11,22 +10,24 @@ import { DateTimeSettingsDateFormatSelect } from '@/settings/experience/componen
 import { DateTimeSettingsTimeFormatSelect } from '@/settings/experience/components/DateTimeSettingsTimeFormatSelect';
 import { DateTimeSettingsTimeZoneSelect } from '@/settings/experience/components/DateTimeSettingsTimeZoneSelect';
 import { NumberFormatSelect } from '@/settings/experience/components/NumberFormatSelect';
+import { CalendarStartDay } from 'twenty-shared/constants';
 import { isDefined } from 'twenty-shared/utils';
 import {
   WorkspaceMemberDateFormatEnum,
   WorkspaceMemberNumberFormatEnum,
   WorkspaceMemberTimeFormatEnum,
-} from '~/generated/graphql';
+} from '~/generated-metadata/graphql';
 import { DateTimeSettingsCalendarStartDaySelect } from '~/pages/settings/profile/appearance/components/DateTimeSettingsCalendarStartDaySelect';
+import { themeCssVariables } from 'twenty-ui/theme-constants';
 
 const StyledContainer = styled.div`
   display: flex;
   flex-direction: column;
-  gap: ${({ theme }) => theme.spacing(4)};
+  gap: ${themeCssVariables.spacing[4]};
 `;
 
 export const FormatPreferencesSettings = () => {
-  const currentWorkspaceMember = useRecoilValue(currentWorkspaceMemberState);
+  const currentWorkspaceMember = useAtomStateValue(currentWorkspaceMemberState);
   const { formatPreferences, updateFormatPreference } = useFormatPreferences();
 
   if (!isDefined(currentWorkspaceMember)) return null;
@@ -51,7 +52,6 @@ export const FormatPreferencesSettings = () => {
     updateFormatPreference('calendarStartDay', value);
   };
 
-  // Convert workspace member values to display values
   const displayTimeZone =
     currentWorkspaceMember.timeZone === 'system'
       ? 'system'

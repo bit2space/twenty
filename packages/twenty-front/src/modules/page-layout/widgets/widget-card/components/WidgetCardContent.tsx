@@ -1,30 +1,84 @@
-import { css } from '@emotion/react';
-import styled from '@emotion/styled';
+import { styled } from '@linaria/react';
 import { type WidgetCardVariant } from '~/modules/page-layout/widgets/types/WidgetCardVariant';
+import { themeCssVariables } from 'twenty-ui/theme-constants';
 
-const StyledWidgetCardContent = styled.div<{ variant: WidgetCardVariant }>`
-  align-items: center;
-  display: flex;
-  height: 100%;
-  width: 100%;
-  justify-content: center;
+type WidgetCardContentStyledProps = {
+  variant: WidgetCardVariant;
+  hasHeader: boolean;
+  isEditable: boolean;
+};
+
+const StyledWidgetCardContent = styled.div<WidgetCardContentStyledProps>`
+  border: ${({ variant, isEditable }) =>
+    variant === 'record-page' || (variant === 'side-column' && isEditable)
+      ? `1px solid ${themeCssVariables.border.color.medium}`
+      : 'none'};
+  border-radius: ${({ variant, isEditable }) =>
+    variant === 'record-page' || (variant === 'side-column' && isEditable)
+      ? themeCssVariables.border.radius.md
+      : '0'};
   box-sizing: border-box;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
 
-  ${({ theme, variant }) => {
-    if (variant === 'dashboard') {
-      return css`
-        padding: ${theme.spacing(2)};
-      `;
-    }
+  height: 100%;
 
-    if (variant === 'record-page') {
-      return css`
-        border: 1px solid ${theme.border.color.medium};
-        border-radius: ${theme.border.radius.md};
-        padding: ${theme.spacing(2)};
-      `;
+  margin-top: ${({ hasHeader }) =>
+    hasHeader ? themeCssVariables.spacing[2] : '0'};
+
+  overflow: hidden;
+
+  padding: ${({ variant, isEditable }) => {
+    if (variant === 'dashboard') return themeCssVariables.spacing[2];
+    if (
+      variant === 'record-page' ||
+      (variant === 'side-column' && isEditable)
+    ) {
+      return themeCssVariables.spacing[2];
     }
-  }}
+    return '0';
+  }};
+
+  &:empty {
+    margin-top: ${({ hasHeader, variant, isEditable }) => {
+      if (hasHeader && variant === 'side-column' && !isEditable) return '0';
+      return hasHeader ? themeCssVariables.spacing[2] : '0';
+    }};
+  }
 `;
 
-export { StyledWidgetCardContent as WidgetCardContent };
+type WidgetCardContentProps = {
+  variant: WidgetCardVariant;
+  hasHeader: boolean;
+  isEditable: boolean;
+  className?: string;
+  children?: React.ReactNode;
+};
+
+export const WidgetCardContent = ({
+  variant,
+  hasHeader,
+  isEditable,
+  className,
+  children,
+}: WidgetCardContentProps) => {
+  const handleContentClick = (event: React.MouseEvent) => {
+    if (!isEditable) {
+      return;
+    }
+
+    event.stopPropagation();
+  };
+
+  return (
+    <StyledWidgetCardContent
+      variant={variant}
+      hasHeader={hasHeader}
+      isEditable={isEditable}
+      className={className}
+      onClick={handleContentClick}
+    >
+      {children}
+    </StyledWidgetCardContent>
+  );
+};

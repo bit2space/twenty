@@ -1,4 +1,5 @@
 import { type FieldMetadataTypesToTestForCreateInputValidation } from 'test/integration/graphql/suites/inputs-validation/types/field-metadata-type-to-test';
+import { joinColumnNameForManyToOneMorphRelationField1 } from 'test/integration/graphql/suites/inputs-validation/utils/setup-test-objects-with-all-field-types.util';
 import { FieldMetadataType } from 'twenty-shared/types';
 
 export const failingCreateInputByFieldMetadataType: {
@@ -9,21 +10,6 @@ export const failingCreateInputByFieldMetadataType: {
   [FieldMetadataType.TEXT]: [
     {
       input: {
-        textField: {},
-      },
-    },
-    {
-      input: {
-        textField: [],
-      },
-    },
-    {
-      input: {
-        textField: true,
-      },
-    },
-    {
-      input: {
         textField: 1,
       },
     },
@@ -31,46 +17,11 @@ export const failingCreateInputByFieldMetadataType: {
   [FieldMetadataType.NUMBER]: [
     {
       input: {
-        numberField: {},
-      },
-    },
-    {
-      input: {
-        numberField: [],
-      },
-    },
-    {
-      input: {
-        numberField: true,
-      },
-    },
-    {
-      input: {
         numberField: 'string',
       },
     },
   ],
   [FieldMetadataType.UUID]: [
-    {
-      input: {
-        uuidField: {},
-      },
-    },
-    {
-      input: {
-        uuidField: [],
-      },
-    },
-    {
-      input: {
-        uuidField: true,
-      },
-    },
-    {
-      input: {
-        uuidField: 1,
-      },
-    },
     {
       input: {
         uuidField: 'non-uuid',
@@ -85,46 +36,11 @@ export const failingCreateInputByFieldMetadataType: {
     },
     {
       input: {
-        selectField: {},
-      },
-    },
-    {
-      input: {
-        selectField: [],
-      },
-    },
-    {
-      input: {
-        selectField: true,
-      },
-    },
-    {
-      input: {
         selectField: 1,
       },
     },
   ],
   [FieldMetadataType.RELATION]: [
-    {
-      input: {
-        manyToOneRelationFieldId: {},
-      },
-    },
-    {
-      input: {
-        manyToOneRelationFieldId: [],
-      },
-    },
-    {
-      input: {
-        manyToOneRelationFieldId: true,
-      },
-    },
-    {
-      input: {
-        manyToOneRelationFieldId: 1,
-      },
-    },
     {
       input: {
         manyToOneRelationFieldId: 'non-uuid',
@@ -160,30 +76,37 @@ export const failingCreateInputByFieldMetadataType: {
       },
     },
   ],
+  [FieldMetadataType.MORPH_RELATION]: [
+    {
+      input: {
+        [joinColumnNameForManyToOneMorphRelationField1]: 'not-a-morph-relation',
+      },
+    },
+    {
+      input: {
+        [joinColumnNameForManyToOneMorphRelationField1]: {},
+      },
+    },
+    {
+      input: {
+        [joinColumnNameForManyToOneMorphRelationField1]: [],
+      },
+    },
+    {
+      input: {
+        [joinColumnNameForManyToOneMorphRelationField1]: true,
+      },
+    },
+    {
+      input: {
+        [joinColumnNameForManyToOneMorphRelationField1]: 1,
+      },
+    },
+  ],
   [FieldMetadataType.RATING]: [
     {
       input: {
         ratingField: 'not-a-rating',
-      },
-    },
-    {
-      input: {
-        ratingField: {},
-      },
-    },
-    {
-      input: {
-        ratingField: [],
-      },
-    },
-    {
-      input: {
-        ratingField: true,
-      },
-    },
-    {
-      input: {
-        ratingField: 1,
       },
     },
   ],
@@ -193,21 +116,6 @@ export const failingCreateInputByFieldMetadataType: {
         multiSelectField: 'not-a-select-option',
       },
     },
-    {
-      input: {
-        multiSelectField: {},
-      },
-    },
-    {
-      input: {
-        multiSelectField: true,
-      },
-    },
-    {
-      input: {
-        multiSelectField: 1,
-      },
-    },
   ],
   [FieldMetadataType.DATE]: [
     {
@@ -215,85 +123,18 @@ export const failingCreateInputByFieldMetadataType: {
         dateField: 'malformed-date',
       },
     },
-    {
-      input: {
-        dateField: {},
-      },
-    },
-    {
-      input: {
-        dateField: [],
-      },
-    },
-    {
-      input: {
-        dateField: true,
-      },
-    },
-    {
-      input: {
-        dateField: 1,
-      },
-    },
   ],
   [FieldMetadataType.DATE_TIME]: [
     {
       input: {
-        dateTimeField: 'malformed-date',
-      },
-    },
-    {
-      input: {
-        dateTimeField: {},
-      },
-    },
-    {
-      input: {
-        dateTimeField: [],
-      },
-    },
-    {
-      input: {
-        dateTimeField: true,
-      },
-    },
-    {
-      input: {
-        dateTimeField: 1,
+        dateTimeField: 'malformed-date-time',
       },
     },
   ],
   [FieldMetadataType.BOOLEAN]: [
     {
       input: {
-        booleanField: null,
-      },
-    },
-    {
-      input: {
-        booleanField: {},
-      },
-    },
-    {
-      input: {
-        booleanField: [],
-      },
-    },
-    {
-      input: {
-        booleanField: 'string',
-      },
-    },
-    {
-      input: {
         booleanField: 1,
-      },
-    },
-  ],
-  [FieldMetadataType.RICH_TEXT]: [
-    {
-      input: {
-        richTextField: 'test',
       },
     },
   ],
@@ -315,6 +156,50 @@ export const failingCreateInputByFieldMetadataType: {
     {
       input: {
         emailsField: 'not-an-email',
+      },
+    },
+    {
+      input: {
+        emailsField: {
+          primaryEmail: 'not-an-email',
+        },
+      },
+    },
+    {
+      input: {
+        emailsField: {
+          additionalEmails: 'not-an-email',
+        },
+      },
+    },
+    {
+      input: {
+        emailsField: {
+          additionalEmails: ['not-an-email'],
+        },
+      },
+    },
+    {
+      input: {
+        emailsField: {
+          primaryEmail: 'email@email.com',
+          additionalEmails: ['not-an-email'],
+        },
+      },
+    },
+    {
+      input: {
+        emailsField: {
+          primaryEmail: 'not-an-email',
+          additionalEmails: ['additional@email.com'],
+        },
+      },
+    },
+    {
+      input: {
+        emailsField: {
+          additionalEmails: ['not-an-email', 'additional@email.com'],
+        },
       },
     },
   ],
@@ -339,10 +224,80 @@ export const failingCreateInputByFieldMetadataType: {
       },
     },
   ],
-  [FieldMetadataType.RICH_TEXT_V2]: [
+  [FieldMetadataType.RICH_TEXT]: [
     {
       input: {
-        richTextV2Field: 'not-a-rich-text',
+        richTextField: 'not-a-rich-text',
+      },
+    },
+    {
+      input: {
+        richTextField: {
+          blocknote: 'invalid-json',
+        },
+      },
+    },
+    {
+      input: {
+        richTextField: {
+          blocknote:
+            '[{"id":"1","type":"paragraph","props":{},"content":[{"type":"text","text":"test"},"children":[]}]',
+        },
+      },
+    },
+  ],
+  [FieldMetadataType.POSITION]: [
+    {
+      input: {
+        position: 'not-a-position',
+      },
+    },
+    {
+      input: {
+        position: NaN,
+      },
+    },
+  ],
+  [FieldMetadataType.FILES]: [
+    {
+      input: {
+        filesField: 'not-an-addFiles-property',
+      },
+    },
+    {
+      input: {
+        filesField: { addFiles: [{ invalidField: 'test' }] },
+      },
+    },
+    {
+      input: {
+        filesField: {
+          addFiles: [{ fileId: 'not-a-uuid', label: 'Document.pdf' }],
+        },
+      },
+    },
+    {
+      input: {
+        filesField: [
+          {
+            addFiles: [
+              { fileId: '550e8400-e29b-41d4-a716-446655440000', label: 12345 },
+            ],
+          },
+        ],
+      },
+    },
+    {
+      input: {
+        filesField: {
+          addFiles: [
+            {
+              fileId: '550e8400-e29b-41d4-a716-446655440000',
+              label: 'Document.pdf',
+              extension: 'not-allowed-in-input',
+            },
+          ],
+        },
       },
     },
   ],

@@ -1,4 +1,4 @@
-/* eslint-disable no-console */
+/* oxlint-disable no-console */
 /**
  * Test script for Fireflies webhook against local Twenty instance
  *
@@ -40,11 +40,13 @@ const FIREFLIES_WEBHOOK_SECRET = process.env.FIREFLIES_WEBHOOK_SECRET || 'test_s
 const _FIREFLIES_API_KEY = process.env.FIREFLIES_API_KEY || 'test_api_key';
 
 // Test meeting data (simulating Fireflies API response)
-const TEST_MEETING_ID = 'test-meeting-local-' + Date.now();
+const TEST_MEETING_ID = process.env.MEETING_ID || 'test-meeting-local-' + Date.now();
+const CLIENT_REFERENCE_ID = process.env.CLIENT_REFERENCE_ID;
+
 const TEST_WEBHOOK_PAYLOAD = {
   meetingId: TEST_MEETING_ID,
   eventType: 'Transcription completed',
-  clientReferenceId: 'test-client-ref',
+  ...(CLIENT_REFERENCE_ID ? { clientReferenceId: CLIENT_REFERENCE_ID } : {}),
 };
 
 // Mock Fireflies GraphQL API response
@@ -119,11 +121,17 @@ const main = async () => {
   }
 
   // Prepare webhook payload
-  const body = JSON.stringify(TEST_WEBHOOK_PAYLOAD);
-  const signature = generateHMACSignature(body, FIREFLIES_WEBHOOK_SECRET);
+  const unsignedBody = JSON.stringify(TEST_WEBHOOK_PAYLOAD);
+  const signature = generateHMACSignature(unsignedBody, FIREFLIES_WEBHOOK_SECRET);
+  const payloadWithSignature = {
+    ...TEST_WEBHOOK_PAYLOAD,
+    'x-hub-signature': signature,
+  };
+  const body = JSON.stringify(payloadWithSignature);
 
   console.log('📤 Sending webhook payload:');
-  console.log(JSON.stringify(TEST_WEBHOOK_PAYLOAD, null, 2));
+  console.log(JSON.stringify(payloadWithSignature, null, 2));
+  console.log('\nℹ️  Signature is sent both as header (preferred) and in payload as fallback (headers are not passed to serverless functions)\n');
   console.log(`\n🔐 HMAC Signature: ${signature}\n`);
 
   // Check if server is reachable
@@ -177,6 +185,31 @@ const main = async () => {
     console.log(`📥 Response Status: ${response.status} ${response.statusText}`);
     console.log('📥 Response Body:');
     console.log(JSON.stringify(responseData, null, 2));
+
+  // Report whether the server appears to have received the header signature
+  const debugMessages = Array.isArray((responseData as any)?.debug)
+    ? ((responseData as any).debug as string[])
+    : [];
+  const headerMissing =
+    debugMessages.some((msg) => msg.includes('headerKeys=none')) ||
+    debugMessages.some((msg) => msg.includes('providedSignature=undefined'));
+  const signatureErrors =
+    Array.isArray((responseData as any)?.errors) &&
+    ((responseData as any).errors as unknown[]).some(
+      (err) => typeof err === 'string' && err.toLowerCase().includes('signature'),
+    );
+
+  if (headerMissing) {
+    console.log(
+      '\n⚠️  Server did not report any received headers; it may be using payload fallback for signature verification.',
+    );
+  } else {
+    console.log('\n✅ Server reported headers present (header-based signature should be used).');
+  }
+
+  if (signatureErrors) {
+    console.log('⚠️  Signature was rejected by the server (check webhook secret / payload).');
+  }
 
     if (response.ok) {
       console.log('\n✅ Webhook test completed successfully!');

@@ -1,4 +1,5 @@
 import {
+  FeatureFlagKey,
   FieldMetadataType,
   type ObjectsPermissions,
 } from 'twenty-shared/types';
@@ -14,7 +15,6 @@ import {
 import { type FeatureFlagMap } from 'src/engine/core-modules/feature-flag/interfaces/feature-flag-map.interface';
 import { type WorkspaceInternalContext } from 'src/engine/twenty-orm/interfaces/workspace-internal-context.interface';
 
-import { FeatureFlagKey } from 'src/engine/core-modules/feature-flag/enums/feature-flag-key.enum';
 import { type FlatFieldMetadata } from 'src/engine/metadata-modules/flat-field-metadata/types/flat-field-metadata.type';
 import { type WorkspaceEntityManager } from 'src/engine/twenty-orm/entity-manager/workspace-entity-manager';
 import { WorkspaceRepository } from 'src/engine/twenty-orm/repository/workspace.repository';
@@ -59,6 +59,9 @@ describe('WorkspaceRepository', () => {
       decrement: jest.fn(),
       preload: jest.fn(),
       clear: jest.fn(),
+      get internalContext() {
+        return mockInternalContext;
+      },
     } as unknown as jest.Mocked<WorkspaceEntityManager>;
 
     const mockFieldMetadata: FlatFieldMetadata = {
@@ -78,15 +81,14 @@ describe('WorkspaceRepository', () => {
       icon: 'IconKey',
       workspaceId: 'test-workspace-id',
       universalIdentifier: 'id-field-universal-id',
-      createdAt: new Date(),
-      updatedAt: new Date(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
       defaultValue: null,
       options: null,
       settings: null,
       morphId: null,
-      standardId: null,
       standardOverrides: null,
-      applicationId: null,
+      applicationId: 'application-id',
       relationTargetFieldMetadataId: null,
       relationTargetObjectMetadataId: null,
       calendarViewIds: [],
@@ -94,29 +96,54 @@ describe('WorkspaceRepository', () => {
       kanbanAggregateOperationViewIds: [],
       viewFieldIds: [],
       mainGroupByFieldMetadataViewIds: [],
+      applicationUniversalIdentifier: 'application-id',
+      objectMetadataUniversalIdentifier: 'test-metadata-id',
+      relationTargetObjectMetadataUniversalIdentifier: null,
+      relationTargetFieldMetadataUniversalIdentifier: null,
+      viewFilterUniversalIdentifiers: [],
+      viewFieldUniversalIdentifiers: [],
+      kanbanAggregateOperationViewUniversalIdentifiers: [],
+      calendarViewUniversalIdentifiers: [],
+      mainGroupByFieldMetadataViewUniversalIdentifiers: [],
+      viewSortIds: [],
+      viewSortUniversalIdentifiers: [],
+      universalSettings: null,
     };
 
     mockInternalContext = {
       workspaceId: 'test-workspace-id',
       flatObjectMetadataMaps: {
-        byId: {},
-        idByUniversalIdentifier: {},
+        byUniversalIdentifier: {},
+        universalIdentifierById: {},
         universalIdentifiersByApplicationId: {},
       },
       flatFieldMetadataMaps: {
-        byId: {
-          'test-field-id': mockFieldMetadata,
+        byUniversalIdentifier: {
+          'id-field-universal-id': mockFieldMetadata,
         },
-        idByUniversalIdentifier: {},
+        universalIdentifierById: {
+          'test-field-id': 'id-field-universal-id',
+        },
         universalIdentifiersByApplicationId: {},
       },
       flatIndexMaps: {
-        byId: {},
-        idByUniversalIdentifier: {},
+        byUniversalIdentifier: {},
+        universalIdentifierById: {},
+        universalIdentifiersByApplicationId: {},
+      },
+      flatRowLevelPermissionPredicateMaps: {
+        byUniversalIdentifier: {},
+        universalIdentifierById: {},
+        universalIdentifiersByApplicationId: {},
+      },
+      flatRowLevelPermissionPredicateGroupMaps: {
+        byUniversalIdentifier: {},
+        universalIdentifierById: {},
         universalIdentifiersByApplicationId: {},
       },
       objectIdByNameSingular: {},
-      featureFlagsMap: {},
+      featureFlagsMap: {} as FeatureFlagMap,
+      userWorkspaceRoleMap: {},
       eventEmitterService: {} as unknown,
     } as unknown as WorkspaceInternalContext;
 
@@ -131,12 +158,13 @@ describe('WorkspaceRepository', () => {
         canSoftDeleteObjectRecords: false,
         canDestroyObjectRecords: false,
         restrictedFields: {},
+        rowLevelPermissionPredicates: [],
+        rowLevelPermissionPredicateGroups: [],
       },
     };
     mockQueryRunner = {} as QueryRunner;
 
     repository = new WorkspaceRepository(
-      mockInternalContext,
       'test-entity',
       mockEntityManager,
       mockFeatureFlagMap,
@@ -152,7 +180,7 @@ describe('WorkspaceRepository', () => {
         id: 'test-metadata-id',
         nameSingular: 'test-entity',
         namePlural: 'test-entities',
-        fieldMetadataIds: ['test-field-id'],
+        fieldIds: ['test-field-id'],
         fieldIdByName: {
           id: 'test-field-id',
         },

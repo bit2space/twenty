@@ -1,25 +1,39 @@
 import { useUserTimezone } from '@/ui/input/components/internal/date/hooks/useUserTimezone';
-import styled from '@emotion/styled';
+import { getTimezoneAbbreviationForZonedDateTime } from '@/ui/input/components/internal/date/utils/getTimeZoneAbbreviationForZonedDateTime';
+import { styled } from '@linaria/react';
+import { isNonEmptyString } from '@sniptt/guards';
+import { type Temporal } from 'temporal-polyfill';
+import { themeCssVariables } from 'twenty-ui/theme-constants';
 
 const StyledTimezoneAbbreviation = styled.span<{ hasError?: boolean }>`
   background: transparent;
-  color: ${({ theme }) => theme.font.color.tertiary};
+  color: ${themeCssVariables.font.color.tertiary};
 
-  font-size: ${({ theme }) => theme.font.size.sm};
-  width: fit-content;
-
+  font-size: ${themeCssVariables.font.size.sm};
   user-select: none;
 
-  line-height: 0.5px;
+  width: fit-content;
 `;
 
-export const TimeZoneAbbreviation = ({ date }: { date: Date }) => {
-  const { isSystemTimezone, getTimezoneAbbreviationForPointInTime } =
-    useUserTimezone();
+export const TimeZoneAbbreviation = ({
+  instant,
+  timeZone,
+}: {
+  instant: Temporal.Instant;
+  timeZone?: string;
+}) => {
+  const { isSystemTimezone, userTimezone, systemTimeZone } = useUserTimezone();
 
-  const shouldShowTimezoneAbbreviation = !isSystemTimezone;
-  const timezoneSuffix = !isSystemTimezone
-    ? ` ${getTimezoneAbbreviationForPointInTime(date ?? new Date())}`
+  const zonedDate = instant.toZonedDateTimeISO(timeZone ?? userTimezone);
+
+  const shouldUseParamsTimeZone =
+    isNonEmptyString(timeZone) && systemTimeZone !== timeZone;
+
+  const shouldShowTimezoneAbbreviation =
+    !isSystemTimezone || shouldUseParamsTimeZone;
+
+  const timezoneSuffix = shouldShowTimezoneAbbreviation
+    ? ` ${getTimezoneAbbreviationForZonedDateTime(zonedDate)}`
     : '';
 
   if (!shouldShowTimezoneAbbreviation) {

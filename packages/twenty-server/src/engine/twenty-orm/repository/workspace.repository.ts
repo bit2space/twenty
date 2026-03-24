@@ -22,7 +22,7 @@ import { type UpsertOptions } from 'typeorm/repository/UpsertOptions';
 import { type FeatureFlagMap } from 'src/engine/core-modules/feature-flag/interfaces/feature-flag-map.interface';
 import { type WorkspaceInternalContext } from 'src/engine/twenty-orm/interfaces/workspace-internal-context.interface';
 
-import { type AuthContext } from 'src/engine/core-modules/auth/types/auth-context.type';
+import { type WorkspaceAuthContext } from 'src/engine/core-modules/auth/types/workspace-auth-context.type';
 import {
   PermissionsException,
   PermissionsExceptionCode,
@@ -37,29 +37,26 @@ import { getObjectMetadataFromEntityTarget } from 'src/engine/twenty-orm/utils/g
 export class WorkspaceRepository<
   T extends ObjectLiteral,
 > extends Repository<T> {
-  private readonly _internalContext: WorkspaceInternalContext;
   private shouldBypassPermissionChecks: boolean;
   private featureFlagMap: FeatureFlagMap;
   public readonly objectRecordsPermissions?: ObjectsPermissions;
-  private authContext?: AuthContext;
+  private authContext?: WorkspaceAuthContext;
   declare manager: WorkspaceEntityManager;
 
   get internalContext(): WorkspaceInternalContext {
-    return this._internalContext;
+    return this.manager.internalContext;
   }
 
   constructor(
-    internalContext: WorkspaceInternalContext,
     target: EntityTarget<T>,
     manager: WorkspaceEntityManager,
     featureFlagMap: FeatureFlagMap,
     queryRunner?: QueryRunner,
     objectRecordsPermissions?: ObjectsPermissions,
     shouldBypassPermissionChecks = false,
-    authContext?: AuthContext,
+    authContext?: WorkspaceAuthContext,
   ) {
     super(target, manager, queryRunner);
-    this._internalContext = internalContext;
     this.featureFlagMap = featureFlagMap;
     this.objectRecordsPermissions = objectRecordsPermissions;
     this.shouldBypassPermissionChecks = shouldBypassPermissionChecks;
@@ -83,9 +80,9 @@ export class WorkspaceRepository<
     return new WorkspaceSelectQueryBuilder(
       queryBuilder,
       this.objectRecordsPermissions,
-      this._internalContext,
+      this.internalContext,
       this.shouldBypassPermissionChecks,
-      this.authContext ?? {},
+      this.authContext ?? ({} as WorkspaceAuthContext),
       this.featureFlagMap,
     );
   }
@@ -948,10 +945,7 @@ export class WorkspaceRepository<
    * PRIVATE METHODS
    */
   private async getObjectMetadataFromTarget() {
-    return getObjectMetadataFromEntityTarget(
-      this.target,
-      this._internalContext,
-    );
+    return getObjectMetadataFromEntityTarget(this.target, this.internalContext);
   }
 
   private async transformOptions<
@@ -978,7 +972,7 @@ export class WorkspaceRepository<
     return formatData(
       data,
       objectMetadata,
-      this._internalContext.flatFieldMetadataMaps,
+      this.internalContext.flatFieldMetadataMaps,
     ) as T;
   }
 }

@@ -1,6 +1,6 @@
 import { useApolloCoreClient } from '@/object-metadata/hooks/useApolloCoreClient';
 import { type FieldMetadataItem } from '@/object-metadata/types/FieldMetadataItem';
-import { type ObjectMetadataItem } from '@/object-metadata/types/ObjectMetadataItem';
+import { type EnrichedObjectMetadataItem } from '@/object-metadata/types/EnrichedObjectMetadataItem';
 import { EMPTY_QUERY } from '@/object-record/constants/EmptyQuery';
 import { useObjectPermissionsForObject } from '@/object-record/hooks/useObjectPermissionsForObject';
 import { generateGroupByAggregateQuery } from '@/object-record/record-aggregate/utils/generateGroupByAggregateQuery';
@@ -11,8 +11,9 @@ import { currentRecordFiltersComponentState } from '@/object-record/record-filte
 import { useAggregateGqlFieldsFromRecordIndexGroupAggregates } from '@/object-record/record-index/hooks/useAggregateGqlFieldsFromRecordIndexGroupAggregates';
 import { type ExtendedAggregateOperations } from '@/object-record/record-table/types/ExtendedAggregateOperations';
 import { buildGroupByFieldObject } from '@/page-layout/widgets/graph/utils/buildGroupByFieldObject';
-import { useRecoilComponentValue } from '@/ui/utilities/state/component-state/hooks/useRecoilComponentValue';
-import { useQuery } from '@apollo/client';
+import { useAtomComponentStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomComponentStateValue';
+import { useQuery } from '@apollo/client/react';
+import { useMemo } from 'react';
 import { type Nullable } from 'twenty-shared/types';
 import {
   computeRecordGqlOperationFilter,
@@ -28,18 +29,18 @@ export const useRecordIndexGroupsAggregatesGroupBy = ({
   recordIndexGroupAggregateOperation,
 }: {
   skip?: boolean;
-  objectMetadataItem: ObjectMetadataItem;
+  objectMetadataItem: EnrichedObjectMetadataItem;
   groupByFieldMetadataItem: FieldMetadataItem;
   recordIndexGroupAggregateFieldMetadataItem: Nullable<FieldMetadataItem>;
   recordIndexGroupAggregateOperation: ExtendedAggregateOperations;
 }) => {
   const apolloCoreClient = useApolloCoreClient();
 
-  const currentRecordFilterGroups = useRecoilComponentValue(
+  const currentRecordFilterGroups = useAtomComponentStateValue(
     currentRecordFilterGroupsComponentState,
   );
 
-  const currentRecordFilters = useRecoilComponentValue(
+  const currentRecordFilters = useAtomComponentStateValue(
     currentRecordFiltersComponentState,
   );
 
@@ -60,14 +61,18 @@ export const useRecordIndexGroupsAggregatesGroupBy = ({
       recordIndexGroupAggregateOperation,
     });
 
-  const groupByAggregateQuery = isDefined(recordAggregateGqlField)
-    ? generateGroupByAggregateQuery({
-        aggregateOperationGqlFields: [recordAggregateGqlField],
-        objectMetadataItem,
-      })
-    : EMPTY_QUERY;
+  const groupByAggregateQuery = useMemo(
+    () =>
+      isDefined(recordAggregateGqlField)
+        ? generateGroupByAggregateQuery({
+            aggregateOperationGqlFields: [recordAggregateGqlField],
+            objectMetadataItem,
+          })
+        : EMPTY_QUERY,
+    [recordAggregateGqlField, objectMetadataItem],
+  );
 
-  const anyFieldFilterValue = useRecoilComponentValue(
+  const anyFieldFilterValue = useAtomComponentStateValue(
     anyFieldFilterValueComponentState,
   );
 

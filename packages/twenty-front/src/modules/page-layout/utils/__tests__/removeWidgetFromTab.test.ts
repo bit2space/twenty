@@ -1,16 +1,17 @@
+import { type PageLayoutTab } from '@/page-layout/types/PageLayoutTab';
+import { removeWidgetFromTab } from '@/page-layout/utils/removeWidgetFromTab';
 import {
   AggregateOperations,
   GraphOrderBy,
-  GraphType,
+  WidgetConfigurationType,
   WidgetType,
 } from '~/generated-metadata/graphql';
-import { type PageLayoutTab } from '../../types/PageLayoutTab';
-import { removeWidgetFromTab } from '../removeWidgetFromTab';
 
 describe('removeWidgetFromTab', () => {
   const mockTabs: PageLayoutTab[] = [
     {
       id: 'tab-1',
+      applicationId: '',
       title: 'Tab 1',
       position: 0,
       pageLayoutId: 'layout-1',
@@ -22,13 +23,14 @@ describe('removeWidgetFromTab', () => {
           title: 'Widget 1',
           type: WidgetType.GRAPH,
           configuration: {
-            graphType: GraphType.AGGREGATE,
+            configurationType: WidgetConfigurationType.AGGREGATE_CHART,
             aggregateOperation: AggregateOperations.COUNT,
             aggregateFieldMetadataId: 'id',
             displayDataLabel: false,
           },
           gridPosition: { row: 0, column: 0, rowSpan: 2, columnSpan: 2 },
           objectMetadataId: null,
+          isOverridden: false,
           createdAt: '2024-01-01T00:00:00Z',
           updatedAt: '2024-01-01T00:00:00Z',
           deletedAt: null,
@@ -40,7 +42,7 @@ describe('removeWidgetFromTab', () => {
           title: 'Widget 2',
           type: WidgetType.GRAPH,
           configuration: {
-            graphType: GraphType.PIE,
+            configurationType: WidgetConfigurationType.PIE_CHART,
             aggregateOperation: AggregateOperations.COUNT,
             aggregateFieldMetadataId: 'id',
             groupByFieldMetadataId: 'status',
@@ -49,17 +51,20 @@ describe('removeWidgetFromTab', () => {
           },
           gridPosition: { row: 2, column: 0, rowSpan: 2, columnSpan: 2 },
           objectMetadataId: null,
+          isOverridden: false,
           createdAt: '2024-01-01T00:00:00Z',
           updatedAt: '2024-01-01T00:00:00Z',
           deletedAt: null,
         },
       ],
+      isOverridden: false,
       createdAt: '2024-01-01T00:00:00Z',
       updatedAt: '2024-01-01T00:00:00Z',
       deletedAt: null,
     },
     {
       id: 'tab-2',
+      applicationId: '',
       title: 'Tab 2',
       position: 1,
       pageLayoutId: 'layout-1',
@@ -71,15 +76,18 @@ describe('removeWidgetFromTab', () => {
           title: 'Widget 3',
           type: WidgetType.IFRAME,
           configuration: {
+            configurationType: WidgetConfigurationType.IFRAME,
             url: 'https://example.com',
           },
           gridPosition: { row: 0, column: 0, rowSpan: 2, columnSpan: 2 },
           objectMetadataId: null,
+          isOverridden: false,
           createdAt: '2024-01-01T00:00:00Z',
           updatedAt: '2024-01-01T00:00:00Z',
           deletedAt: null,
         },
       ],
+      isOverridden: false,
       createdAt: '2024-01-01T00:00:00Z',
       updatedAt: '2024-01-01T00:00:00Z',
       deletedAt: null,

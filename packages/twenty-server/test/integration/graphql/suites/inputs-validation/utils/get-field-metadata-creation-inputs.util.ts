@@ -3,8 +3,10 @@ import {
   type FieldMetadataTypesToTestForFilterInputValidation,
 } from 'test/integration/graphql/suites/inputs-validation/types/field-metadata-type-to-test';
 import {
+  type FieldMetadataSettingsMapping,
   FieldMetadataType,
   RelationType,
+  type FieldMetadataMultiItemSettings,
   type RelationCreationPayload,
 } from 'twenty-shared/types';
 
@@ -17,29 +19,28 @@ type FieldMetadataCreationInput = {
   objectMetadataId: string;
   options?: FieldMetadataComplexOption[];
   relationCreationPayload?: RelationCreationPayload;
+  morphRelationsCreationPayload?: RelationCreationPayload[];
+  settings?:
+    | FieldMetadataMultiItemSettings
+    | FieldMetadataSettingsMapping['FILES'];
 };
 
 export const getFieldMetadataCreationInputs = (
   objectMetadataId: string,
-  targetObjectMetadataId: string,
+  targetObjectMetadata1Id: string,
+  targetObjectMetadata2Id: string,
 ) => {
   const fieldInputsMap: {
     [K in Exclude<
       | FieldMetadataTypesToTestForCreateInputValidation
       | FieldMetadataTypesToTestForFilterInputValidation,
-      'ACTOR'
+      'ACTOR' | 'POSITION'
     >]: FieldMetadataCreationInput | FieldMetadataCreationInput[];
   } = {
     [FieldMetadataType.RICH_TEXT]: {
       name: 'richTextField',
       label: 'richTextField',
       type: FieldMetadataType.RICH_TEXT,
-      objectMetadataId,
-    },
-    [FieldMetadataType.RICH_TEXT_V2]: {
-      name: 'richTextV2Field',
-      label: 'richTextV2Field',
-      type: FieldMetadataType.RICH_TEXT_V2,
       objectMetadataId,
     },
     [FieldMetadataType.TEXT]: {
@@ -157,6 +158,15 @@ export const getFieldMetadataCreationInputs = (
       type: FieldMetadataType.ARRAY,
       objectMetadataId,
     },
+    [FieldMetadataType.FILES]: {
+      name: 'filesField',
+      label: 'filesField',
+      type: FieldMetadataType.FILES,
+      objectMetadataId,
+      settings: {
+        maxNumberOfValues: 2,
+      },
+    },
     [FieldMetadataType.UUID]: {
       name: 'uuidField',
       label: 'uuidField',
@@ -170,7 +180,7 @@ export const getFieldMetadataCreationInputs = (
         type: FieldMetadataType.RELATION,
         objectMetadataId,
         relationCreationPayload: {
-          targetObjectMetadataId: targetObjectMetadataId,
+          targetObjectMetadataId: targetObjectMetadata1Id,
           targetFieldLabel: 'oneToManyTargetRelationField',
           targetFieldIcon: 'IconListOpportunity',
           type: RelationType.MANY_TO_ONE,
@@ -182,12 +192,46 @@ export const getFieldMetadataCreationInputs = (
         type: FieldMetadataType.RELATION,
         objectMetadataId,
         relationCreationPayload: {
-          targetObjectMetadataId: targetObjectMetadataId,
+          targetObjectMetadataId: targetObjectMetadata1Id,
           targetFieldLabel: 'manyToOneTargetRelationField',
           targetFieldIcon: 'IconListOpportunity',
           type: RelationType.ONE_TO_MANY,
         },
       },
+    ],
+    [FieldMetadataType.MORPH_RELATION]: [
+      {
+        name: 'manyToOneMorphRelationField',
+        label: 'manyToOneMorphRelationField',
+        type: FieldMetadataType.MORPH_RELATION,
+        objectMetadataId,
+        morphRelationsCreationPayload: [
+          {
+            targetObjectMetadataId: targetObjectMetadata1Id,
+            targetFieldLabel: 'oneToManyTarget1MorphRelationField',
+            targetFieldIcon: 'IconListOpportunity',
+            type: RelationType.MANY_TO_ONE,
+          },
+          {
+            targetObjectMetadataId: targetObjectMetadata2Id,
+            targetFieldLabel: 'oneToManyTarget2MorphRelationField',
+            targetFieldIcon: 'IconListOpportunity',
+            type: RelationType.MANY_TO_ONE,
+          },
+        ],
+      },
+      // {
+      //   name: 'oneToManyRelationField',
+      //   label: 'oneToManyRelationField',
+      //   type: FieldMetadataType.RELATION,
+      //   objectMetadataId,
+      //   relationCreationPayload: {
+      //     targetObjectMetadataId: targetObjectMetadata1Id,
+      //     targetFieldLabel: 'manyToOneTargetRelationField',
+      //     targetFieldIcon: 'IconListOpportunity',
+      //     type: RelationType.ONE_TO_MANY,
+      //   },
+      // },
     ],
   };
 

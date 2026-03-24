@@ -5,8 +5,9 @@ import {
 } from '@nestjs/common';
 import { GqlExecutionContext } from '@nestjs/graphql';
 
+import { ViewVisibility } from 'twenty-shared/types';
+
 import { ViewAccessService } from 'src/engine/metadata-modules/view-permissions/services/view-access.service';
-import { ViewVisibility } from 'src/engine/metadata-modules/view/enums/view-visibility.enum';
 
 @Injectable()
 export class CreateViewPermissionGuard implements CanActivate {
@@ -34,6 +35,7 @@ export class CreateViewPermissionGuard implements CanActivate {
       visibility,
       request.userWorkspaceId,
       request.workspace.id,
+      request.apiKey?.id,
     );
   }
 }

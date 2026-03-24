@@ -1,11 +1,12 @@
-import { type TabLayouts } from '@/page-layout/types/tab-layouts';
+import { isDefined } from 'twenty-shared/utils';
+import { type TabLayouts } from '@/page-layout/types/TabLayouts';
 
 export const removeWidgetLayoutFromTab = (
   allTabLayouts: TabLayouts,
   tabId: string,
   widgetId: string,
 ): TabLayouts => {
-  if (!allTabLayouts[tabId]) {
+  if (!isDefined(allTabLayouts[tabId])) {
     return allTabLayouts;
   }
 

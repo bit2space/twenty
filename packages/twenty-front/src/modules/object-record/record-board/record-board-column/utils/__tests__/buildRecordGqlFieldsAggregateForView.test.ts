@@ -1,5 +1,5 @@
 import { type FieldMetadataItem } from '@/object-metadata/types/FieldMetadataItem';
-import { type ObjectMetadataItem } from '@/object-metadata/types/ObjectMetadataItem';
+import { type EnrichedObjectMetadataItem } from '@/object-metadata/types/EnrichedObjectMetadataItem';
 import { buildRecordGqlFieldsAggregateForView } from '@/object-record/record-board/record-board-column/utils/buildRecordGqlFieldsAggregateForView';
 
 import { AggregateOperations } from '@/object-record/record-table/constants/AggregateOperations';
@@ -11,23 +11,27 @@ describe('buildRecordGqlFieldsAggregateForView', () => {
   const fields = [
     {
       id: MOCK_FIELD_ID,
+      universalIdentifier: MOCK_FIELD_ID,
       name: 'amount',
       type: FieldMetadataType.NUMBER,
     } as FieldMetadataItem,
     {
       id: '06b33746-5293-4d07-9f7f-ebf5ad396064',
+      universalIdentifier: '06b33746-5293-4d07-9f7f-ebf5ad396064',
       name: 'name',
       type: FieldMetadataType.TEXT,
     } as FieldMetadataItem,
     {
       id: 'e46b9ba4-144b-4d10-a092-03a7521c8aa0',
+      universalIdentifier: 'e46b9ba4-144b-4d10-a092-03a7521c8aa0',
       name: 'createdAt',
       type: FieldMetadataType.DATE_TIME,
     } as FieldMetadataItem,
   ];
 
-  const mockObjectMetadata: ObjectMetadataItem = {
+  const mockObjectMetadata: EnrichedObjectMetadataItem = {
     id: '123',
+    universalIdentifier: '123',
     nameSingular: 'opportunity',
     namePlural: 'opportunities',
     labelSingular: 'Opportunity',

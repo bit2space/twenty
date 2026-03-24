@@ -24,12 +24,11 @@ import {
 } from 'class-validator';
 import { GraphQLJSON } from 'graphql-type-json';
 import {
-  FieldMetadataOptions,
-  FieldMetadataSettings,
+  type FieldMetadataOptions,
+  type FieldMetadataSettings,
   FieldMetadataType,
+  type FieldMetadataDefaultValue,
 } from 'twenty-shared/types';
-
-import { FieldMetadataDefaultValue } from 'src/engine/metadata-modules/field-metadata/interfaces/field-metadata-default-value.interface';
 
 import { UUIDScalarType } from 'src/engine/api/graphql/workspace-schema-builder/graphql-types/scalars';
 import { IsValidMetadataName } from 'src/engine/decorators/metadata/is-valid-metadata-name.decorator';
@@ -45,7 +44,7 @@ registerEnumType(FieldMetadataType, {
 
 @ObjectType('Field')
 @Authorize({
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // oxlint-disable-next-line @typescripttypescript/no-explicit-any
   authorize: (context: any) => ({
     workspaceId: { eq: context?.req?.workspace?.id },
   }),
@@ -64,6 +63,10 @@ export class FieldMetadataDTO<T extends FieldMetadataType = FieldMetadataType> {
   @IsNotEmpty()
   @IDField(() => UUIDScalarType)
   id: string;
+
+  @IsNotEmpty()
+  @Field()
+  universalIdentifier: string;
 
   @IsEnum(FieldMetadataType)
   @IsNotEmpty()
@@ -150,6 +153,11 @@ export class FieldMetadataDTO<T extends FieldMetadataType = FieldMetadataType> {
   @Field({ nullable: true })
   isLabelSyncedWithName?: boolean;
 
+  @IsOptional()
+  @IsUUID()
+  @Field(() => UUIDScalarType, { nullable: true })
+  morphId?: string;
+
   @IsDateString(undefined, {
     message: ({ value }) =>
       `Field metadata created at is invalid got ${JSON.stringify(value)} isDate: ${value instanceof Date}`,
@@ -160,4 +168,7 @@ export class FieldMetadataDTO<T extends FieldMetadataType = FieldMetadataType> {
   @IsDateString()
   @Field()
   updatedAt: Date;
+
+  @Field(() => UUIDScalarType)
+  applicationId: string;
 }

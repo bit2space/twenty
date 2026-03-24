@@ -5,13 +5,14 @@ import {
   linksFieldDefinition,
   morphRelationFieldDefinition,
   relationFieldDefinition,
+  richTextFieldDefinition,
   selectFieldDefinition,
 } from '@/object-record/record-field/ui/__mocks__/fieldDefinitions';
 import { type FieldDefinition } from '@/object-record/record-field/ui/types/FieldDefinition';
 import { type FieldCurrencyMetadata } from '@/object-record/record-field/ui/types/FieldMetadata';
 import { FieldMetadataType } from '~/generated-metadata/graphql';
 
-import { isFieldValueEmpty } from '../isFieldValueEmpty';
+import { isFieldValueEmpty } from '@/object-record/record-field/ui/utils/isFieldValueEmpty';
 
 describe('isFieldValueEmpty', () => {
   it('should return correct value for boolean field', () => {
@@ -210,6 +211,46 @@ describe('isFieldValueEmpty', () => {
             { url: 'wikipedia', label: 'Invalid URL' },
             { url: 'https://docs.twenty.com', label: 'Documentation' },
           ],
+        },
+      }),
+    ).toBe(false);
+  });
+
+  it('should return correct value for rich text field', () => {
+    expect(
+      isFieldValueEmpty({
+        fieldDefinition: richTextFieldDefinition,
+        fieldValue: null,
+      }),
+    ).toBe(true);
+
+    expect(
+      isFieldValueEmpty({
+        fieldDefinition: richTextFieldDefinition,
+        fieldValue: { blocknote: null, markdown: null },
+      }),
+    ).toBe(true);
+
+    expect(
+      isFieldValueEmpty({
+        fieldDefinition: richTextFieldDefinition,
+        fieldValue: { blocknote: '', markdown: null },
+      }),
+    ).toBe(true);
+
+    expect(
+      isFieldValueEmpty({
+        fieldDefinition: richTextFieldDefinition,
+        fieldValue: { blocknote: '[{"type":"paragraph"}]', markdown: null },
+      }),
+    ).toBe(false);
+
+    expect(
+      isFieldValueEmpty({
+        fieldDefinition: richTextFieldDefinition,
+        fieldValue: {
+          blocknote: '[{"type":"paragraph"}]',
+          markdown: 'some text',
         },
       }),
     ).toBe(false);

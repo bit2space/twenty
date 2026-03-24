@@ -21,11 +21,14 @@ export const commonQueryRunnerToRestApiExceptionHandler = (
     case CommonQueryRunnerExceptionCode.INVALID_ARGS_LAST:
     case CommonQueryRunnerExceptionCode.INVALID_QUERY_INPUT:
     case CommonQueryRunnerExceptionCode.INVALID_ARGS_DATA:
+    case CommonQueryRunnerExceptionCode.INVALID_ARGS_FILTER:
     case CommonQueryRunnerExceptionCode.UPSERT_MULTIPLE_MATCHING_RECORDS_CONFLICT:
     case CommonQueryRunnerExceptionCode.INVALID_CURSOR:
     case CommonQueryRunnerExceptionCode.TOO_MANY_RECORDS_TO_UPDATE:
     case CommonQueryRunnerExceptionCode.BAD_REQUEST:
     case CommonQueryRunnerExceptionCode.TOO_COMPLEX_QUERY:
+    case CommonQueryRunnerExceptionCode.MISSING_TIMEZONE_FOR_DATE_GROUP_BY:
+    case CommonQueryRunnerExceptionCode.INVALID_TIMEZONE:
       throw new BadRequestException(error.message);
     case CommonQueryRunnerExceptionCode.RECORD_NOT_FOUND:
       throw new NotFoundException('Record not found');

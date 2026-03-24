@@ -1,18 +1,39 @@
 import { useDateTimeFormat } from '@/localization/hooks/useDateTimeFormat';
 import { InputHint } from '@/ui/input/components/InputHint';
 import type { WorkflowCronTrigger } from '@/workflow/types/Workflow';
+import { calculateNextExecutionsForMinuteInterval } from '@/workflow/workflow-trigger/utils/cron-to-human/utils/calculateNextExecutionsForMinuteInterval';
 import { convertScheduleToCronExpression } from '@/workflow/workflow-trigger/utils/cron-to-human/utils/convertScheduleToCronExpression';
+import { normalizeCronExpression } from '@/workflow/workflow-trigger/utils/cron-to-human/utils/normalizeCronExpression';
 import { getTriggerScheduleDescription } from '@/workflow/workflow-trigger/utils/getTriggerScheduleDescription';
-import styled from '@emotion/styled';
+import { useAtomStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomStateValue';
+import { styled } from '@linaria/react';
 import { t } from '@lingui/core/macro';
 import { CronExpressionParser } from 'cron-parser';
-import { useRecoilValue } from 'recoil';
 import { dateLocaleState } from '~/localization/states/dateLocaleState';
 import { formatDateTimeString } from '~/utils/string/formatDateTimeString';
+import { themeCssVariables } from 'twenty-ui/theme-constants';
 
-const getNextExecutions = (cronExpression: string): Date[] => {
+const getNextExecutions = (
+  cronExpression: string,
+  trigger?: WorkflowCronTrigger,
+): Date[] => {
   try {
-    const interval = CronExpressionParser.parse(cronExpression, {
+    const normalized = normalizeCronExpression(cronExpression);
+
+    /* For MINUTES type with interval > 30, calculate manually
+     because cron's N pattern resets at hour boundaries and doesn't
+     represent true continuous intervals for values > 30
+     */
+    if (
+      trigger?.settings.type === 'MINUTES' &&
+      trigger.settings.schedule.minute > 30
+    ) {
+      return calculateNextExecutionsForMinuteInterval(
+        trigger.settings.schedule.minute,
+      );
+    }
+
+    const interval = CronExpressionParser.parse(normalized, {
       tz: 'UTC',
     });
     return interval.take(3).map((date) => date.toDate());
@@ -24,39 +45,39 @@ const getNextExecutions = (cronExpression: string): Date[] => {
 const StyledContainer = styled.div`
   display: flex;
   flex-direction: column;
-  gap: ${({ theme }) => theme.spacing(3)};
-  margin-top: ${({ theme }) => theme.spacing(2)};
+  gap: ${themeCssVariables.spacing[3]};
+  margin-top: ${themeCssVariables.spacing[2]};
 `;
 
 const StyledSection = styled.div`
-  background-color: ${({ theme }) => theme.background.transparent.lighter};
-  border: 1px solid ${({ theme }) => theme.border.color.medium};
-  border-radius: ${({ theme }) => theme.border.radius.sm};
+  background-color: ${themeCssVariables.background.transparent.lighter};
+  border: 1px solid ${themeCssVariables.border.color.medium};
+  border-radius: ${themeCssVariables.border.radius.sm};
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  gap: ${({ theme }) => theme.spacing(1)};
-  padding: ${({ theme }) => theme.spacing(3)} ${({ theme }) => theme.spacing(4)};
+  gap: ${themeCssVariables.spacing[1]};
+  padding: ${themeCssVariables.spacing[3]} ${themeCssVariables.spacing[4]};
 `;
 
 const StyledScheduleDescription = styled.div`
-  color: ${({ theme }) => theme.font.color.secondary};
-  font-size: ${({ theme }) => theme.font.size.sm};
-  font-weight: ${({ theme }) => theme.font.weight.medium};
+  color: ${themeCssVariables.font.color.secondary};
+  font-size: ${themeCssVariables.font.size.sm};
+  font-weight: ${themeCssVariables.font.weight.medium};
 `;
 
 const StyledScheduleTitle = styled.div`
-  color: ${({ theme }) => theme.font.color.primary};
-  font-size: ${({ theme }) => theme.font.size.sm};
-  font-weight: ${({ theme }) => theme.font.weight.medium};
-  margin-bottom: ${({ theme }) => theme.spacing(1)};
+  color: ${themeCssVariables.font.color.primary};
+  font-size: ${themeCssVariables.font.size.sm};
+  font-weight: ${themeCssVariables.font.weight.medium};
+  margin-bottom: ${themeCssVariables.spacing[1]};
 `;
 
 const StyledExecutionItem = styled.div`
-  color: ${({ theme }) => theme.font.color.secondary};
-  font-size: ${({ theme }) => theme.font.size.sm};
-  font-weight: ${({ theme }) => theme.font.weight.medium};
-  margin-top: ${({ theme }) => theme.spacing(0.5)};
+  color: ${themeCssVariables.font.color.secondary};
+  font-size: ${themeCssVariables.font.size.sm};
+  font-weight: ${themeCssVariables.font.weight.medium};
+  margin-top: ${themeCssVariables.spacing[0.5]};
 `;
 
 type CronExpressionHelperProps = {
@@ -73,7 +94,7 @@ export const CronExpressionHelper = ({
   isUpcomingExecutionVisible = true,
 }: CronExpressionHelperProps) => {
   const { timeZone, dateFormat, timeFormat } = useDateTimeFormat();
-  const dateLocale = useRecoilValue(dateLocaleState);
+  const dateLocale = useAtomStateValue(dateLocaleState);
 
   if (!isVisible) {
     return null;
@@ -93,7 +114,8 @@ export const CronExpressionHelper = ({
   let errorMessage = '';
 
   try {
-    CronExpressionParser.parse(cronExpression);
+    const normalized = normalizeCronExpression(cronExpression);
+    CronExpressionParser.parse(normalized);
   } catch (error) {
     isValid = false;
     errorMessage = error instanceof Error ? error.message : t`Unknown error`;
@@ -109,7 +131,7 @@ export const CronExpressionHelper = ({
     );
   }
 
-  const nextExecutions = getNextExecutions(cronExpression);
+  const nextExecutions = getNextExecutions(cronExpression, trigger);
 
   return (
     <StyledContainer>

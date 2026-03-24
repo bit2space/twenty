@@ -4,14 +4,14 @@ image: /images/user-guide/table-views/table.png
 ---
 
 <Frame>
-  <img src="/images/user-guide/table-views/table.png" alt="Header" />
+  <img src="/images/user-guide/table-views/table.png" alt="Başlık" />
 </Frame>
 
 İçeriği görsel olarak kategorize etmek veya etiketlemek için bileşen.
 
 <Tabs>
 
-<Tab title="Usage">
+<Tab title="Kullanım">
 
 ```jsx
 import { Tag } from "@/ui/display/tag/components/Tag";
@@ -21,7 +21,7 @@ export const MyComponent = () => {
     <Tag
       className
       color="red"
-      text="Urgent"
+      text="Acil"
       onClick={() => console.log("click")}
     />
   );
@@ -30,14 +30,17 @@ export const MyComponent = () => {
 
 </Tab>
 
-<Tab title="Props">
+<Tab title="Özellikler">
 
-| Özellikler    | Tür       | Açıklama                                                                                                                                                  |
-| ------------- | --------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| sınıfAdı      | metin     | Ek stil için isteğe bağlı ad                                                                                                                              |
-| renk          | metin     | Etiketin rengi. Options include: `green`, `turquoise`, `sky`, `blue`, `purple`, `pink`, `red`, `orange`, `yellow`, `gray` |
-| metin         | metin     | Etiketin içeriği                                                                                                                                          |
-| tıklandığında | fonksiyon | Kullanıcı etikete tıkladığında çağrılan isteğe bağlı fonksiyon                                                                                            |
+
+| Özellikler | Tür      | Açıklama                                                                                                                  |
+| ---------- | -------- | ------------------------------------------------------------------------------------------------------------------------- |
+| className  | dize     | Ek stil için isteğe bağlı isim                                                                                            |
+| renk       | dize     | Etiketin rengi. Seçenekler: `yeşil`, `turkuaz`, `gökyüzü`, `mavi`, `mor`, `pembe`, `kırmızı`, `turuncu`, `sarı`, ve `gri` |
+| metin      | dize     | Etiketin içeriği                                                                                                          |
+| onClick    | function | Kullanıcı etikete tıkladığında çağrılan isteğe bağlı fonksiyon                                                            |
+
+
 
 </Tab>
 

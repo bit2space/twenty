@@ -2,13 +2,14 @@ import { useEffect } from 'react';
 
 import { useContextStoreObjectMetadataItemOrThrow } from '@/context-store/hooks/useContextStoreObjectMetadataItemOrThrow';
 import { useHasPermissionFlag } from '@/settings/roles/hooks/useHasPermissionFlag';
-import { useRecoilComponentState } from '@/ui/utilities/state/component-state/hooks/useRecoilComponentState';
-import { useRecoilComponentValue } from '@/ui/utilities/state/component-state/hooks/useRecoilComponentValue';
-import { useSetRecoilComponentState } from '@/ui/utilities/state/component-state/hooks/useSetRecoilComponentState';
-import { coreViewsFromObjectMetadataItemFamilySelector } from '@/views/states/selectors/coreViewsFromObjectMetadataItemFamilySelector';
+import { useAtomComponentState } from '@/ui/utilities/state/jotai/hooks/useAtomComponentState';
+import { useAtomComponentStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomComponentStateValue';
+import { useSetAtomComponentState } from '@/ui/utilities/state/jotai/hooks/useSetAtomComponentState';
+import { useAtomFamilySelectorValue } from '@/ui/utilities/state/jotai/hooks/useAtomFamilySelectorValue';
+import { viewsFromObjectMetadataItemFamilySelector } from '@/views/states/selectors/viewsFromObjectMetadataItemFamilySelector';
 import { viewTypeIconMapping } from '@/views/types/ViewType';
 import { useGetAvailableFieldsForCalendar } from '@/views/view-picker/hooks/useGetAvailableFieldsForCalendar';
-import { useGetAvailableFieldsForKanban } from '@/views/view-picker/hooks/useGetAvailableFieldsForKanban';
+import { useGetAvailableFieldsToGroupRecordsBy } from '@/views/view-picker/hooks/useGetAvailableFieldsToGroupRecordsBy';
 import { useViewPickerMode } from '@/views/view-picker/hooks/useViewPickerMode';
 import { viewPickerCalendarFieldMetadataIdComponentState } from '@/views/view-picker/states/viewPickerCalendarFieldMetadataIdComponentState';
 import { viewPickerInputNameComponentState } from '@/views/view-picker/states/viewPickerInputNameComponentState';
@@ -19,19 +20,20 @@ import { viewPickerReferenceViewIdComponentState } from '@/views/view-picker/sta
 import { viewPickerSelectedIconComponentState } from '@/views/view-picker/states/viewPickerSelectedIconComponentState';
 import { viewPickerTypeComponentState } from '@/views/view-picker/states/viewPickerTypeComponentState';
 import { viewPickerVisibilityComponentState } from '@/views/view-picker/states/viewPickerVisibilityComponentState';
-import { useRecoilValue } from 'recoil';
 import { isDefined } from 'twenty-shared/utils';
-import { ViewVisibility } from '~/generated-metadata/graphql';
-import { PermissionFlagType } from '~/generated/graphql';
+import {
+  ViewVisibility,
+  PermissionFlagType,
+} from '~/generated-metadata/graphql';
 
 export const ViewPickerContentEffect = () => {
-  const setViewPickerSelectedIcon = useSetRecoilComponentState(
+  const setViewPickerSelectedIcon = useSetAtomComponentState(
     viewPickerSelectedIconComponentState,
   );
-  const setViewPickerInputName = useSetRecoilComponentState(
+  const setViewPickerInputName = useSetAtomComponentState(
     viewPickerInputNameComponentState,
   );
-  const setViewPickerVisibility = useSetRecoilComponentState(
+  const setViewPickerVisibility = useSetAtomComponentState(
     viewPickerVisibilityComponentState,
   );
   const { viewPickerMode } = useViewPickerMode();
@@ -39,43 +41,41 @@ export const ViewPickerContentEffect = () => {
   const [
     viewPickerMainGroupByFieldMetadataId,
     setViewPickerMainGroupByFieldMetadataId,
-  ] = useRecoilComponentState(
-    viewPickerMainGroupByFieldMetadataIdComponentState,
-  );
+  ] = useAtomComponentState(viewPickerMainGroupByFieldMetadataIdComponentState);
 
   const [
     viewPickerCalendarFieldMetadataId,
     setViewPickerCalendarFieldMetadataId,
-  ] = useRecoilComponentState(viewPickerCalendarFieldMetadataIdComponentState);
+  ] = useAtomComponentState(viewPickerCalendarFieldMetadataIdComponentState);
 
-  const [viewPickerType, setViewPickerType] = useRecoilComponentState(
+  const [viewPickerType, setViewPickerType] = useAtomComponentState(
     viewPickerTypeComponentState,
   );
 
-  const viewPickerReferenceViewId = useRecoilComponentValue(
+  const viewPickerReferenceViewId = useAtomComponentStateValue(
     viewPickerReferenceViewIdComponentState,
   );
 
-  const viewPickerIsDirty = useRecoilComponentValue(
+  const viewPickerIsDirty = useAtomComponentStateValue(
     viewPickerIsDirtyComponentState,
   );
 
-  const viewPickerIsPersisting = useRecoilComponentValue(
+  const viewPickerIsPersisting = useAtomComponentStateValue(
     viewPickerIsPersistingComponentState,
   );
 
   const { objectMetadataItem } = useContextStoreObjectMetadataItemOrThrow();
-  const viewsOnCurrentObject = useRecoilValue(
-    coreViewsFromObjectMetadataItemFamilySelector({
-      objectMetadataItemId: objectMetadataItem.id,
-    }),
+  const viewsOnCurrentObject = useAtomFamilySelectorValue(
+    viewsFromObjectMetadataItemFamilySelector,
+    { objectMetadataItemId: objectMetadataItem.id },
   );
 
   const referenceView = viewsOnCurrentObject.find(
     (view) => view.id === viewPickerReferenceViewId,
   );
 
-  const { availableFieldsForKanban } = useGetAvailableFieldsForKanban();
+  const { availableFieldsForGrouping } =
+    useGetAvailableFieldsToGroupRecordsBy();
   const { availableFieldsForCalendar } = useGetAvailableFieldsForCalendar();
   const hasViewPermission = useHasPermissionFlag(PermissionFlagType.VIEWS);
 
@@ -115,14 +115,14 @@ export const ViewPickerContentEffect = () => {
   useEffect(() => {
     if (
       isDefined(referenceView) &&
-      availableFieldsForKanban.length > 0 &&
+      availableFieldsForGrouping.length > 0 &&
       viewPickerMainGroupByFieldMetadataId === ''
     ) {
       setViewPickerMainGroupByFieldMetadataId(
         isDefined(referenceView.mainGroupByFieldMetadataId) &&
           referenceView.mainGroupByFieldMetadataId !== ''
           ? referenceView.mainGroupByFieldMetadataId
-          : availableFieldsForKanban[0].id,
+          : availableFieldsForGrouping[0].id,
       );
     }
     if (
@@ -139,7 +139,7 @@ export const ViewPickerContentEffect = () => {
     }
   }, [
     referenceView,
-    availableFieldsForKanban,
+    availableFieldsForGrouping,
     viewPickerMainGroupByFieldMetadataId,
     setViewPickerMainGroupByFieldMetadataId,
     availableFieldsForCalendar,

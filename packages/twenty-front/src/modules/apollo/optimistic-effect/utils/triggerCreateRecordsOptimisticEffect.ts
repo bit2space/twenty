@@ -2,7 +2,7 @@ import { type ApolloCache, type StoreObject } from '@apollo/client';
 import { isNonEmptyString } from '@sniptt/guards';
 
 import { triggerUpdateRelationsOptimisticEffect } from '@/apollo/optimistic-effect/utils/triggerUpdateRelationsOptimisticEffect';
-import { type ObjectMetadataItem } from '@/object-metadata/types/ObjectMetadataItem';
+import { type EnrichedObjectMetadataItem } from '@/object-metadata/types/EnrichedObjectMetadataItem';
 import { type RecordGqlRefEdge } from '@/object-record/cache/types/RecordGqlRefEdge';
 import { getEdgeTypename } from '@/object-record/cache/utils/getEdgeTypename';
 import { isObjectRecordConnectionWithRefs } from '@/object-record/cache/utils/isObjectRecordConnectionWithRefs';
@@ -25,17 +25,17 @@ import { parseApolloStoreFieldName } from '~/utils/parseApolloStoreFieldName';
   then we'll be able to uncomment the code below so the cached lists are updated coherently with the variables.
 */
 type TriggerCreateRecordsOptimisticEffectArgs = {
-  cache: ApolloCache<object>;
-  objectMetadataItem: ObjectMetadataItem;
+  cache: ApolloCache;
+  objectMetadataItem: EnrichedObjectMetadataItem;
   recordsToCreate: RecordGqlNode[];
-  objectMetadataItems: ObjectMetadataItem[];
+  objectMetadataItems: EnrichedObjectMetadataItem[];
   shouldMatchRootQueryFilter?: boolean;
   checkForRecordInCache?: boolean;
   objectPermissionsByObjectMetadataId: Record<
     string,
     ObjectPermissions & { objectMetadataId: string }
   >;
-  upsertRecordsInStore: (records: ObjectRecord[]) => void;
+  upsertRecordsInStore: (props: { partialRecords: ObjectRecord[] }) => void;
 };
 
 export const triggerCreateRecordsOptimisticEffect = ({
@@ -165,7 +165,7 @@ export const triggerCreateRecordsOptimisticEffect = ({
                 },
               );
 
-              if (recordToCreateReference && !recordAlreadyInCache) {
+              if (isDefined(recordToCreateReference) && !recordAlreadyInCache) {
                 const cursor = encodeCursor(recordToCreate);
 
                 const edge = {

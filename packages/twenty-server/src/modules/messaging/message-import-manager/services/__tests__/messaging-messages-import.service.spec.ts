@@ -5,7 +5,7 @@ import { ConnectedAccountProvider } from 'twenty-shared/types';
 
 import { CacheStorageService } from 'src/engine/core-modules/cache-storage/services/cache-storage.service';
 import { CacheStorageNamespace } from 'src/engine/core-modules/cache-storage/types/cache-storage-namespace.enum';
-import { TwentyORMManager } from 'src/engine/twenty-orm/twenty-orm.manager';
+import { GlobalWorkspaceOrmManager } from 'src/engine/twenty-orm/global-workspace-datasource/global-workspace-orm.manager';
 import { BlocklistRepository } from 'src/modules/blocklist/repositories/blocklist.repository';
 import { EmailAliasManagerService } from 'src/modules/connected-account/email-alias-manager/services/email-alias-manager.service';
 import { ConnectedAccountRefreshTokensService } from 'src/modules/connected-account/refresh-tokens-manager/services/connected-account-refresh-tokens.service';
@@ -13,6 +13,7 @@ import { type ConnectedAccountWorkspaceEntity } from 'src/modules/connected-acco
 import { MessageChannelSyncStatusService } from 'src/modules/messaging/common/services/message-channel-sync-status.service';
 import {
   MessageChannelSyncStage,
+  MessageFolderImportPolicy,
   type MessageChannelWorkspaceEntity,
 } from 'src/modules/messaging/common/standard-objects/message-channel.workspace-entity';
 import { MESSAGING_GMAIL_USERS_MESSAGES_GET_BATCH_SIZE } from 'src/modules/messaging/message-import-manager/drivers/gmail/constants/messaging-gmail-users-messages-get-batch-size.constant';
@@ -21,6 +22,7 @@ import { MessagingGetMessagesService } from 'src/modules/messaging/message-impor
 import { MessageImportExceptionHandlerService } from 'src/modules/messaging/message-import-manager/services/messaging-import-exception-handler.service';
 import { MessagingMessagesImportService } from 'src/modules/messaging/message-import-manager/services/messaging-messages-import.service';
 import { MessagingSaveMessagesAndEnqueueContactCreationService } from 'src/modules/messaging/message-import-manager/services/messaging-save-messages-and-enqueue-contact-creation.service';
+import { MessageChannelDataAccessService } from 'src/engine/metadata-modules/message-channel/data-access/services/message-channel-data-access.service';
 import { MessagingMonitoringService } from 'src/modules/messaging/monitoring/services/messaging-monitoring.service';
 
 describe('MessagingMessagesImportService', () => {
@@ -32,7 +34,15 @@ describe('MessagingMessagesImportService', () => {
   let saveMessagesService: MessagingSaveMessagesAndEnqueueContactCreationService;
 
   const workspaceId = 'workspace-id';
-  let mockMessageChannel: MessageChannelWorkspaceEntity;
+  let mockMessageChannel: Pick<
+    MessageChannelWorkspaceEntity,
+    | 'id'
+    | 'syncStage'
+    | 'connectedAccountId'
+    | 'handle'
+    | 'messageFolders'
+    | 'messageFolderImportPolicy'
+  >;
   let mockConnectedAccount: ConnectedAccountWorkspaceEntity;
   let providersBase: Provider[];
 
@@ -52,7 +62,9 @@ describe('MessagingMessagesImportService', () => {
       syncStage: MessageChannelSyncStage.MESSAGES_IMPORT_SCHEDULED,
       connectedAccountId: mockConnectedAccount.id,
       handle: 'test@gmail.com',
-    } as MessageChannelWorkspaceEntity;
+      messageFolders: [],
+      messageFolderImportPolicy: MessageFolderImportPolicy.ALL_FOLDERS,
+    };
 
     providersBase = [
       MessagingMessagesImportService,
@@ -106,11 +118,20 @@ describe('MessagingMessagesImportService', () => {
         },
       },
       {
-        provide: TwentyORMManager,
+        provide: GlobalWorkspaceOrmManager,
         useValue: {
           getRepository: jest.fn().mockResolvedValue({
             update: jest.fn().mockResolvedValue(undefined),
           }),
+          executeInWorkspaceContext: jest
+            .fn()
+            .mockImplementation((fn: () => any, _authContext?: any) => fn()),
+        },
+      },
+      {
+        provide: MessageChannelDataAccessService,
+        useValue: {
+          update: jest.fn().mockResolvedValue(undefined),
         },
       },
       {
@@ -198,7 +219,7 @@ describe('MessagingMessagesImportService', () => {
 
     expect(
       service.processMessageBatchImport(
-        mockMessageChannel,
+        mockMessageChannel as MessageChannelWorkspaceEntity,
         mockConnectedAccount,
         workspaceId,
       ),
@@ -207,7 +228,7 @@ describe('MessagingMessagesImportService', () => {
 
   it('should process message batch import successfully', async () => {
     await service.processMessageBatchImport(
-      mockMessageChannel,
+      mockMessageChannel as MessageChannelWorkspaceEntity,
       mockConnectedAccount,
       workspaceId,
     );
@@ -219,11 +240,14 @@ describe('MessagingMessagesImportService', () => {
       connectedAccountRefreshTokensService.refreshAndSaveTokens,
     ).toHaveBeenCalledWith(mockConnectedAccount, workspaceId);
 
-    expect(emailAliasManagerService.refreshHandleAliases).toHaveBeenCalledWith({
-      ...mockConnectedAccount,
-      accessToken: 'new-access-token',
-      refreshToken: 'new-refresh-token',
-    });
+    expect(emailAliasManagerService.refreshHandleAliases).toHaveBeenCalledWith(
+      {
+        ...mockConnectedAccount,
+        accessToken: 'new-access-token',
+        refreshToken: 'new-refresh-token',
+      },
+      workspaceId,
+    );
     expect(messagingGetMessagesService.getMessages).toHaveBeenCalledWith(
       ['message-id-1', 'message-id-2'],
       {
@@ -231,6 +255,7 @@ describe('MessagingMessagesImportService', () => {
         accessToken: 'new-access-token',
         refreshToken: 'new-refresh-token',
       },
+      mockMessageChannel,
     );
     expect(
       saveMessagesService.saveMessagesAndEnqueueContactCreation,
@@ -287,7 +312,7 @@ describe('MessagingMessagesImportService', () => {
       );
 
     await service.processMessageBatchImport(
-      mockMessageChannel,
+      mockMessageChannel as MessageChannelWorkspaceEntity,
       mockConnectedAccount,
       workspaceId,
     );

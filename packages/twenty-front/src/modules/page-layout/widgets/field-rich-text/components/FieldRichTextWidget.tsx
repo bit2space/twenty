@@ -1,8 +1,9 @@
+import { type PageLayoutWidget } from '@/page-layout/types/PageLayoutWidget';
 import { FieldRichTextCard } from '@/ui/layout/show-page/components/FieldRichTextCard';
-import styled from '@emotion/styled';
-import { type PageLayoutWidget } from '~/generated/graphql';
+import { styled } from '@linaria/react';
 
 const StyledContainer = styled.div`
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
   width: 100%;

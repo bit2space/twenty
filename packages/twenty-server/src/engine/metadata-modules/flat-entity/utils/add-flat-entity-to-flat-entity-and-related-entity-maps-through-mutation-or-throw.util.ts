@@ -1,7 +1,8 @@
 import { type AllMetadataName } from 'twenty-shared/metadata';
 import { isDefined } from 'twenty-shared/utils';
 
-import { ALL_METADATA_RELATED_METADATA_BY_FOREIGN_KEY } from 'src/engine/metadata-modules/flat-entity/constant/all-metadata-many-to-one-relations.constant';
+import { ALL_MANY_TO_ONE_METADATA_RELATIONS } from 'src/engine/metadata-modules/flat-entity/constant/all-many-to-one-metadata-relations.constant';
+import { ALL_ONE_TO_MANY_METADATA_RELATIONS } from 'src/engine/metadata-modules/flat-entity/constant/all-one-to-many-metadata-relations.constant';
 import {
   FlatEntityMapsException,
   FlatEntityMapsExceptionCode,
@@ -12,8 +13,8 @@ import { type MetadataRelatedFlatEntityMapsKeys } from 'src/engine/metadata-modu
 import { type MetadataFlatEntityAndRelatedFlatEntityMaps } from 'src/engine/metadata-modules/flat-entity/types/metadata-related-types.type';
 import { findFlatEntityByIdInFlatEntityMapsOrThrow } from 'src/engine/metadata-modules/flat-entity/utils/find-flat-entity-by-id-in-flat-entity-maps-or-throw.util';
 import { getMetadataFlatEntityMapsKey } from 'src/engine/metadata-modules/flat-entity/utils/get-metadata-flat-entity-maps-key.util';
-import { addFlatEntityToFlatEntityMapsThroughMutationOrThrow } from 'src/engine/workspace-manager/workspace-migration-v2/utils/add-flat-entity-to-flat-entity-maps-through-mutation-or-throw.util';
-import { replaceFlatEntityInFlatEntityMapsThroughMutationOrThrow } from 'src/engine/workspace-manager/workspace-migration-v2/utils/replace-flat-entity-in-flat-entity-maps-through-mutation-or-throw.util';
+import { addUniversalFlatEntityToUniversalFlatEntityAndRelatedEntityMapsThroughMutationOrThrow } from 'src/engine/workspace-manager/workspace-migration/universal-flat-entity/utils/add-universal-flat-entity-to-universal-flat-entity-and-related-entity-maps-through-mutation-or-throw.util';
+import { replaceFlatEntityInFlatEntityMapsThroughMutationOrThrow } from 'src/engine/workspace-manager/workspace-migration/utils/replace-flat-entity-in-flat-entity-maps-through-mutation-or-throw.util';
 
 type AddFlatEntityToFlatEntityAndRelatedEntityMapsThroughMutationOrThrowArgs<
   T extends AllMetadataName,
@@ -22,45 +23,79 @@ type AddFlatEntityToFlatEntityAndRelatedEntityMapsThroughMutationOrThrowArgs<
   flatEntity: MetadataFlatEntity<T>;
   flatEntityAndRelatedMapsToMutate: MetadataFlatEntityAndRelatedFlatEntityMaps<T>;
 };
+
 export const addFlatEntityToFlatEntityAndRelatedEntityMapsThroughMutationOrThrow =
   <T extends AllMetadataName>({
     metadataName,
     flatEntity,
     flatEntityAndRelatedMapsToMutate,
   }: AddFlatEntityToFlatEntityAndRelatedEntityMapsThroughMutationOrThrowArgs<T>) => {
+    addUniversalFlatEntityToUniversalFlatEntityAndRelatedEntityMapsThroughMutationOrThrow(
+      {
+        metadataName,
+        universalFlatEntity: flatEntity,
+        universalFlatEntityAndRelatedMapsToMutate:
+          flatEntityAndRelatedMapsToMutate,
+      },
+    );
+
     const flatEntityMapsKey = getMetadataFlatEntityMapsKey(metadataName);
+    const selfFlatEntityMaps =
+      flatEntityAndRelatedMapsToMutate[flatEntityMapsKey];
 
-    addFlatEntityToFlatEntityMapsThroughMutationOrThrow({
-      flatEntity,
-      flatEntityMapsToMutate:
-        flatEntityAndRelatedMapsToMutate[flatEntityMapsKey],
-    });
+    selfFlatEntityMaps.universalIdentifierById[flatEntity.id] =
+      flatEntity.universalIdentifier;
 
-    const manyToOneRelatedMetadataName = Object.entries(
-      ALL_METADATA_RELATED_METADATA_BY_FOREIGN_KEY[metadataName],
-    ) as Array<
-      [
-        keyof MetadataFlatEntity<T>,
-        {
-          metadataName: AllMetadataName;
-          flatEntityForeignKeyAggregator: keyof MetadataFlatEntity<AllMetadataName>;
-        },
-      ]
-    >;
+    const manyToOneRelations = ALL_MANY_TO_ONE_METADATA_RELATIONS[metadataName];
 
-    for (const [
-      foreignKey,
-      { metadataName: relatedMetadataName, flatEntityForeignKeyAggregator },
-    ] of manyToOneRelatedMetadataName) {
+    for (const relationPropertyName of Object.keys(manyToOneRelations)) {
+      const relation = manyToOneRelations[
+        relationPropertyName as keyof typeof manyToOneRelations
+      ] as {
+        metadataName: AllMetadataName;
+        foreignKey: string;
+        inverseOneToManyProperty: string | null;
+      } | null;
+
+      if (!isDefined(relation)) {
+        continue;
+      }
+
+      const {
+        metadataName: relatedMetadataName,
+        foreignKey,
+        inverseOneToManyProperty,
+      } = relation;
+
+      if (!isDefined(inverseOneToManyProperty)) {
+        continue;
+      }
+
+      const oneToManyRelations =
+        ALL_ONE_TO_MANY_METADATA_RELATIONS[relatedMetadataName];
+
+      const inverseRelation = oneToManyRelations[
+        inverseOneToManyProperty as keyof typeof oneToManyRelations
+      ] as {
+        flatEntityForeignKeyAggregator: string;
+      } | null;
+
+      if (!isDefined(inverseRelation)) {
+        continue;
+      }
+
+      const { flatEntityForeignKeyAggregator } = inverseRelation;
+
       const relatedFlatEntityMapsKey =
         getMetadataFlatEntityMapsKey(relatedMetadataName);
+
       const relatedFlatEntityMetadataMaps = flatEntityAndRelatedMapsToMutate[
         relatedFlatEntityMapsKey as MetadataRelatedFlatEntityMapsKeys<T>
       ] as FlatEntityMaps<MetadataFlatEntity<typeof relatedMetadataName>>;
 
-      const flatEntityRelatedEntityForeignKeyValue = flatEntity[foreignKey] as
-        | string
-        | undefined;
+      const flatEntityRelatedEntityForeignKeyValue = (
+        flatEntity as unknown as Record<string, string | undefined>
+      )[foreignKey];
 
       if (!isDefined(flatEntityRelatedEntityForeignKeyValue)) {
         continue;
@@ -78,7 +113,7 @@ export const addFlatEntityToFlatEntityAndRelatedEntityMapsThroughMutationOrThrow
         )
       ) {
         throw new FlatEntityMapsException(
-          `Should never occur, invalid flat entity typing. flat ${metadataName} should contain ${flatEntityForeignKeyAggregator}`,
+          `Should never occur, invalid flat entity typing. flat ${relatedMetadataName} should contain ${String(flatEntityForeignKeyAggregator)}`,
           FlatEntityMapsExceptionCode.ENTITY_MALFORMED,
         );
       }
@@ -86,9 +121,9 @@ export const addFlatEntityToFlatEntityAndRelatedEntityMapsThroughMutationOrThrow
       const updatedRelatedEntity = {
         ...relatedFlatEntity,
         [flatEntityForeignKeyAggregator]: [
-          ...(relatedFlatEntity[
+          ...((relatedFlatEntity as unknown as Record<string, string[]>)[
             flatEntityForeignKeyAggregator
-          ] as unknown as string[]),
+          ] ?? []),
           flatEntity.id,
         ],
       };

@@ -1,10 +1,9 @@
 import { type ViewFilter } from '@/views/types/ViewFilter';
 import { ViewFilterOperand } from 'twenty-shared/types';
-import { getViewFiltersToDelete } from '../getViewFiltersToDelete';
+import { getViewFiltersToDelete } from '@/views/utils/getViewFiltersToDelete';
 
 describe('getViewFiltersToDelete', () => {
   const baseFilter: ViewFilter = {
-    __typename: 'ViewFilter',
     id: 'filter-1',
     fieldMetadataId: 'field-1',
     operand: ViewFilterOperand.CONTAINS,

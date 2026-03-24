@@ -1,4 +1,6 @@
 import { triggerUpdateRecordOptimisticEffectByBatch } from '@/apollo/optimistic-effect/utils/triggerUpdateRecordOptimisticEffectByBatch';
+import { dispatchObjectRecordOperationBrowserEvent } from '@/browser-event/utils/dispatchObjectRecordOperationBrowserEvent';
+import { useRemoveNavigationMenuItemByTargetRecordId } from '@/navigation-menu-item/common/hooks/useRemoveNavigationMenuItemByTargetRecordId';
 import { useApolloCoreClient } from '@/object-metadata/hooks/useApolloCoreClient';
 import { useObjectMetadataItem } from '@/object-metadata/hooks/useObjectMetadataItem';
 import { useObjectMetadataItems } from '@/object-metadata/hooks/useObjectMetadataItems';
@@ -13,7 +15,6 @@ import { type UseFindManyRecordsParams } from '@/object-record/hooks/useFetchMor
 import { useIncrementalFetchAndMutateRecords } from '@/object-record/hooks/useIncrementalFetchAndMutateRecords';
 import { useObjectPermissions } from '@/object-record/hooks/useObjectPermissions';
 import { useRefetchAggregateQueries } from '@/object-record/hooks/useRefetchAggregateQueries';
-import { useRegisterObjectOperation } from '@/object-record/hooks/useRegisterObjectOperation';
 import { useUpsertRecordsInStore } from '@/object-record/record-store/hooks/useUpsertRecordsInStore';
 import { type ObjectRecord } from '@/object-record/types/ObjectRecord';
 import { useCallback } from 'react';
@@ -40,7 +41,6 @@ export const useIncrementalDeleteManyRecords = <T>({
   delayInMsBetweenMutations = DEFAULT_DELAY_BETWEEN_MUTATIONS_MS,
   skipOptimisticEffect = false,
 }: UseIncrementalDeleteManyRecordsParams<T>) => {
-  const { registerObjectOperation } = useRegisterObjectOperation();
   const { upsertRecordsInStore } = useUpsertRecordsInStore();
 
   const mutationPageSize = pageSize;
@@ -61,9 +61,9 @@ export const useIncrementalDeleteManyRecords = <T>({
 
   const { objectMetadataItems } = useObjectMetadataItems();
   const { objectPermissionsByObjectMetadataId } = useObjectPermissions();
-  const { refetchAggregateQueries } = useRefetchAggregateQueries({
-    objectMetadataNamePlural: objectMetadataItem.namePlural,
-  });
+  const { refetchAggregateQueries } = useRefetchAggregateQueries();
+  const { removeNavigationMenuItemsByTargetRecordIds } =
+    useRemoveNavigationMenuItemByTargetRecordId();
 
   const { incrementalFetchAndMutate, progress, isProcessing, updateProgress } =
     useIncrementalFetchAndMutateRecords<T>({
@@ -129,7 +129,10 @@ export const useIncrementalDeleteManyRecords = <T>({
     ],
   );
 
-  const deleteManyRecordsBatch = async (recordIdsToDelete: string[]) => {
+  const deleteManyRecordsBatch = async (
+    recordIdsToDelete: string[],
+    abortSignal: AbortSignal,
+  ) => {
     const numberOfBatches = Math.ceil(
       recordIdsToDelete.length / mutationPageSize,
     );
@@ -167,6 +170,11 @@ export const useIncrementalDeleteManyRecords = <T>({
           mutation: deleteManyRecordsMutation,
           variables: {
             filter: { id: { in: batchedIdsToDelete } },
+          },
+          context: {
+            fetchOptions: {
+              signal: abortSignal,
+            },
           },
         })
         .catch((error: Error) => {
@@ -214,19 +222,31 @@ export const useIncrementalDeleteManyRecords = <T>({
 
   const incrementalDeleteManyRecords = async () => {
     let totalDeletedCount = 0;
+    const allDeletedRecordIds: string[] = [];
 
-    await incrementalFetchAndMutate(async ({ recordIds, totalCount }) => {
-      await deleteManyRecordsBatch(recordIds);
+    await incrementalFetchAndMutate(
+      async ({ recordIds, totalCount, abortSignal }) => {
+        await deleteManyRecordsBatch(recordIds, abortSignal);
 
-      totalDeletedCount += recordIds.length;
+        allDeletedRecordIds.push(...recordIds);
+        totalDeletedCount += recordIds.length;
 
-      updateProgress(totalDeletedCount, totalCount);
+        updateProgress(totalDeletedCount, totalCount);
+      },
+    );
+
+    await refetchAggregateQueries({
+      objectMetadataNamePlural: objectMetadataItem.namePlural,
     });
 
-    await refetchAggregateQueries();
+    removeNavigationMenuItemsByTargetRecordIds(allDeletedRecordIds);
 
-    registerObjectOperation(objectNameSingular, {
-      type: 'delete-many',
+    dispatchObjectRecordOperationBrowserEvent({
+      objectMetadataItem,
+      operation: {
+        type: 'delete-many',
+        deletedRecordIds: allDeletedRecordIds,
+      },
     });
 
     return totalDeletedCount;

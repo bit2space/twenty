@@ -7,7 +7,9 @@ import { type WorkspacePostQueryHookInstance } from 'src/engine/api/graphql/work
 
 import { WorkspaceQueryHook } from 'src/engine/api/graphql/workspace-query-runner/workspace-query-hook/decorators/workspace-query-hook.decorator';
 import { WorkspaceQueryHookType } from 'src/engine/api/graphql/workspace-query-runner/workspace-query-hook/types/workspace-query-hook.type';
-import { type AuthContext } from 'src/engine/core-modules/auth/types/auth-context.type';
+import { isApiKeyAuthContext } from 'src/engine/core-modules/auth/guards/is-api-key-auth-context.guard';
+import { isUserAuthContext } from 'src/engine/core-modules/auth/guards/is-user-auth-context.guard';
+import { type WorkspaceAuthContext } from 'src/engine/core-modules/auth/types/workspace-auth-context.type';
 import { UserWorkspaceEntity } from 'src/engine/core-modules/user-workspace/user-workspace.entity';
 import { UserWorkspaceService } from 'src/engine/core-modules/user-workspace/user-workspace.service';
 import { WorkspaceNotFoundDefaultError } from 'src/engine/core-modules/workspace/workspace.exception';
@@ -15,7 +17,7 @@ import {
   PermissionsException,
   PermissionsExceptionCode,
 } from 'src/engine/metadata-modules/permissions/permissions.exception';
-import { TwentyORMManager } from 'src/engine/twenty-orm/twenty-orm.manager';
+import { GlobalWorkspaceOrmManager } from 'src/engine/twenty-orm/global-workspace-datasource/global-workspace-orm.manager';
 import { WorkspaceMemberPreQueryHookService } from 'src/modules/workspace-member/query-hooks/workspace-member-pre-query-hook.service';
 import { WorkspaceMemberWorkspaceEntity } from 'src/modules/workspace-member/standard-objects/workspace-member.workspace-entity';
 
@@ -27,7 +29,7 @@ export class WorkspaceMemberDeleteOnePostQueryHook
   implements WorkspacePostQueryHookInstance
 {
   constructor(
-    private readonly twentyORMManager: TwentyORMManager,
+    private readonly globalWorkspaceOrmManager: GlobalWorkspaceOrmManager,
     @InjectRepository(UserWorkspaceEntity)
     private readonly userWorkspaceRepository: Repository<UserWorkspaceEntity>,
     private readonly workspaceMemberPreQueryHookService: WorkspaceMemberPreQueryHookService,
@@ -35,7 +37,7 @@ export class WorkspaceMemberDeleteOnePostQueryHook
   ) {}
 
   async execute(
-    authContext: AuthContext,
+    authContext: WorkspaceAuthContext,
     _objectName: string,
     payload: WorkspaceMemberWorkspaceEntity[],
   ): Promise<void> {
@@ -52,25 +54,38 @@ export class WorkspaceMemberDeleteOnePostQueryHook
 
     await this.workspaceMemberPreQueryHookService.validateWorkspaceMemberUpdatePermissionOrThrow(
       {
-        userWorkspaceId: authContext.userWorkspaceId,
-        workspaceMemberId: authContext.workspaceMemberId,
+        userWorkspaceId: isUserAuthContext(authContext)
+          ? authContext.userWorkspaceId
+          : undefined,
+        workspaceMemberId: isUserAuthContext(authContext)
+          ? authContext.workspaceMemberId
+          : undefined,
         targettedWorkspaceMemberId,
         workspaceId: workspace.id,
-        apiKey: authContext.apiKey,
+        apiKey: isApiKeyAuthContext(authContext)
+          ? authContext.apiKey
+          : undefined,
       },
     );
 
-    const workspaceMemberRepository =
-      await this.twentyORMManager.getRepository<WorkspaceMemberWorkspaceEntity>(
-        'workspaceMember',
-      );
+    const workspaceMember =
+      await this.globalWorkspaceOrmManager.executeInWorkspaceContext(
+        async () => {
+          const workspaceMemberRepository =
+            await this.globalWorkspaceOrmManager.getRepository<WorkspaceMemberWorkspaceEntity>(
+              workspace.id,
+              'workspaceMember',
+            );
 
-    const workspaceMember = await workspaceMemberRepository.findOne({
-      where: {
-        id: targettedWorkspaceMemberId,
-      },
-      withDeleted: true,
-    });
+          return workspaceMemberRepository.findOne({
+            where: {
+              id: targettedWorkspaceMemberId,
+            },
+            withDeleted: true,
+          });
+        },
+        authContext,
+      );
 
     if (!isDefined(workspaceMember)) {
       throw new PermissionsException(

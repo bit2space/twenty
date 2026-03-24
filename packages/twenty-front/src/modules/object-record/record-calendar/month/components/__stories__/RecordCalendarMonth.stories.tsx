@@ -1,14 +1,15 @@
-import { type Meta, type StoryObj } from '@storybook/react';
+import { type Meta, type StoryObj } from '@storybook/react-vite';
+import { useEffect, useMemo, useState } from 'react';
 
 import { type TaskGroups } from '@/activities/tasks/components/TaskGroups';
 import { contextStoreCurrentViewIdComponentState } from '@/context-store/states/contextStoreCurrentViewIdComponentState';
 import { CoreObjectNamePlural } from '@/object-metadata/types/CoreObjectNamePlural';
-import { CoreObjectNameSingular } from '@/object-metadata/types/CoreObjectNameSingular';
 import { ObjectFilterDropdownComponentInstanceContext } from '@/object-record/object-filter-dropdown/states/contexts/ObjectFilterDropdownComponentInstanceContext';
 import { RecordIndexContextProvider } from '@/object-record/record-index/contexts/RecordIndexContext';
 import { RecordTableComponentInstanceContext } from '@/object-record/record-table/states/context/RecordTableComponentInstanceContext';
-import { useSetRecoilComponentState } from '@/ui/utilities/state/component-state/hooks/useSetRecoilComponentState';
+import { useSetAtomComponentState } from '@/ui/utilities/state/jotai/hooks/useSetAtomComponentState';
 import { ViewComponentInstanceContext } from '@/views/states/contexts/ViewComponentInstanceContext';
+import { CoreObjectNameSingular } from 'twenty-shared/types';
 
 import { MAIN_CONTEXT_STORE_INSTANCE_ID } from '@/context-store/constants/MainContextStoreInstanceId';
 import { RecordComponentInstanceContextsWrapper } from '@/object-record/components/RecordComponentInstanceContextsWrapper';
@@ -17,58 +18,68 @@ import { RecordCalendarMonth } from '@/object-record/record-calendar/month/compo
 import { currentRecordFieldsComponentState } from '@/object-record/record-field/states/currentRecordFieldsComponentState';
 import { type RecordField } from '@/object-record/record-field/types/RecordField';
 import { useRecordIndexFieldMetadataDerivedStates } from '@/object-record/record-index/hooks/useRecordIndexFieldMetadataDerivedStates';
-import { VIEW_BAR_FILTER_DROPDOWN_ID } from '@/views/constants/ViewBarFilterDropdownId';
-import { coreViewsState } from '@/views/states/coreViewState';
-import { useSetRecoilState } from 'recoil';
+import { jotaiStore } from '@/ui/utilities/state/jotai/jotaiStore';
+import { ViewBarFilterDropdownIds } from '@/views/constants/ViewBarFilterDropdownIds';
 import { ComponentDecorator, RouterDecorator } from 'twenty-ui/testing';
 import { ContextStoreDecorator } from '~/testing/decorators/ContextStoreDecorator';
-import { I18nFrontDecorator } from '~/testing/decorators/I18nFrontDecorator';
 import { IconsProviderDecorator } from '~/testing/decorators/IconsProviderDecorator';
 import { ObjectMetadataItemsDecorator } from '~/testing/decorators/ObjectMetadataItemsDecorator';
 import { SnackBarDecorator } from '~/testing/decorators/SnackBarDecorator';
-import { mockedCoreViewsData } from '~/testing/mock-data/views';
-import { generatedMockObjectMetadataItems } from '~/testing/utils/generatedMockObjectMetadataItems';
+import { mockedViews } from '~/testing/mock-data/generated/metadata/views/mock-views-data';
+import { getTestEnrichedObjectMetadataItemsMock } from '~/testing/utils/getTestEnrichedObjectMetadataItemsMock';
+import { setTestViewsInMetadataStore } from '~/testing/utils/setTestViewsInMetadataStore';
 
 const meta: Meta<typeof RecordCalendarMonth> = {
   title: 'Modules/ObjectRecord/RecordCalendar/Month',
   component: RecordCalendarMonth,
   decorators: [
     (Story) => {
-      const companyObjectMetadataItem = generatedMockObjectMetadataItems.find(
-        (item) => item.nameSingular === CoreObjectNameSingular.Company,
-      )!;
+      const companyObjectMetadataItem =
+        getTestEnrichedObjectMetadataItemsMock().find(
+          (item) => item.nameSingular === CoreObjectNameSingular.Company,
+        )!;
       const instanceId = companyObjectMetadataItem.id;
 
-      const setCurrentRecordFields = useSetRecoilComponentState(
+      const setCurrentRecordFields = useSetAtomComponentState(
         currentRecordFieldsComponentState,
         instanceId,
       );
 
-      const setCoreViews = useSetRecoilState(coreViewsState);
+      const mockView = mockedViews.find((v) => v.name === 'All Companies')!;
 
-      const mockCoreView = mockedCoreViewsData[0];
-
-      setCoreViews([mockCoreView]);
-
-      const setCurrentViewId = useSetRecoilComponentState(
+      const setContextStoreCurrentViewId = useSetAtomComponentState(
         contextStoreCurrentViewIdComponentState,
         MAIN_CONTEXT_STORE_INSTANCE_ID,
       );
 
-      setCurrentViewId(mockCoreView.id);
-
-      const columns = companyObjectMetadataItem.fields.map(
-        (fieldMetadataItem, index) =>
-          ({
-            id: fieldMetadataItem.id,
-            fieldMetadataItemId: fieldMetadataItem.id,
-            isVisible: true,
-            position: index,
-            size: 100,
-          }) satisfies RecordField,
+      const columns = useMemo(
+        () =>
+          companyObjectMetadataItem.fields.map(
+            (fieldMetadataItem, index) =>
+              ({
+                id: fieldMetadataItem.id,
+                fieldMetadataItemId: fieldMetadataItem.id,
+                isVisible: true,
+                position: index,
+                size: 100,
+              }) satisfies RecordField,
+          ),
+        [companyObjectMetadataItem.fields],
       );
 
-      setCurrentRecordFields(columns);
+      const [isLoaded, setIsLoaded] = useState(false);
+
+      useEffect(() => {
+        setTestViewsInMetadataStore(jotaiStore, [mockView]);
+        setContextStoreCurrentViewId(mockView.id);
+        setCurrentRecordFields(columns);
+        setIsLoaded(true);
+      }, [
+        setContextStoreCurrentViewId,
+        setCurrentRecordFields,
+        mockView,
+        columns,
+      ]);
 
       const {
         fieldDefinitionByFieldMetadataItemId,
@@ -79,6 +90,10 @@ const meta: Meta<typeof RecordCalendarMonth> = {
         companyObjectMetadataItem,
         instanceId,
       );
+
+      if (!isLoaded) {
+        return <></>;
+      }
 
       return (
         <RecordIndexContextProvider
@@ -101,7 +116,7 @@ const meta: Meta<typeof RecordCalendarMonth> = {
             componentInstanceId={instanceId}
           >
             <ObjectFilterDropdownComponentInstanceContext.Provider
-              value={{ instanceId: VIEW_BAR_FILTER_DROPDOWN_ID }}
+              value={{ instanceId: ViewBarFilterDropdownIds.MAIN }}
             >
               <RecordTableComponentInstanceContext.Provider
                 value={{
@@ -122,6 +137,8 @@ const meta: Meta<typeof RecordCalendarMonth> = {
                         canSoftDeleteObjectRecords: true,
                         canDestroyObjectRecords: true,
                         restrictedFields: {},
+                        rowLevelPermissionPredicates: [],
+                        rowLevelPermissionPredicateGroups: [],
                       },
                     }}
                   >
@@ -139,7 +156,6 @@ const meta: Meta<typeof RecordCalendarMonth> = {
     SnackBarDecorator,
     ComponentDecorator,
     IconsProviderDecorator,
-    I18nFrontDecorator,
     RouterDecorator,
   ],
 };

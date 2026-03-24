@@ -4,7 +4,6 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ApplicationModule } from 'src/engine/core-modules/application/application.module';
 import { AuditModule } from 'src/engine/core-modules/audit/audit.module';
 import { FeatureFlagModule } from 'src/engine/core-modules/feature-flag/feature-flag.module';
-import { FileUploadModule } from 'src/engine/core-modules/file/file-upload/file-upload.module';
 import { FileModule } from 'src/engine/core-modules/file/file.module';
 import { ThrottlerModule } from 'src/engine/core-modules/throttler/throttler.module';
 import { AiAgentRoleModule } from 'src/engine/metadata-modules/ai/ai-agent-role/ai-agent-role.module';
@@ -17,8 +16,8 @@ import { RoleTargetEntity } from 'src/engine/metadata-modules/role-target/role-t
 import { RoleEntity } from 'src/engine/metadata-modules/role/role.entity';
 import { WorkspaceCacheStorageModule } from 'src/engine/workspace-cache-storage/workspace-cache-storage.module';
 import { WorkspaceCacheModule } from 'src/engine/workspace-cache/workspace-cache.module';
-import { WorkspaceMigrationBuilderGraphqlApiExceptionInterceptor } from 'src/engine/workspace-manager/workspace-migration-v2/interceptors/workspace-migration-builder-graphql-api-exception.interceptor';
-import { WorkspaceMigrationV2Module } from 'src/engine/workspace-manager/workspace-migration-v2/workspace-migration-v2.module';
+import { WorkspaceMigrationGraphqlApiExceptionInterceptor } from 'src/engine/workspace-manager/workspace-migration/interceptors/workspace-migration-graphql-api-exception.interceptor';
+import { WorkspaceMigrationModule } from 'src/engine/workspace-manager/workspace-migration/workspace-migration.module';
 
 import { AgentResolver } from './agent.resolver';
 import { AgentService } from './agent.service';
@@ -33,12 +32,11 @@ import { AgentEntity } from './entities/agent.entity';
     ThrottlerModule,
     AuditModule,
     FeatureFlagModule,
-    FileUploadModule,
     FileModule,
     ObjectMetadataModule,
     PermissionsModule,
     WorkspaceCacheStorageModule,
-    WorkspaceMigrationV2Module,
+    WorkspaceMigrationModule,
     ApplicationModule,
     FlatAgentModule,
     WorkspaceCacheModule,
@@ -46,7 +44,7 @@ import { AgentEntity } from './entities/agent.entity';
   providers: [
     AgentResolver,
     AgentService,
-    WorkspaceMigrationBuilderGraphqlApiExceptionInterceptor,
+    WorkspaceMigrationGraphqlApiExceptionInterceptor,
     AgentGraphqlApiExceptionInterceptor,
   ],
   exports: [AgentService, TypeOrmModule.forFeature([AgentEntity])],

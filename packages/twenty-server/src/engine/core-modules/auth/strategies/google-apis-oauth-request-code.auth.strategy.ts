@@ -12,11 +12,14 @@ export type GoogleAPIScopeConfig = {
 
 @Injectable()
 export class GoogleAPIsOauthRequestCodeStrategy extends GoogleAPIsOauthCommonStrategy {
-  constructor(twentyConfigService: TwentyConfigService) {
-    super(twentyConfigService);
+  constructor(
+    twentyConfigService: TwentyConfigService,
+    isDraftEmailEnabled = false,
+  ) {
+    super(twentyConfigService, isDraftEmailEnabled);
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // oxlint-disable-next-line @typescripttypescript/no-explicit-any
   authenticate(req: any, options: any) {
     options = {
       ...options,
@@ -28,6 +31,8 @@ export class GoogleAPIsOauthRequestCodeStrategy extends GoogleAPIsOauthCommonStr
         redirectLocation: req.params.redirectLocation,
         calendarVisibility: req.params.calendarVisibility,
         messageVisibility: req.params.messageVisibility,
+        skipMessageChannelConfiguration:
+          req.params.skipMessageChannelConfiguration,
       }),
     };
 

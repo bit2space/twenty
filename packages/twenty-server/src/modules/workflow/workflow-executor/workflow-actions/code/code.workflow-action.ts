@@ -4,8 +4,7 @@ import { resolveInput } from 'twenty-shared/utils';
 
 import { type WorkflowAction } from 'src/modules/workflow/workflow-executor/interfaces/workflow-action.interface';
 
-import { ServerlessFunctionService } from 'src/engine/metadata-modules/serverless-function/serverless-function.service';
-import { ScopedWorkspaceContextFactory } from 'src/engine/twenty-orm/factories/scoped-workspace-context.factory';
+import { LogicFunctionExecutorService } from 'src/engine/core-modules/logic-function/logic-function-executor/logic-function-executor.service';
 import {
   WorkflowStepExecutorException,
   WorkflowStepExecutorExceptionCode,
@@ -19,14 +18,14 @@ import { type WorkflowCodeActionInput } from 'src/modules/workflow/workflow-exec
 @Injectable()
 export class CodeWorkflowAction implements WorkflowAction {
   constructor(
-    private readonly serverlessFunctionService: ServerlessFunctionService,
-    private readonly scopedWorkspaceContextFactory: ScopedWorkspaceContextFactory,
+    private readonly logicFunctionExecutorService: LogicFunctionExecutorService,
   ) {}
 
   async execute({
     currentStepId,
     steps,
     context,
+    runInfo,
   }: WorkflowActionInput): Promise<WorkflowActionOutput> {
     const step = findStepOrThrow({
       stepId: currentStepId,
@@ -45,31 +44,18 @@ export class CodeWorkflowAction implements WorkflowAction {
       context,
     ) as WorkflowCodeActionInput;
 
-    try {
-      const { workspaceId } = this.scopedWorkspaceContextFactory.create();
+    const { workspaceId } = runInfo;
 
-      if (!workspaceId) {
-        throw new WorkflowStepExecutorException(
-          'Scoped workspace not found',
-          WorkflowStepExecutorExceptionCode.SCOPED_WORKSPACE_NOT_FOUND,
-        );
-      }
+    const result = await this.logicFunctionExecutorService.execute({
+      logicFunctionId: workflowActionInput.logicFunctionId,
+      workspaceId,
+      payload: workflowActionInput.logicFunctionInput,
+    });
 
-      const result =
-        await this.serverlessFunctionService.executeOneServerlessFunction(
-          workflowActionInput.serverlessFunctionId,
-          workspaceId,
-          workflowActionInput.serverlessFunctionInput,
-          workflowActionInput.serverlessFunctionVersion,
-        );
-
-      if (result.error) {
-        return { error: result.error.errorMessage };
-      }
-
-      return { result: result.data || {} };
-    } catch (error) {
-      return { error: error.message };
+    if (result.error) {
+      return { error: result.error.errorMessage };
     }
+
+    return { result: result.data || {} };
   }
 }

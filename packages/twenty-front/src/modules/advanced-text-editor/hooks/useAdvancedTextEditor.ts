@@ -15,10 +15,15 @@ import { Paragraph } from '@tiptap/extension-paragraph';
 import { Strike } from '@tiptap/extension-strike';
 import { Text } from '@tiptap/extension-text';
 import { Underline } from '@tiptap/extension-underline';
-import { Dropcursor, Placeholder, UndoRedo } from '@tiptap/extensions';
+import { Dropcursor } from '@tiptap/extensions/drop-cursor';
+import { Placeholder } from '@tiptap/extensions/placeholder';
+import { UndoRedo } from '@tiptap/extensions/undo-redo';
 import { type Editor, useEditor } from '@tiptap/react';
+import { marked } from 'marked';
 import { type DependencyList, useMemo } from 'react';
 import { isDefined } from 'twenty-shared/utils';
+
+export type AdvancedTextEditorContentType = 'json' | 'markdown';
 
 type UseAdvancedTextEditorProps = {
   placeholder: string | undefined;
@@ -30,6 +35,7 @@ type UseAdvancedTextEditorProps = {
   onImageUpload?: (file: File) => Promise<string>;
   onImageUploadError?: (error: Error, file: File) => void;
   enableSlashCommand?: boolean;
+  contentType?: AdvancedTextEditorContentType;
 };
 
 export const useAdvancedTextEditor = (
@@ -43,9 +49,12 @@ export const useAdvancedTextEditor = (
     onImageUpload,
     onImageUploadError,
     enableSlashCommand,
+    contentType = 'json',
   }: UseAdvancedTextEditorProps,
   dependencies?: DependencyList,
 ) => {
+  const isMarkdownMode = contentType === 'markdown';
+
   const extensions = useMemo(
     () => [
       Document,
@@ -87,12 +96,23 @@ export const useAdvancedTextEditor = (
     ],
   );
 
+  const getEditorContent = () => {
+    if (!isDefined(defaultValue)) {
+      return undefined;
+    }
+
+    if (isMarkdownMode) {
+      // Convert markdown to HTML, then TipTap will parse the HTML
+      return marked.parse(defaultValue, { async: false }) as string;
+    }
+
+    return getInitialAdvancedTextEditorContent(defaultValue);
+  };
+
   const editor = useEditor(
     {
       extensions,
-      content: isDefined(defaultValue)
-        ? getInitialAdvancedTextEditorContent(defaultValue)
-        : undefined,
+      content: getEditorContent(),
       editable: !readonly,
       onUpdate: ({ editor }) => {
         onUpdate(editor);

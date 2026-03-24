@@ -6,6 +6,7 @@ import {
   ConnectedAccountProvider,
   type AllowedAddressSubField,
   type FieldMetadataMultiItemSettings,
+  type FileCategory,
 } from 'twenty-shared/types';
 import { type ThemeColor } from 'twenty-ui/theme';
 import { z } from 'zod';
@@ -91,6 +92,7 @@ export type FieldCurrencyMetadata = BaseFieldMetadata & {
   isPositive?: boolean;
   settings?: {
     format: FieldCurrencyFormat | null;
+    decimals?: number;
   };
 };
 
@@ -129,10 +131,6 @@ export type FieldRawJsonMetadata = BaseFieldMetadata & {
   settings?: null;
 };
 
-export type FieldRichTextV2Metadata = BaseFieldMetadata & {
-  settings?: null;
-};
-
 export type FieldRichTextMetadata = BaseFieldMetadata & {
   settings?: null;
 };
@@ -140,6 +138,15 @@ export type FieldRichTextMetadata = BaseFieldMetadata & {
 export type FieldPositionMetadata = BaseFieldMetadata & {
   settings?: null;
 };
+
+export type FieldRelationMetadataSettings = {
+  relationType?: RelationType;
+  // Join column name for the foreign key (e.g., "petId" for a "pet" relation)
+  joinColumnName?: string | null;
+  // Points to the target field on the junction object
+  // For MORPH_RELATION fields, morphRelations already contains all targets
+  junctionTargetFieldId?: string;
+} | null;
 
 // for later: refactor this in order to directly use relation without mapping
 export type FieldRelationMetadata = BaseFieldMetadata & {
@@ -150,14 +157,14 @@ export type FieldRelationMetadata = BaseFieldMetadata & {
   relationType?: RelationType;
   targetFieldMetadataName?: string;
   useEditButton?: boolean;
-  settings?: null;
+  settings?: FieldRelationMetadataSettings;
 };
 
 export type FieldMorphRelationMetadata = BaseFieldMetadata & {
   morphRelations: FieldMetadataItemRelation[];
   relationType: RelationType;
   useEditButton?: boolean;
-  settings?: null;
+  settings?: FieldRelationMetadataSettings;
 };
 
 export type FieldSelectMetadata = BaseFieldMetadata & {
@@ -188,6 +195,10 @@ export type FieldTsVectorMetadata = BaseFieldMetadata & {
   settings?: null;
 };
 
+export type FieldFilesMetadata = BaseFieldMetadata & {
+  settings?: FieldMetadataMultiItemSettings | null;
+};
+
 export type FieldMetadata =
   | FieldBooleanMetadata
   | FieldCurrencyMetadata
@@ -195,6 +206,7 @@ export type FieldMetadata =
   | FieldDateMetadata
   | FieldEmailMetadata
   | FieldEmailsMetadata
+  | FieldFilesMetadata
   | FieldFullNameMetadata
   | FieldLinkMetadata
   | FieldLinksMetadata
@@ -212,7 +224,7 @@ export type FieldMetadata =
   | FieldActorMetadata
   | FieldArrayMetadata
   | FieldTsVectorMetadata
-  | FieldRichTextV2Metadata
+  | FieldRawJsonMetadata
   | FieldRichTextMetadata;
 
 export type FieldTextValue = string;
@@ -267,12 +279,10 @@ export type FieldRelationValue<
 export type Json = ZodHelperLiteral | { [key: string]: Json } | Json[];
 export type FieldJsonValue = Record<string, Json> | Json[] | null;
 
-export type FieldRichTextV2Value = {
+export type FieldRichTextValue = {
   blocknote: string | null;
   markdown: string | null;
 };
-
-export type FieldRichTextValue = null | string;
 
 const FieldActorSourceSchema = z.union([
   z.literal('API'),
@@ -284,6 +294,7 @@ const FieldActorSourceSchema = z.union([
   z.literal('WORKFLOW'),
   z.literal('WEBHOOK'),
   z.literal('AGENT'),
+  z.literal('APPLICATION'),
 ]);
 
 export const FieldActorValueSchema = z.object({
@@ -316,4 +327,12 @@ export type FieldPhonesValue = {
   primaryPhoneCountryCode: string;
   primaryPhoneCallingCode?: string;
   additionalPhones?: PhoneRecord[] | null;
+};
+
+export type FieldFilesValue = {
+  fileId: string;
+  label: string;
+  extension?: string;
+  url?: string;
+  fileCategory?: FileCategory;
 };

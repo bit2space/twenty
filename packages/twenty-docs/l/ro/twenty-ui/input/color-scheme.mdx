@@ -4,15 +4,15 @@ image: /images/user-guide/fields/field.png
 ---
 
 <Frame>
-  <img src="/images/user-guide/fields/field.png" alt="Header" />
+  <img src="/images/user-guide/fields/field.png" alt="Antet" />
 </Frame>
 
-## Color Scheme Card
+## Card pentru schema culorilor
 
 Reprezintă scheme de culori diferite și este special adaptat pentru teme deschise și întunecate.
 
 <Tabs>
-<Tab title="Usage">
+<Tab title="Utilizare">
 
 ```jsx
 import { ColorSchemeCard } from "twenty-ui/display";
@@ -29,13 +29,16 @@ export const MyComponent = () => {
 
 </Tab>
 
-<Tab title="Props">
+<Tab title="Proprietăți">
 
-| Proprietăți              | Tip                                     | Descriere                                                                                        | Implicit |
-| ------------------------ | --------------------------------------- | ------------------------------------------------------------------------------------------------ | -------- |
+
+| Proprietăți              | Tip                                     | Descriere                                                                        | Implicit |
+| ------------------------ | --------------------------------------- | -------------------------------------------------------------------------------- | -------- |
 | variantă                 | șir                                     | Varianta schemei de culori. Opțiuni includ `Întunecată`, `Deschisă`, și `Sistem` | luminos  |
-| selectat                 | boolean                                 | If `true`, displays a checkmark to indicate the selected color scheme                            |          |
-| proprietăți suplimentare | `React.ComponentPropsWithoutRef<'div'>` | Proprietăți standard pentru elementul HTML `div`                                                 |          |
+| selectat                 | boolean                                 | Dacă este `true`, afișează o bifă pentru a indica schema culorilor selectată     |          |
+| proprietăți suplimentare | `React.ComponentPropsWithoutRef<'div'>` | Proprietăți standard pentru elementul HTML `div`                                 |          |
+
+
 
 </Tab>
 
@@ -46,7 +49,7 @@ export const MyComponent = () => {
 Permite utilizatorilor să aleagă între diferite scheme de culori.
 
 <Tabs>
-<Tab title="Usage">
+<Tab title="Utilizare">
 
 ```jsx
 import { ColorSchemePicker } from "twenty-ui/display";
@@ -61,12 +64,15 @@ export const MyComponent = () => {
 
 </Tab>
 
-<Tab title="Props">
+<Tab title="Proprietăți">
+
 
 | Proprietăți | Tip                | Descriere                                                                                           |
 | ----------- | ------------------ | --------------------------------------------------------------------------------------------------- |
 | valoare     | `Schema culorilor` | Schema de culori curentă selectată                                                                  |
 | onChange    | funcție            | Funcția de callback pe care doriți să o declanșați când un utilizator selectează o schemă de culori |
+
+
 
 </Tab>
 

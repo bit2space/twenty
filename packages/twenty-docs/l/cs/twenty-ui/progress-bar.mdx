@@ -4,14 +4,14 @@ image: /images/user-guide/emails/emails_header.png
 ---
 
 <Frame>
-  <img src="/images/user-guide/emails/emails_header.png" alt="Header" />
+  <img src="/images/user-guide/emails/emails_header.png" alt="Hlavička" />
 </Frame>
 
 Udává průběh nebo odpočítávání a pohybuje se zprava doleva.
 
 <Tabs>
 
-<Tab title="Usage">
+<Tab title="Použití">
 
 ```jsx
 import { ProgressBar } from "twenty-ui/feedback";
@@ -32,16 +32,19 @@ export const MyComponent = () => {
 
 </Tab>
 
-<Tab title="Props">
+<Tab title="Vlastnosti">
+
 
 | Vlastnosti | Typ                | Popis                                                                                | Výchozí   |
 | ---------- | ------------------ | ------------------------------------------------------------------------------------ | --------- |
-| trvání     | číslo              | The total duration of the progress bar animation in milliseconds                     | 3         |
+| trvání     | číslo              | Celková doba trvání animace indikačního pruhu v milisekundách                        | 3         |
 | zpoždění   | číslo              | Zpoždění spuštění animace indikačního pruhu v milisekundách                          | 0         |
-| easing     | textový řetězec    | Easing function for the progress bar animation                                       | easeInOut |
+| easing     | textový řetězec    | Easingová funkce pro animaci indikačního pruhu                                       | easeInOut |
 | barHeight  | číslo              | Výška pruhu v pixelech                                                               | 24        |
 | barvaPruhu | textový řetězec    | Barva pruhu                                                                          | gray80    |
 | autoStart  | booleovská hodnota | Pokud `true`, animace indikačního pruhu se automaticky spustí při načtení komponenty | `pravda`  |
+
+
 
 </Tab>
 </Tabs>
@@ -52,7 +55,7 @@ Udává průběh úkolu, často používané na načítacích obrazovkách nebo 
 
 <Tabs>
 
-<Tab title="Usage">
+<Tab title="Použití">
 
 ```jsx
 import { CircularProgressBar } from "@/ui/feedback/progress-bar/components/CircularProgressBar";
@@ -64,13 +67,16 @@ export const MyComponent = () => {
 
 </Tab>
 
-<Tab title="Props">
+<Tab title="Vlastnosti">
+
 
 | Vlastnosti | Typ             | Popis                                | Výchozí       |
 | ---------- | --------------- | ------------------------------------ | ------------- |
 | velikost   | číslo           | Velikost kruhového indikačního pruhu | 50            |
 | barWidth   | číslo           | Šířka čáry indikačního pruhu         | 5             |
 | barvaPruhu | textový řetězec | Barva indikačního pruhu              | současnáBarva |
+
+
 
 </Tab>
 

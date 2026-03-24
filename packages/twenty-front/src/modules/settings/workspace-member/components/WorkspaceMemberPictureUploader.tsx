@@ -1,15 +1,16 @@
+import { t } from '@lingui/core/macro';
 import { useState } from 'react';
-import { useRecoilState } from 'recoil';
 
 import { currentWorkspaceMemberState } from '@/auth/states/currentWorkspaceMemberState';
-import { CoreObjectNameSingular } from '@/object-metadata/types/CoreObjectNameSingular';
+import { useAtomState } from '@/ui/utilities/state/jotai/hooks/useAtomState';
+import { CoreObjectNameSingular } from 'twenty-shared/types';
 import { useUpdateOneRecord } from '@/object-record/hooks/useUpdateOneRecord';
-import { UPLOAD_WORKSPACE_MEMBER_PROFILE_PICTURE } from '@/settings/members/graphql/mutations/uploadWorkspaceMemberProfilePicture';
 import { useCanEditProfileField } from '@/settings/profile/hooks/useCanEditProfileField';
 import { useSnackBar } from '@/ui/feedback/snack-bar-manager/hooks/useSnackBar';
 import { ImageInput } from '@/ui/input/components/ImageInput';
-import { useMutation } from '@apollo/client';
-import { buildSignedPath, isDefined } from 'twenty-shared/utils';
+import { isDefined } from 'twenty-shared/utils';
+import { useMutation } from '@apollo/client/react';
+import { UploadWorkspaceMemberProfilePictureDocument } from '~/generated-metadata/graphql';
 import { isUndefinedOrNull } from '~/utils/isUndefinedOrNull';
 
 type WorkspaceMemberPictureUploaderProps = {
@@ -31,15 +32,15 @@ export const WorkspaceMemberPictureUploader = ({
   const [uploadController, setUploadController] =
     useState<AbortController | null>(null);
 
-  const [currentWorkspaceMember, setCurrentWorkspaceMember] = useRecoilState(
+  const [currentWorkspaceMember, setCurrentWorkspaceMember] = useAtomState(
     currentWorkspaceMemberState,
   );
 
-  const [uploadPicture] = useMutation(UPLOAD_WORKSPACE_MEMBER_PROFILE_PICTURE);
+  const [uploadPicture] = useMutation(
+    UploadWorkspaceMemberProfilePictureDocument,
+  );
 
-  const { updateOneRecord } = useUpdateOneRecord({
-    objectNameSingular: CoreObjectNameSingular.WorkspaceMember,
-  });
+  const { updateOneRecord } = useUpdateOneRecord();
 
   const { canEdit: canEditProfilePicture } =
     useCanEditProfileField('profilePicture');
@@ -57,6 +58,7 @@ export const WorkspaceMemberPictureUploader = ({
     setIsUploading(true);
     setErrorMessage(null);
 
+    let newAvatarUrl: string | null = null;
     try {
       const { data } = await uploadPicture({
         variables: { file },
@@ -73,11 +75,12 @@ export const WorkspaceMemberPictureUploader = ({
       }
 
       await updateOneRecord({
+        objectNameSingular: CoreObjectNameSingular.WorkspaceMember,
         idToUpdate: workspaceMemberId,
-        updateOneRecordInput: { avatarUrl: signedFile.path },
+        updateOneRecordInput: { avatarUrl: signedFile.url },
       });
 
-      const newAvatarUrl = buildSignedPath(signedFile);
+      newAvatarUrl = signedFile.url;
 
       if (isEditingSelf && isDefined(currentWorkspaceMember)) {
         setCurrentWorkspaceMember({
@@ -94,8 +97,8 @@ export const WorkspaceMemberPictureUploader = ({
       setErrorMessage(null);
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : 'Failed to upload picture';
-      setErrorMessage('An error occurred while uploading the picture.');
+        error instanceof Error ? error.message : t`Failed to upload picture`;
+      setErrorMessage(t`An error occurred while uploading the picture.`);
       enqueueErrorSnackBar({ message });
     } finally {
       setIsUploading(false);
@@ -112,6 +115,7 @@ export const WorkspaceMemberPictureUploader = ({
 
     try {
       await updateOneRecord({
+        objectNameSingular: CoreObjectNameSingular.WorkspaceMember,
         idToUpdate: workspaceMemberId,
         updateOneRecordInput: { avatarUrl: '' },
       });
@@ -130,8 +134,8 @@ export const WorkspaceMemberPictureUploader = ({
       setErrorMessage(null);
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : 'Failed to remove picture';
-      setErrorMessage('An error occurred while removing the picture.');
+        error instanceof Error ? error.message : t`Failed to remove picture`;
+      setErrorMessage(t`An error occurred while removing the picture.`);
       enqueueErrorSnackBar({ message });
     } finally {
       setIsUploading(false);

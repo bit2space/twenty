@@ -1,22 +1,27 @@
 import { Field, ObjectType, registerEnumType } from '@nestjs/graphql';
 
+import { type AiSdkPackage } from 'twenty-shared/ai';
+import { FeatureFlagKey } from 'twenty-shared/types';
+
 import { SupportDriver } from 'src/engine/core-modules/twenty-config/interfaces/support.interface';
 
 import { BillingTrialPeriodDTO } from 'src/engine/core-modules/billing/dtos/billing-trial-period.dto';
 import { CaptchaDriverType } from 'src/engine/core-modules/captcha/interfaces';
-import { FeatureFlagKey } from 'src/engine/core-modules/feature-flag/enums/feature-flag-key.enum';
-import { AuthProvidersDTO } from 'src/engine/core-modules/workspace/dtos/public-workspace-data-output';
-import {
-  ModelId,
-  ModelProvider,
-} from 'src/engine/metadata-modules/ai/ai-models/constants/ai-models.const';
+import { AuthProvidersDTO } from 'src/engine/core-modules/workspace/dtos/public-workspace-data.dto';
+import { AiModelRole } from 'src/engine/metadata-modules/ai/ai-models/types/ai-model-role.enum';
+import { ModelFamily } from 'src/engine/metadata-modules/ai/ai-models/types/model-family.enum';
+import { type ModelId } from 'src/engine/metadata-modules/ai/ai-models/types/model-id.type';
 
 registerEnumType(FeatureFlagKey, {
   name: 'FeatureFlagKey',
 });
 
-registerEnumType(ModelProvider, {
-  name: 'ModelProvider',
+registerEnumType(ModelFamily, {
+  name: 'ModelFamily',
+});
+
+registerEnumType(AiModelRole, {
+  name: 'AiModelRole',
 });
 
 @ObjectType()
@@ -31,22 +36,111 @@ export class NativeModelCapabilities {
 @ObjectType()
 export class ClientAIModelConfig {
   @Field(() => String)
+  // Composite model id (`provider/modelName`) for this workspace; matches registry and admin APIs.
   modelId: ModelId;
 
   @Field(() => String)
   label: string;
 
-  @Field(() => ModelProvider)
-  provider: ModelProvider;
+  @Field(() => ModelFamily, { nullable: true })
+  modelFamily?: ModelFamily;
+
+  @Field({ nullable: true })
+  modelFamilyLabel?: string;
+
+  @Field(() => String, { nullable: true })
+  sdkPackage: AiSdkPackage | null;
 
   @Field(() => Number)
-  inputCostPer1kTokensInCredits: number;
+  inputCostPerMillionTokensInCredits: number;
 
   @Field(() => Number)
-  outputCostPer1kTokensInCredits: number;
+  outputCostPerMillionTokensInCredits: number;
 
   @Field(() => NativeModelCapabilities, { nullable: true })
   nativeCapabilities?: NativeModelCapabilities;
+
+  @Field(() => Boolean, { nullable: true })
+  isDeprecated?: boolean;
+
+  @Field(() => Boolean, { nullable: true })
+  isRecommended?: boolean;
+
+  @Field(() => String, { nullable: true })
+  providerName?: string;
+
+  @Field(() => String, { nullable: true })
+  dataResidency?: string;
+}
+
+@ObjectType()
+export class AdminAIModelConfig {
+  @Field(() => String)
+  // Composite model id (`provider/modelName`) used for toggles, defaults, and registry lookups.
+  modelId: string;
+
+  @Field(() => String)
+  label: string;
+
+  @Field(() => ModelFamily, { nullable: true })
+  modelFamily?: ModelFamily;
+
+  @Field({ nullable: true })
+  modelFamilyLabel?: string;
+
+  @Field(() => String, { nullable: true })
+  sdkPackage: AiSdkPackage | null;
+
+  @Field(() => Boolean)
+  isAvailable: boolean;
+
+  @Field(() => Boolean)
+  isAdminEnabled: boolean;
+
+  @Field(() => Boolean, { nullable: true })
+  isDeprecated?: boolean;
+
+  @Field(() => Boolean, { nullable: true })
+  isRecommended?: boolean;
+
+  @Field(() => Number, { nullable: true })
+  contextWindowTokens?: number;
+
+  @Field(() => Number, { nullable: true })
+  maxOutputTokens?: number;
+
+  @Field(() => Number, { nullable: true })
+  inputCostPerMillionTokens?: number;
+
+  @Field(() => Number, { nullable: true })
+  outputCostPerMillionTokens?: number;
+
+  @Field(() => String, { nullable: true })
+  providerName?: string;
+
+  @Field(() => String, { nullable: true })
+  providerLabel?: string;
+
+  @Field(() => String, { nullable: true })
+  // Bare SDK model name from the provider definition (`AiProviderModelConfig.name`), not the composite `modelId`.
+  name?: string;
+
+  @Field(() => String, { nullable: true })
+  dataResidency?: string;
+}
+
+@ObjectType('AdminAIModels')
+export class AdminAIModelsDTO {
+  @Field(() => [AdminAIModelConfig])
+  models: AdminAIModelConfig[];
+
+  @Field(() => String, { nullable: true })
+  // Composite model id for the default “smart” role (`provider/modelName`).
+  defaultSmartModelId?: string;
+
+  @Field(() => String, { nullable: true })
+  // Composite model id for the default “fast” role (`provider/modelName`).
+  defaultFastModelId?: string;
 }
 
 @ObjectType()
@@ -105,8 +199,8 @@ export class PublicFeatureFlagMetadata {
   @Field(() => String)
   description: string;
 
-  @Field(() => String, { nullable: false, defaultValue: '' })
-  imagePath: string;
+  @Field(() => String, { nullable: true })
+  imagePath?: string;
 }
 
 @ObjectType()
@@ -162,9 +256,6 @@ export class ClientConfig {
   @Field(() => Captcha)
   captcha: Captcha;
 
-  @Field(() => String, { nullable: true })
-  chromeExtensionId: string | undefined;
-
   @Field(() => ApiConfig)
   api: ApiConfig;
 
@@ -192,6 +283,15 @@ export class ClientConfig {
   @Field(() => Boolean)
   isImapSmtpCaldavEnabled: boolean;
 
+  @Field(() => Boolean)
+  allowRequestsToTwentyIcons: boolean;
+
   @Field(() => String, { nullable: true })
   calendarBookingPageId?: string;
+
+  @Field(() => Boolean)
+  isCloudflareIntegrationEnabled: boolean;
+
+  @Field(() => Boolean)
+  isClickHouseConfigured: boolean;
 }

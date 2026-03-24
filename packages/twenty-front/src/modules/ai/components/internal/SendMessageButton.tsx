@@ -1,45 +1,45 @@
-import { AI_CHAT_INPUT_ID } from '@/ai/constants/AiChatInputId';
-import { useAgentChatContextOrThrow } from '@/ai/hooks/useAgentChatContextOrThrow';
-import { agentChatInputState } from '@/ai/states/agentChatInputState';
-import { type ObjectRecord } from '@/object-record/types/ObjectRecord';
-import { useHotkeysOnFocusedElement } from '@/ui/utilities/hotkey/hooks/useHotkeysOnFocusedElement';
-import { t } from '@lingui/core/macro';
-import { useRecoilValue } from 'recoil';
-import { Key } from 'ts-key-enum';
-import { Button } from 'twenty-ui/input';
+import { AGENT_CHAT_STOP_EVENT_NAME } from '@/ai/constants/AgentChatStopEventName';
+import { agentChatInputIsEmptySelector } from '@/ai/states/agentChatInputIsEmptySelector';
+import { agentChatIsLoadingState } from '@/ai/states/agentChatIsLoadingState';
+import { agentChatIsStreamingState } from '@/ai/states/agentChatIsStreamingState';
+import { dispatchBrowserEvent } from '@/browser-event/utils/dispatchBrowserEvent';
+import { useAtomStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomStateValue';
+import { IconArrowUp, IconPlayerStop } from 'twenty-ui/display';
+import { RoundedIconButton } from 'twenty-ui/input';
 
-export const SendMessageButton = ({
-  records,
-}: {
-  records?: ObjectRecord[];
-}) => {
-  const agentChatInput = useRecoilValue(agentChatInputState);
-  const { handleSendMessage, isLoading } = useAgentChatContextOrThrow();
+type SendMessageButtonProps = {
+  onSend: () => void;
+};
 
-  useHotkeysOnFocusedElement({
-    keys: [Key.Enter],
-    callback: (event: KeyboardEvent) => {
-      if (!event.ctrlKey && !event.metaKey) {
-        event.preventDefault();
-        handleSendMessage(records);
-      }
-    },
-    focusId: AI_CHAT_INPUT_ID,
-    dependencies: [agentChatInput, isLoading],
-    options: {
-      enableOnFormTags: true,
-    },
-  });
+export const SendMessageButton = ({ onSend }: SendMessageButtonProps) => {
+  const agentChatInputIsEmpty = useAtomStateValue(
+    agentChatInputIsEmptySelector,
+  );
+
+  const agentChatIsLoading = useAtomStateValue(agentChatIsLoadingState);
+
+  const agentChatIsStreaming = useAtomStateValue(agentChatIsStreamingState);
+
+  const handleStopClick = () => {
+    dispatchBrowserEvent(AGENT_CHAT_STOP_EVENT_NAME);
+  };
+
+  if (agentChatIsStreaming) {
+    return (
+      <RoundedIconButton
+        Icon={IconPlayerStop}
+        size="medium"
+        onClick={handleStopClick}
+      />
+    );
+  }
 
   return (
-    <Button
-      hotkeys={agentChatInput && !isLoading ? ['⏎'] : undefined}
-      onClick={() => handleSendMessage(records)}
-      disabled={!agentChatInput || isLoading}
-      variant="primary"
-      accent="blue"
-      size="small"
-      title={t`Send`}
+    <RoundedIconButton
+      Icon={IconArrowUp}
+      size="medium"
+      onClick={onSend}
+      disabled={agentChatInputIsEmpty || agentChatIsLoading}
     />
   );
 };

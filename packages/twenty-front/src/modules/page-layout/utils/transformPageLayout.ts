@@ -1,6 +1,6 @@
 import { type PageLayout } from '@/page-layout/types/PageLayout';
 import { type PageLayoutTab } from '@/page-layout/types/PageLayoutTab';
-import { type PageLayout as PageLayoutGenerated } from '~/generated/graphql';
+import { type PageLayout as PageLayoutGenerated } from '~/generated-metadata/graphql';
 
 export const transformPageLayout = (
   pageLayout: PageLayoutGenerated,
@@ -9,11 +9,11 @@ export const transformPageLayout = (
     ...pageLayout,
     tabs: (pageLayout.tabs ?? [])
       .toSorted((a, b) => a.position - b.position)
-      .map(
-        (tab): PageLayoutTab => ({
+      .map((tab): PageLayoutTab => {
+        return {
           ...tab,
           widgets: tab.widgets ?? [],
-        }),
-      ),
+        };
+      }),
   };
 };

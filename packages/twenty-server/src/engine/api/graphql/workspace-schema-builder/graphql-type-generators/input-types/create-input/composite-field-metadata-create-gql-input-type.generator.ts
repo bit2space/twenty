@@ -1,22 +1,23 @@
 import { Injectable, Logger } from '@nestjs/common';
 
 import {
+  GraphQLEnumType,
   GraphQLInputFieldConfigMap,
   GraphQLInputObjectType,
   isObjectType,
 } from 'graphql';
-import { isDefined } from 'twenty-shared/utils';
 import { CompositeType } from 'twenty-shared/types';
+import { isDefined, pascalCase } from 'twenty-shared/utils';
 
 import { GqlInputTypeDefinitionKind } from 'src/engine/api/graphql/workspace-schema-builder/enums/gql-input-type-definition-kind.enum';
 import { TypeMapperService } from 'src/engine/api/graphql/workspace-schema-builder/services/type-mapper.service';
 import { GqlTypesStorage } from 'src/engine/api/graphql/workspace-schema-builder/storages/gql-types.storage';
+import { applyTypeOptionsForCreateInput } from 'src/engine/api/graphql/workspace-schema-builder/utils/apply-type-options-for-create-input.util';
 import { computeCompositeFieldTypeOptions } from 'src/engine/api/graphql/workspace-schema-builder/utils/compute-composite-field-type-options.util';
 import { computeCompositeFieldEnumTypeKey } from 'src/engine/api/graphql/workspace-schema-builder/utils/compute-stored-gql-type-key-utils/compute-composite-field-enum-type-key.util';
 import { computeCompositeFieldInputTypeKey } from 'src/engine/api/graphql/workspace-schema-builder/utils/compute-stored-gql-type-key-utils/compute-composite-field-input-type-key.util';
 import { isEnumFieldMetadataType } from 'src/engine/metadata-modules/field-metadata/utils/is-enum-field-metadata-type.util';
 import { isMorphOrRelationFieldMetadataType } from 'src/engine/utils/is-morph-or-relation-field-metadata-type.util';
-import { pascalCase } from 'src/utils/pascal-case';
 
 @Injectable()
 export class CompositeFieldMetadataCreateGqlInputTypeGenerator {
@@ -71,8 +72,11 @@ export class CompositeFieldMetadataCreateGqlInputTypeGenerator {
       const typeOptions = computeCompositeFieldTypeOptions(property);
 
       const type = isEnumFieldMetadataType(property.type)
-        ? this.gqlTypesStorage.getGqlTypeByKey(key)
-        : this.typeMapperService.mapToScalarType(property.type, typeOptions);
+        ? this.gqlTypesStorage.getGqlTypeByKey<GraphQLEnumType>(key)
+        : this.typeMapperService.mapToPreBuiltGraphQLInputType({
+            fieldMetadataType: property.type,
+            typeOptions,
+          });
 
       if (!isDefined(type) || isObjectType(type)) {
         const message = `Could not find a GraphQL input type for ${compositeType.type} ${property.name}`;
@@ -85,10 +89,7 @@ export class CompositeFieldMetadataCreateGqlInputTypeGenerator {
         throw new Error(message);
       }
 
-      const modifiedType = this.typeMapperService.applyTypeOptions(
-        type,
-        typeOptions,
-      );
+      const modifiedType = applyTypeOptionsForCreateInput(type, typeOptions);
 
       fields[property.name] = {
         type: modifiedType,

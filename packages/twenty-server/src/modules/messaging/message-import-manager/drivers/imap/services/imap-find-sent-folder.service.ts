@@ -68,7 +68,7 @@ export class ImapFindSentFolderService {
   ): Promise<SentFolderResult> {
     for (const folder of list) {
       if (folder.specialUse && folder.specialUse.includes('\\Sent')) {
-        this.logger.log(
+        this.logger.debug(
           `Found sent folder via special-use flag: ${folder.path}`,
         );
 
@@ -108,7 +108,7 @@ export class ImapFindSentFolderService {
       );
 
       if (messageCount > 0) {
-        this.logger.log(
+        this.logger.debug(
           `Selected sent folder via pattern match: ${folder.path}`,
         );
 
@@ -120,7 +120,7 @@ export class ImapFindSentFolderService {
     }
 
     if (regexCandidateFolders.length > 0) {
-      this.logger.log(
+      this.logger.debug(
         `Using first regex candidate sent folder: ${regexCandidateFolders[0].path} (no messages found in any regex candidate)`,
       );
 
@@ -140,23 +140,15 @@ export class ImapFindSentFolderService {
     folderPath: string,
   ): Promise<number> {
     try {
-      const lock = await client.getMailboxLock(folderPath);
+      const status = await client.status(folderPath, {
+        messages: true,
+      });
 
-      try {
-        const status = await client.status(folderPath, {
-          messages: true,
-        });
+      const messageCount = status?.messages;
 
-        const messageCount = status?.messages;
+      this.logger.debug(`Folder "${folderPath}" has ${messageCount} messages`);
 
-        this.logger.debug(
-          `Folder "${folderPath}" has ${messageCount} messages`,
-        );
-
-        return isNumber(messageCount) ? messageCount : 0;
-      } finally {
-        lock.release();
-      }
+      return isNumber(messageCount) ? messageCount : 0;
     } catch (error) {
       this.logger.warn(
         `Error checking folder "${folderPath}": ${error.message}`,

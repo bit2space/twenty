@@ -4,7 +4,6 @@ import { SaveAndCancelButtons } from '@/settings/components/SaveAndCancelButtons
 import { SettingsPageContainer } from '@/settings/components/SettingsPageContainer';
 import { SettingsDataModelNewFieldBreadcrumbDropDown } from '@/settings/data-model/components/SettingsDataModelNewFieldBreadcrumbDropDown';
 import { FIELD_NAME_MAXIMUM_LENGTH } from '@/settings/data-model/constants/FieldNameMaximumLength';
-import { SettingsDataModelFieldDescriptionForm } from '@/settings/data-model/fields/forms/components/SettingsDataModelFieldDescriptionForm';
 import { SettingsDataModelFieldIconLabelForm } from '@/settings/data-model/fields/forms/components/SettingsDataModelFieldIconLabelForm';
 import { SettingsDataModelFieldSettingsFormCard } from '@/settings/data-model/fields/forms/components/SettingsDataModelFieldSettingsFormCard';
 import { settingsFieldFormSchema } from '@/settings/data-model/fields/forms/validation-schemas/settingsFieldFormSchema';
@@ -20,7 +19,7 @@ import {
   type RelationCreationPayload,
   SettingsPath,
 } from 'twenty-shared/types';
-import { getSettingsPath } from 'twenty-shared/utils';
+import { isDefined, getSettingsPath } from 'twenty-shared/utils';
 import { H2Title } from 'twenty-ui/display';
 import { Section } from 'twenty-ui/layout';
 import { type z } from 'zod';
@@ -58,16 +57,18 @@ export const SettingsObjectNewFieldConfigure = () => {
   const formConfig = useForm<SettingsDataModelNewFieldFormValues>({
     mode: 'onTouched',
     resolver: zodResolver(
-      settingsFieldFormSchema(
-        activeObjectMetadataItem?.fields.map((value) => value.name),
-      ),
+      settingsFieldFormSchema({
+        existingOtherLabels: activeObjectMetadataItem?.fields.map(
+          (value) => value.name,
+        ),
+        sourceObjectMetadataId: activeObjectMetadataItem?.id,
+      }),
     ),
     defaultValues: {
       type: fieldType,
       icon:
         DEFAULT_ICONS_BY_FIELD_TYPE[fieldType] ?? DEFAULT_ICON_FOR_NEW_FIELD,
       label: '',
-      description: '',
       name: '',
     },
   });
@@ -82,12 +83,12 @@ export const SettingsObjectNewFieldConfigure = () => {
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
-    if (!activeObjectMetadataItem) {
+    if (!isDefined(activeObjectMetadataItem)) {
       navigateApp(AppPath.NotFound);
     }
   }, [activeObjectMetadataItem, navigateApp]);
 
-  if (!activeObjectMetadataItem) return null;
+  if (!isDefined(activeObjectMetadataItem)) return null;
 
   const { isValid, isSubmitting } = formConfig.formState;
 
@@ -169,10 +170,10 @@ export const SettingsObjectNewFieldConfigure = () => {
     }
   };
 
-  if (!activeObjectMetadataItem) return null;
+  if (!isDefined(activeObjectMetadataItem)) return null;
 
   return (
-    <FormProvider // eslint-disable-next-line react/jsx-props-no-spreading
+    <FormProvider // oxlint-disable-next-line react/jsx-props-no-spreading
       {...formConfig}
     >
       <SubMenuTopBarContainer
@@ -236,13 +237,6 @@ export const SettingsObjectNewFieldConfigure = () => {
               existingFieldMetadataId=""
               objectNameSingular={activeObjectMetadataItem.nameSingular}
             />
-          </Section>
-          <Section>
-            <H2Title
-              title={t`Description`}
-              description={t`The description of this field`}
-            />
-            <SettingsDataModelFieldDescriptionForm />
           </Section>
         </SettingsPageContainer>
       </SubMenuTopBarContainer>

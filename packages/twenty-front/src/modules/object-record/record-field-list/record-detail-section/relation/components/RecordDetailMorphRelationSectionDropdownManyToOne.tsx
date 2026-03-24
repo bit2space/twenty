@@ -1,6 +1,7 @@
-import { useCallback, useContext } from 'react';
+import { type ReactNode, useCallback, useContext } from 'react';
 
 import { useObjectMetadataItems } from '@/object-metadata/hooks/useObjectMetadataItems';
+import { useRecordFieldsScopeContextOrThrow } from '@/object-record/record-field-list/contexts/RecordFieldsScopeContext';
 import { useGetMorphRelationRelatedRecordsWithObjectNameSingular } from '@/object-record/record-field-list/record-detail-section/relation/components/hooks/useGetMorphRelationRelatedRecordsWithObjectNameSingular';
 import { FieldContext } from '@/object-record/record-field/ui/contexts/FieldContext';
 import { FieldInputEventContext } from '@/object-record/record-field/ui/contexts/FieldInputEventContext';
@@ -15,14 +16,21 @@ import { getRecordFieldCardRelationPickerDropdownId } from '@/object-record/reco
 import { Dropdown } from '@/ui/layout/dropdown/components/Dropdown';
 import { useCloseDropdown } from '@/ui/layout/dropdown/hooks/useCloseDropdown';
 import { dropdownPlacementComponentState } from '@/ui/layout/dropdown/states/dropdownPlacementComponentState';
-import { useRecoilComponentValue } from '@/ui/utilities/state/component-state/hooks/useRecoilComponentValue';
-import { useSetRecoilComponentState } from '@/ui/utilities/state/component-state/hooks/useSetRecoilComponentState';
+import { useAtomComponentStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomComponentStateValue';
+import { useSetAtomComponentState } from '@/ui/utilities/state/jotai/hooks/useSetAtomComponentState';
 import { FieldMetadataType } from 'twenty-shared/types';
 import { isDefined } from 'twenty-shared/utils';
 import { IconForbid, IconPencil } from 'twenty-ui/display';
 import { LightIconButton } from 'twenty-ui/input';
 
-export const RecordDetailMorphRelationSectionDropdownManyToOne = () => {
+type RecordDetailMorphRelationSectionDropdownManyToOneProps = {
+  dropdownTriggerClickableComponent?: ReactNode;
+};
+
+export const RecordDetailMorphRelationSectionDropdownManyToOne = ({
+  dropdownTriggerClickableComponent,
+}: RecordDetailMorphRelationSectionDropdownManyToOneProps) => {
+  const { scopeInstanceId } = useRecordFieldsScopeContextOrThrow();
   const { recordId, fieldDefinition } = useContext(FieldContext);
 
   assertFieldMetadata(
@@ -52,21 +60,22 @@ export const RecordDetailMorphRelationSectionDropdownManyToOne = () => {
   const dropdownId = getRecordFieldCardRelationPickerDropdownId({
     fieldDefinition,
     recordId,
+    instanceId: scopeInstanceId,
   });
 
   const { closeDropdown } = useCloseDropdown();
 
-  const dropdownPlacement = useRecoilComponentValue(
+  const dropdownPlacement = useAtomComponentStateValue(
     dropdownPlacementComponentState,
     dropdownId,
   );
 
-  const setSingleRecordPickerSearchFilter = useSetRecoilComponentState(
+  const setSingleRecordPickerSearchFilter = useSetAtomComponentState(
     singleRecordPickerSearchFilterComponentState,
     dropdownId,
   );
 
-  const setSingleRecordPickerSelectedId = useSetRecoilComponentState(
+  const setSingleRecordPickerSelectedId = useSetAtomComponentState(
     singleRecordPickerSelectedIdComponentState,
     dropdownId,
   );
@@ -82,7 +91,10 @@ export const RecordDetailMorphRelationSectionDropdownManyToOne = () => {
   ) => {
     closeDropdown(dropdownId);
 
-    if (!selectedMorphItem?.recordId) return;
+    if (!isDefined(selectedMorphItem)) {
+      onSubmit?.({ newValue: null });
+      return;
+    }
 
     onSubmit?.({
       newValue: {
@@ -112,11 +124,13 @@ export const RecordDetailMorphRelationSectionDropdownManyToOne = () => {
       onClose={handleCloseRelationPickerDropdown}
       onOpen={handleOpenRelationPickerDropdown}
       clickableComponent={
-        <LightIconButton
-          className="displayOnHover"
-          Icon={IconPencil}
-          accent="tertiary"
-        />
+        dropdownTriggerClickableComponent ?? (
+          <LightIconButton
+            className="displayOnHover"
+            Icon={IconPencil}
+            accent="tertiary"
+          />
+        )
       }
       dropdownComponents={
         <SingleRecordPicker

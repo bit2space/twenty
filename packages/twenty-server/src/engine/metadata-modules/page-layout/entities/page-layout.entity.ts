@@ -10,14 +10,14 @@ import {
   ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
-  Relation,
+  type Relation,
   UpdateDateColumn,
 } from 'typeorm';
 
-import { PageLayoutTabEntity } from 'src/engine/metadata-modules/page-layout/entities/page-layout-tab.entity';
-import { PageLayoutType } from 'src/engine/metadata-modules/page-layout/enums/page-layout-type.enum';
-import { WorkspaceEntity } from 'src/engine/core-modules/workspace/workspace.entity';
 import { ObjectMetadataEntity } from 'src/engine/metadata-modules/object-metadata/object-metadata.entity';
+import { PageLayoutTabEntity } from 'src/engine/metadata-modules/page-layout-tab/entities/page-layout-tab.entity';
+import { PageLayoutType } from 'src/engine/metadata-modules/page-layout/enums/page-layout-type.enum';
+import { SyncableEntity } from 'src/engine/workspace-manager/types/syncable-entity.interface';
 
 @Entity({ name: 'pageLayout', schema: 'core' })
 @ObjectType('PageLayout')
@@ -26,21 +26,15 @@ import { ObjectMetadataEntity } from 'src/engine/metadata-modules/object-metadat
   ['workspaceId', 'objectMetadataId'],
   { where: '"deletedAt" IS NULL' },
 )
-export class PageLayoutEntity implements Required<PageLayoutEntity> {
+export class PageLayoutEntity
+  extends SyncableEntity
+  implements Required<PageLayoutEntity>
+{
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
   @Column({ nullable: false })
   name: string;
-
-  @Column({ nullable: false, type: 'uuid' })
-  workspaceId: string;
-
-  @ManyToOne(() => WorkspaceEntity, {
-    onDelete: 'CASCADE',
-  })
-  @JoinColumn({ name: 'workspaceId' })
-  workspace: Relation<WorkspaceEntity>;
 
   @Column({
     type: 'enum',
@@ -64,6 +58,16 @@ export class PageLayoutEntity implements Required<PageLayoutEntity> {
     cascade: true,
   })
   tabs: Relation<PageLayoutTabEntity[]>;
+
+  @Column({ nullable: true, type: 'uuid' })
+  defaultTabToFocusOnMobileAndSidePanelId: string | null;
+
+  @ManyToOne(() => PageLayoutTabEntity, {
+    onDelete: 'SET NULL',
+    nullable: true,
+  })
+  @JoinColumn({ name: 'defaultTabToFocusOnMobileAndSidePanelId' })
+  defaultTabToFocusOnMobileAndSidePanel: Relation<PageLayoutTabEntity> | null;
 
   @CreateDateColumn({ type: 'timestamptz' })
   createdAt: Date;

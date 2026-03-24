@@ -1,18 +1,42 @@
-import { type Meta, type StoryObj } from '@storybook/react';
+import { type Meta, type StoryObj } from '@storybook/react-vite';
 
 import { WorkflowVisualizerComponentInstanceContext } from '@/workflow/workflow-diagram/states/contexts/WorkflowVisualizerComponentInstanceContext';
 import { workflowSelectedNodeComponentState } from '@/workflow/workflow-diagram/states/workflowSelectedNodeComponentState';
+import { WorkflowDiagramEmptyTriggerEditable } from '@/workflow/workflow-diagram/workflow-nodes/components/WorkflowDiagramEmptyTriggerEditable';
 import '@xyflow/react/dist/style.css';
-import { RecoilRoot } from 'recoil';
+import { useStore } from 'jotai';
+import { useEffect } from 'react';
+import { isDefined } from 'twenty-shared/utils';
 import { ComponentDecorator } from 'twenty-ui/testing';
-import { I18nFrontDecorator } from '~/testing/decorators/I18nFrontDecorator';
 import { ReactflowDecorator } from '~/testing/decorators/ReactflowDecorator';
-import { WorkflowDiagramEmptyTriggerEditable } from '../../workflow-nodes/components/WorkflowDiagramEmptyTriggerEditable';
+
+const JotaiInitializer = ({
+  children,
+  selectedNodeId,
+}: {
+  children: React.ReactNode;
+  selectedNodeId?: string;
+}) => {
+  const store = useStore();
+
+  useEffect(() => {
+    if (isDefined(selectedNodeId)) {
+      store.set(
+        workflowSelectedNodeComponentState.atomFamily({
+          instanceId: 'workflow-visualizer-instance-id',
+        }),
+        selectedNodeId,
+      );
+    }
+  }, [store, selectedNodeId]);
+
+  return <>{children}</>;
+};
 
 const meta: Meta<typeof WorkflowDiagramEmptyTriggerEditable> = {
   title: 'Modules/Workflow/WorkflowDiagramEmptyTriggerEditable',
   component: WorkflowDiagramEmptyTriggerEditable,
-  decorators: [I18nFrontDecorator],
+  decorators: [],
 };
 
 export default meta;
@@ -25,13 +49,11 @@ export const Default: Story = {
   decorators: [
     (Story) => (
       <div style={{ position: 'relative' }}>
-        <RecoilRoot>
-          <WorkflowVisualizerComponentInstanceContext.Provider
-            value={{ instanceId: 'workflow-visualizer-instance-id' }}
-          >
-            <Story />
-          </WorkflowVisualizerComponentInstanceContext.Provider>
-        </RecoilRoot>
+        <WorkflowVisualizerComponentInstanceContext.Provider
+          value={{ instanceId: 'workflow-visualizer-instance-id' }}
+        >
+          <Story />
+        </WorkflowVisualizerComponentInstanceContext.Provider>
       </div>
     ),
     ReactflowDecorator,
@@ -46,22 +68,13 @@ export const Selected: Story = {
   decorators: [
     (Story) => (
       <div style={{ position: 'relative' }}>
-        <RecoilRoot
-          initializeState={({ set }) => {
-            set(
-              workflowSelectedNodeComponentState.atomFamily({
-                instanceId: 'workflow-visualizer-instance-id',
-              }),
-              'trigger-node',
-            );
-          }}
+        <WorkflowVisualizerComponentInstanceContext.Provider
+          value={{ instanceId: 'workflow-visualizer-instance-id' }}
         >
-          <WorkflowVisualizerComponentInstanceContext.Provider
-            value={{ instanceId: 'workflow-visualizer-instance-id' }}
-          >
+          <JotaiInitializer selectedNodeId="trigger-node">
             <Story />
-          </WorkflowVisualizerComponentInstanceContext.Provider>
-        </RecoilRoot>
+          </JotaiInitializer>
+        </WorkflowVisualizerComponentInstanceContext.Provider>
       </div>
     ),
     ReactflowDecorator,

@@ -1,28 +1,26 @@
 import { SKELETON_LOADER_HEIGHT_SIZES } from '@/activities/components/SkeletonLoader';
-import { ListenRecordUpdatesEffect } from '@/subscription/components/ListenRecordUpdatesEffect';
 import { useTargetRecord } from '@/ui/layout/contexts/useTargetRecord';
 import { getWorkflowVisualizerComponentInstanceId } from '@/workflow/utils/getWorkflowVisualizerComponentInstanceId';
+import { WorkflowRunSSESubscribeEffect } from '@/workflow/workflow-diagram/components/WorkflowRunSSESubscribeEffect';
 import { WorkflowRunVisualizer } from '@/workflow/workflow-diagram/components/WorkflowRunVisualizer';
 import { WorkflowRunVisualizerEffect } from '@/workflow/workflow-diagram/components/WorkflowRunVisualizerEffect';
 import { WorkflowRunVisualizerComponentInstanceContext } from '@/workflow/workflow-diagram/states/contexts/WorkflowRunVisualizerComponentInstanceContext';
 import { WorkflowVisualizerComponentInstanceContext } from '@/workflow/workflow-diagram/states/contexts/WorkflowVisualizerComponentInstanceContext';
-import { useTheme } from '@emotion/react';
-import styled from '@emotion/styled';
-import { Suspense, useId } from 'react';
+import { styled } from '@linaria/react';
+import { Suspense, useContext, useId } from 'react';
 import Skeleton, { SkeletonTheme } from 'react-loading-skeleton';
-
+import { ThemeContext, themeCssVariables } from 'twenty-ui/theme-constants';
 const StyledLoadingSkeletonContainer = styled.div`
   display: flex;
   flex-direction: column;
-  gap: ${({ theme }) => theme.spacing(2)};
+  gap: ${themeCssVariables.spacing[2]};
   height: 100%;
-  padding: ${({ theme }) => theme.spacing(4)};
+  padding: ${themeCssVariables.spacing[4]};
   width: 100%;
 `;
 
 const LoadingSkeleton = () => {
-  const theme = useTheme();
-
+  const { theme } = useContext(ThemeContext);
   return (
     <StyledLoadingSkeletonContainer>
       <SkeletonTheme
@@ -56,11 +54,7 @@ export const WorkflowRunCard = () => {
         }}
       >
         <WorkflowRunVisualizerEffect workflowRunId={targetRecord.id} />
-        <ListenRecordUpdatesEffect
-          objectNameSingular={targetRecord.targetObjectNameSingular}
-          recordId={targetRecord.id}
-          listenedFields={['status', 'state']}
-        />
+        <WorkflowRunSSESubscribeEffect workflowRunId={targetRecord.id} />
         <Suspense fallback={<LoadingSkeleton />}>
           <WorkflowRunVisualizer workflowRunId={targetRecord.id} />
         </Suspense>

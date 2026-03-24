@@ -1,132 +1,148 @@
 import { type DropResult } from '@hello-pangea/dnd';
-import { useRecoilCallback } from 'recoil';
+import { useCallback } from 'react';
+import { useStore } from 'jotai';
 
 import { useUpdateOneRecord } from '@/object-record/hooks/useUpdateOneRecord';
 import { useRecordCalendarContextOrThrow } from '@/object-record/record-calendar/contexts/RecordCalendarContext';
 import { calendarDayRecordIdsComponentFamilySelector } from '@/object-record/record-calendar/states/selectors/calendarDayRecordsComponentFamilySelector';
 
 import { extractRecordPositions } from '@/object-record/record-drag/utils/extractRecordPositions';
-import { isFieldDateTime } from '@/object-record/record-field/ui/types/guards/isFieldDateTime';
 import { recordStoreFamilyState } from '@/object-record/record-store/states/recordStoreFamilyState';
 import { computeNewPositionOfDraggedRecord } from '@/object-record/utils/computeNewPositionOfDraggedRecord';
-import { useRecoilComponentCallbackState } from '@/ui/utilities/state/component-state/hooks/useRecoilComponentCallbackState';
+import { useUserTimezone } from '@/ui/input/components/internal/date/hooks/useUserTimezone';
+import { useAtomComponentFamilySelectorCallbackState } from '@/ui/utilities/state/jotai/hooks/useAtomComponentFamilySelectorCallbackState';
 import { useGetCurrentViewOnly } from '@/views/hooks/useGetCurrentViewOnly';
-import {
-  formatISO,
-  getHours,
-  getMilliseconds,
-  getMinutes,
-  getSeconds,
-  parse,
-  set,
-} from 'date-fns';
+import { Temporal } from 'temporal-polyfill';
+import { FieldMetadataType } from 'twenty-shared/types';
 import { isDefined } from 'twenty-shared/utils';
 
 export const useProcessCalendarCardDrop = () => {
+  const store = useStore();
   const { objectMetadataItem } = useRecordCalendarContextOrThrow();
   const { currentView } = useGetCurrentViewOnly();
-  const { updateOneRecord } = useUpdateOneRecord({
-    objectNameSingular: objectMetadataItem.nameSingular,
-  });
+  const { updateOneRecord } = useUpdateOneRecord();
 
-  const calendarDayRecordIdsSelector = useRecoilComponentCallbackState(
-    calendarDayRecordIdsComponentFamilySelector,
-  );
+  const { userTimezone } = useUserTimezone();
 
-  const processCalendarCardDrop = useRecoilCallback(
-    ({ snapshot }) =>
-      async (calendarCardDropResult: DropResult) => {
-        if (
-          !calendarCardDropResult.destination ||
-          !currentView?.calendarFieldMetadataId
-        )
-          return;
+  const calendarDayRecordIdsSelector =
+    useAtomComponentFamilySelectorCallbackState(
+      calendarDayRecordIdsComponentFamilySelector,
+    );
 
-        const { draggableId: recordId } = calendarCardDropResult;
-        const destinationDate = calendarCardDropResult.destination.droppableId;
-        const destinationIndex = calendarCardDropResult.destination.index;
+  const processCalendarCardDrop = useCallback(
+    async (calendarCardDropResult: DropResult) => {
+      if (
+        !calendarCardDropResult.destination ||
+        !currentView?.calendarFieldMetadataId
+      )
+        return;
 
-        const record = snapshot
-          .getLoadable(recordStoreFamilyState(recordId))
-          .getValue();
+      const { draggableId: recordId } = calendarCardDropResult;
+      const destinationDate = calendarCardDropResult.destination.droppableId;
+      const destinationIndex = calendarCardDropResult.destination.index;
 
-        if (!record) return;
+      const destinationPlainDate = Temporal.PlainDate.from(destinationDate);
 
-        const calendarFieldMetadata = objectMetadataItem.fields.find(
-          (field) => field.id === currentView.calendarFieldMetadataId,
+      const record = store.get(recordStoreFamilyState.atomFamily(recordId));
+
+      if (!record) return;
+
+      const calendarFieldMetadata = objectMetadataItem.fields.find(
+        (field) => field.id === currentView.calendarFieldMetadataId,
+      );
+
+      if (!calendarFieldMetadata) return;
+
+      const destinationRecordIds = store.get(
+        calendarDayRecordIdsSelector({
+          day: destinationPlainDate,
+          timeZone: userTimezone,
+        }),
+      );
+
+      const targetDayIsEmpty = destinationRecordIds.length === 0;
+
+      let newPosition: number;
+
+      if (targetDayIsEmpty) {
+        newPosition = 1;
+      } else {
+        const recordsWithPosition = extractRecordPositions(
+          destinationRecordIds,
+          store,
         );
+        const droppedRecordIsFromAnotherList = !recordsWithPosition
+          .map((recordWithPosition) => recordWithPosition.id)
+          .includes(recordId);
 
-        if (!calendarFieldMetadata) return;
+        const isDroppedAfterList =
+          (recordsWithPosition.length === 2 &&
+            destinationIndex === 1 &&
+            !droppedRecordIsFromAnotherList) ||
+          destinationIndex === recordsWithPosition.length;
 
-        const destinationRecordIds = snapshot
-          .getLoadable(calendarDayRecordIdsSelector(destinationDate))
-          .getValue() as string[];
+        const targetRecord = isDroppedAfterList
+          ? recordsWithPosition.at(-1)
+          : recordsWithPosition.at(destinationIndex);
 
-        const targetDayIsEmpty = destinationRecordIds.length === 0;
-
-        let newPosition: number;
-
-        if (targetDayIsEmpty) {
-          newPosition = 1;
-        } else {
-          const recordsWithPosition = extractRecordPositions(
-            destinationRecordIds,
-            snapshot,
+        if (!isDefined(targetRecord)) {
+          throw new Error(
+            `targetRecord cannot be found in passed recordsWithPosition, this should not happen.`,
           );
-
-          const isDroppedAfterList =
-            destinationIndex >= recordsWithPosition.length;
-
-          const targetRecord = isDroppedAfterList
-            ? recordsWithPosition.at(-1)
-            : recordsWithPosition.at(destinationIndex);
-
-          if (!isDefined(targetRecord)) {
-            throw new Error(
-              `targetRecord cannot be found in passed recordsWithPosition, this should not happen.`,
-            );
-          }
-
-          newPosition = computeNewPositionOfDraggedRecord({
-            arrayOfRecordsWithPosition: recordsWithPosition,
-            idOfItemToMove: recordId,
-            idOfTargetItem: targetRecord.id,
-            isDroppedAfterList,
-          });
         }
 
-        const targetDate = parse(destinationDate, 'yyyy-MM-dd', new Date());
-        const currentFieldValue = record[calendarFieldMetadata.name];
-        let newDate: Date;
+        newPosition = computeNewPositionOfDraggedRecord({
+          arrayOfRecordsWithPosition: recordsWithPosition,
+          idOfItemToMove: recordId,
+          idOfTargetItem: targetRecord.id,
+          isDroppedAfterList,
+        });
+      }
 
-        if (
-          isDefined(currentFieldValue) &&
-          isFieldDateTime(calendarFieldMetadata)
-        ) {
-          const currentDateTime = new Date(currentFieldValue);
-          newDate = set(targetDate, {
-            hours: getHours(currentDateTime),
-            minutes: getMinutes(currentDateTime),
-            seconds: getSeconds(currentDateTime),
-            milliseconds: getMilliseconds(currentDateTime),
-          });
-        } else {
-          newDate = targetDate;
-        }
+      const currentFieldValue = record[calendarFieldMetadata.name] as
+        | string
+        | undefined;
 
+      if (calendarFieldMetadata.type === FieldMetadataType.DATE) {
         await updateOneRecord({
+          objectNameSingular: objectMetadataItem.nameSingular,
           idToUpdate: recordId,
           updateOneRecordInput: {
-            [calendarFieldMetadata.name]: formatISO(newDate),
+            [calendarFieldMetadata.name]: destinationPlainDate.toString(),
             position: newPosition,
           },
         });
-      },
+      } else if (calendarFieldMetadata.type === FieldMetadataType.DATE_TIME) {
+        const newDate = isDefined(currentFieldValue)
+          ? Temporal.Instant.from(currentFieldValue)
+              .toZonedDateTimeISO(userTimezone)
+              .with({
+                day: destinationPlainDate.day,
+                month: destinationPlainDate.month,
+                year: destinationPlainDate.year,
+              })
+          : Temporal.PlainDate.from(destinationPlainDate).toZonedDateTime(
+              userTimezone,
+            );
+
+        await updateOneRecord({
+          objectNameSingular: objectMetadataItem.nameSingular,
+          idToUpdate: recordId,
+          updateOneRecordInput: {
+            [calendarFieldMetadata.name]: newDate.toInstant().toString(),
+            position: newPosition,
+          },
+        });
+      }
+    },
     [
-      objectMetadataItem,
+      store,
       currentView,
-      updateOneRecord,
+      objectMetadataItem.nameSingular,
+      objectMetadataItem.fields,
       calendarDayRecordIdsSelector,
+      userTimezone,
+      updateOneRecord,
     ],
   );
 

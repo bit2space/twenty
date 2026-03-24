@@ -1,8 +1,6 @@
 import { useCallback } from 'react';
-import { useRecoilState, useRecoilValue, useSetRecoilState } from 'recoil';
 
 import { currentWorkspaceMemberState } from '@/auth/states/currentWorkspaceMemberState';
-import { CalendarStartDay } from 'twenty-shared';
 import { DateFormat } from '@/localization/constants/DateFormat';
 import { NumberFormat } from '@/localization/constants/NumberFormat';
 import { TimeFormat } from '@/localization/constants/TimeFormat';
@@ -17,8 +15,12 @@ import { detectTimeFormat } from '@/localization/utils/detection/detectTimeForma
 import { detectTimeZone } from '@/localization/utils/detection/detectTimeZone';
 import { getFormatPreferencesFromWorkspaceMember } from '@/localization/utils/format-preferences/getFormatPreferencesFromWorkspaceMember';
 import { getWorkspaceMemberUpdateFromFormatPreferences } from '@/localization/utils/format-preferences/getWorkspaceMemberUpdateFromFormatPreferences';
-import { CoreObjectNameSingular } from '@/object-metadata/types/CoreObjectNameSingular';
+import { CoreObjectNameSingular } from 'twenty-shared/types';
 import { useUpdateOneRecord } from '@/object-record/hooks/useUpdateOneRecord';
+import { useAtomState } from '@/ui/utilities/state/jotai/hooks/useAtomState';
+import { useAtomStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomStateValue';
+import { useSetAtomState } from '@/ui/utilities/state/jotai/hooks/useSetAtomState';
+import { CalendarStartDay } from 'twenty-shared/constants';
 import { logError } from '~/utils/logError';
 
 export type FormatPreferenceKey = keyof WorkspaceMemberFormatPreferences;
@@ -27,15 +29,13 @@ export const useFormatPreferences = () => {
   const [
     workspaceMemberFormatPreferences,
     setWorkspaceMemberFormatPreferences,
-  ] = useRecoilState(workspaceMemberFormatPreferencesState);
-  const currentWorkspaceMember = useRecoilValue(currentWorkspaceMemberState);
-  const setCurrentWorkspaceMember = useSetRecoilState(
+  ] = useAtomState(workspaceMemberFormatPreferencesState);
+  const currentWorkspaceMember = useAtomStateValue(currentWorkspaceMemberState);
+  const setCurrentWorkspaceMember = useSetAtomState(
     currentWorkspaceMemberState,
   );
 
-  const { updateOneRecord } = useUpdateOneRecord({
-    objectNameSingular: CoreObjectNameSingular.WorkspaceMember,
-  });
+  const { updateOneRecord } = useUpdateOneRecord();
 
   const updateFormatPreference = useCallback(
     async <K extends FormatPreferenceKey>(
@@ -97,6 +97,7 @@ export const useFormatPreferences = () => {
 
       try {
         await updateOneRecord({
+          objectNameSingular: CoreObjectNameSingular.WorkspaceMember,
           idToUpdate: currentWorkspaceMember.id,
           updateOneRecordInput: workspaceMemberUpdate,
         });
@@ -167,6 +168,7 @@ export const useFormatPreferences = () => {
 
       try {
         await updateOneRecord({
+          objectNameSingular: CoreObjectNameSingular.WorkspaceMember,
           idToUpdate: currentWorkspaceMember.id,
           updateOneRecordInput: workspaceMemberUpdate,
         });

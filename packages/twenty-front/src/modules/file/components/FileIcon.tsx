@@ -1,33 +1,55 @@
 import { type AttachmentFileCategory } from '@/activities/files/types/AttachmentFileCategory';
-import { useFileCategoryColors } from '@/file/hooks/useFileCategoryColors';
+import { isDefined } from 'twenty-shared/utils';
+import { useFileIconColors } from '@/file/hooks/useFileIconColors';
 import { IconMapping } from '@/file/utils/fileIconMappings';
-import { useTheme } from '@emotion/react';
-import styled from '@emotion/styled';
+import { styled } from '@linaria/react';
+import { type FileCategory } from 'twenty-shared/types';
+import { AvatarOrIcon } from 'twenty-ui/components';
+import { useContext } from 'react';
+import { ThemeContext, themeCssVariables } from 'twenty-ui/theme-constants';
 
-const StyledIconContainer = styled.div<{ background: string }>`
+type FileIconSize = 'small' | 'medium';
+
+const StyledIconContainer = styled.div<{
+  background: string;
+}>`
   align-items: center;
   background: ${({ background }) => background};
-  border-radius: ${({ theme }) => theme.border.radius.sm};
-  color: ${({ theme }) => theme.grayScale.gray1};
+  border-radius: ${themeCssVariables.border.radius.sm};
+  color: ${themeCssVariables.grayScale.gray1};
   display: flex;
   flex-shrink: 0;
   justify-content: center;
-  padding: ${({ theme }) => theme.spacing(1.25)};
+  padding: 5px;
 `;
 
 export const FileIcon = ({
   fileCategory,
+  size = 'medium',
 }: {
-  fileCategory: AttachmentFileCategory;
+  fileCategory: AttachmentFileCategory | FileCategory;
+  size?: FileIconSize;
 }) => {
-  const theme = useTheme();
-  const iconColors = useFileCategoryColors();
-
+  const { theme } = useContext(ThemeContext);
+  const iconColors = useFileIconColors();
   const Icon = IconMapping[fileCategory];
 
+  if (size === 'small') {
+    return (
+      <AvatarOrIcon
+        Icon={Icon}
+        IconBackgroundColor={iconColors[fileCategory] ?? theme.color.gray}
+      />
+    );
+  }
+
   return (
-    <StyledIconContainer background={iconColors[fileCategory]}>
-      {Icon && <Icon size={theme.icon.size.sm} />}
+    <StyledIconContainer
+      background={iconColors[fileCategory] ?? theme.color.gray}
+    >
+      {isDefined(Icon) && (
+        <Icon size={theme.icon.size.sm} stroke={theme.icon.stroke.sm} />
+      )}
     </StyledIconContainer>
   );
 };

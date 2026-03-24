@@ -85,7 +85,7 @@ function assertVersionIsValid(workflowVersion: WorkflowVersionWorkspaceEntity) {
 
 function assertTriggerSettingsAreValid(
   triggerType: WorkflowTriggerType,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // oxlint-disable-next-line @typescripttypescript/no-explicit-any
   settings: any,
 ) {
   switch (triggerType) {
@@ -109,7 +109,7 @@ function assertTriggerSettingsAreValid(
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// oxlint-disable-next-line @typescripttypescript/no-explicit-any
 function assertCronTriggerSettingsAreValid(settings: any) {
   if (!settings?.type) {
     throw new WorkflowTriggerException(
@@ -220,12 +220,19 @@ function assertCronTriggerSettingsAreValid(settings: any) {
         );
       }
 
-      if (settings.schedule.minute <= 0) {
+      if (settings.schedule.minute <= 0 || settings.schedule.minute > 60) {
+        const errorMessage =
+          settings.schedule.minute <= 0
+            ? msg`Invalid minute value. Should be integer greater than 1`
+            : msg`Minute value cannot exceed 60. For intervals greater than 60 minutes, use the "Hours" trigger type or a custom cron expression`;
+
         throw new WorkflowTriggerException(
-          'Invalid minute value. Should be integer greater than 1',
+          settings.schedule.minute <= 0
+            ? 'Invalid minute value. Should be integer greater than 1'
+            : 'Invalid minute value. Cannot exceed 60. For intervals greater than 60 minutes, use the "Hours" trigger type or a custom cron expression',
           WorkflowTriggerExceptionCode.INVALID_WORKFLOW_TRIGGER,
           {
-            userFriendlyMessage: msg`Invalid minute value. Should be integer greater than 1`,
+            userFriendlyMessage: errorMessage,
           },
         );
       }
@@ -244,7 +251,7 @@ function assertCronTriggerSettingsAreValid(settings: any) {
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+// oxlint-disable-next-line @typescripttypescript/no-explicit-any
 function assertDatabaseEventTriggerSettingsAreValid(settings: any) {
   if (!settings?.eventName) {
     throw new WorkflowTriggerException(

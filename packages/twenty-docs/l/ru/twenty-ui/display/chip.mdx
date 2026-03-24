@@ -4,14 +4,14 @@ image: /images/user-guide/github/github-header.png
 ---
 
 <Frame>
-  <img src="/images/user-guide/github/github-header.png" alt="Header" />
+  <img src="/images/user-guide/github/github-header.png" alt="Заголовок" />
 </Frame>
 
 Визуальный элемент, который можно использовать как кликабельный или некликабельный контейнер с меткой, необязательными левым и правым компонентами и различными стилями для отображения меток и тегов.
 
 <Tabs>
 
-<Tab title="Usage">
+<Tab title="Использование">
 
 ```jsx
 import { Chip } from 'twenty-ui/components';
@@ -20,7 +20,7 @@ export const MyComponent = () => {
   return (
     <Chip
       size="large"
-      label="Clickable Chip"
+      label="Кликабельный чип"
       clickable={true}
       variant="highlighted"
       accent="text-primary"
@@ -36,17 +36,20 @@ export const MyComponent = () => {
 
 </Tab>
 
-<Tab title="Props">
+<Tab title="Свойства">
 
-| Свойства     | Тип                      | Описание                                                                                                                         |
-| ------------ | ------------------------ | -------------------------------------------------------------------------------------------------------------------------------- |
-| linkToEntity | строка                   | Ссылка на объект                                                                                                                 |
-| entityId     | строка                   | Уникальный идентификатор для объекта                                                                                             |
-| имя          | строка                   | Имя объекта                                                                                                                      |
-| pictureUrl   | строка                   | s picture",                                                                                                                      |
+
+| Свойства     | Тип                      | Описание                                                                                         |
+| ------------ | ------------------------ | ------------------------------------------------------------------------------------------------ |
+| linkToEntity | строка                   | Ссылка на объект                                                                                 |
+| entityId     | строка                   | Уникальный идентификатор для объекта                                                             |
+| имя          | строка                   | Имя объекта                                                                                      |
+| pictureUrl   | строка                   | изображение",                                                                                    |
 | avatarType   | Тип аватара              | Тип аватара, который вы хотите отобразить. Есть два варианта: `округлый` и `квадратный`          |
 | вариант      | `EntityChipVariant` enum | Вариант элемента чипа, который вы хотите отобразить. Есть два варианта: `обычный` и `прозрачный` |
-| LeftIcon     | ИконкаКомпонент          | React-компонент, представляющий иконку. Отображается на левой стороне чипа                                       |
+| LeftIcon     | ИконкаКомпонент          | React-компонент, представляющий иконку. Отображается на левой стороне чипа                       |
+
+
 
 </Tab>
 </Tabs>
@@ -62,7 +65,7 @@ export const MyComponent = () => {
   return (
       <Chip 
       size="large"
-      label="Transparent Disabled Chip"
+      label="Прозрачный неактивный чип"
       clickable={false}
       variant="rounded"
       accent="text-secondary"
@@ -76,7 +79,7 @@ export const MyComponent = () => {
 
 ```
 
-<br/>
+<br />
 
 ### Отключенный чип с подсказкой
 
@@ -87,7 +90,7 @@ export const MyComponent = () => {
   return (
       <Chip 
       size="large"
-      label="Disabled chip that triggers a tooltip when overflowing."
+      label="Неактивный чип, который показывает подсказку при переполнении."
       clickable={false}
       variant="regular"
       accent="text-primary"
@@ -106,7 +109,7 @@ export const MyComponent = () => {
 
 <Tabs>
 
-<Tab title="Usage">
+<Tab title="Использование">
 
 ```jsx
 import { BrowserRouter as Router } from 'react-router-dom';
@@ -119,7 +122,7 @@ export const MyComponent = () => {
       <Chip
         linkToEntity="/entity-link"
         entityId="entityTest"
-        name="Entity name"
+        name="Название сущности"
         pictureUrl=""
         avatarType="rounded"
         variant="regular"
@@ -132,17 +135,20 @@ export const MyComponent = () => {
 
 </Tab>
 
-<Tab title="Props">
+<Tab title="Свойства">
 
-| Свойства     | Тип                      | Описание                                                                                                                         |
-| ------------ | ------------------------ | -------------------------------------------------------------------------------------------------------------------------------- |
-| linkToEntity | строка                   | Ссылка на объект                                                                                                                 |
-| entityId     | строка                   | Уникальный идентификатор для объекта                                                                                             |
-| имя          | строка                   | Имя объекта                                                                                                                      |
-| pictureUrl   | строка                   | s picture",                                                                                                                      |
+
+| Свойства     | Тип                      | Описание                                                                                         |
+| ------------ | ------------------------ | ------------------------------------------------------------------------------------------------ |
+| linkToEntity | строка                   | Ссылка на объект                                                                                 |
+| entityId     | строка                   | Уникальный идентификатор для объекта                                                             |
+| имя          | строка                   | Имя объекта                                                                                      |
+| pictureUrl   | строка                   | изображение",                                                                                    |
 | avatarType   | Тип аватара              | Тип аватара, который вы хотите отобразить. Есть два варианта: `округлый` и `квадратный`          |
 | вариант      | `EntityChipVariant` enum | Вариант элемента чипа, который вы хотите отобразить. Есть два варианта: `обычный` и `прозрачный` |
-| LeftIcon     | ИконкаКомпонент          | React-компонент, представляющий иконку. Отображается на левой стороне чипа                                       |
+| LeftIcon     | ИконкаКомпонент          | React-компонент, представляющий иконку. Отображается на левой стороне чипа                       |
+
+
 
 </Tab>
 </Tabs>

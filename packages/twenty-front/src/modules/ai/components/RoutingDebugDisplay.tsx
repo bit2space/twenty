@@ -1,10 +1,10 @@
-import { useTheme } from '@emotion/react';
-import styled from '@emotion/styled';
-import { useState } from 'react';
+import { styled } from '@linaria/react';
+import { useContext, useState } from 'react';
 
 import { IconChevronDown, IconChevronUp } from 'twenty-ui/display';
 import { JsonTree } from 'twenty-ui/json-visualizer';
 import { AnimatedExpandableContainer } from 'twenty-ui/layout';
+import { ThemeContext, themeCssVariables } from 'twenty-ui/theme-constants';
 
 import { useLingui } from '@lingui/react/macro';
 import { type DataMessagePart } from 'twenty-shared/ai';
@@ -14,33 +14,33 @@ import { useCopyToClipboard } from '~/hooks/useCopyToClipboard';
 const StyledContainer = styled.div`
   display: flex;
   flex-direction: column;
-  gap: ${({ theme }) => theme.spacing(2)};
-  margin-top: ${({ theme }) => theme.spacing(2)};
+  gap: ${themeCssVariables.spacing[2]};
+  margin-top: ${themeCssVariables.spacing[2]};
 `;
 
 const StyledToggleButton = styled.div`
   align-items: center;
   background: none;
   border: none;
+  color: ${themeCssVariables.font.color.tertiary};
   cursor: pointer;
   display: flex;
-  color: ${({ theme }) => theme.font.color.tertiary};
-  gap: ${({ theme }) => theme.spacing(1)};
-  padding: ${({ theme }) => theme.spacing(1)} 0;
-  transition: color ${({ theme }) => theme.animation.duration.normal}s;
-  font-size: ${({ theme }) => theme.font.size.sm};
+  font-size: ${themeCssVariables.font.size.sm};
+  gap: ${themeCssVariables.spacing[1]};
+  padding: ${themeCssVariables.spacing[1]} 0;
+  transition: color calc(${themeCssVariables.animation.duration.normal} * 1s);
 
   &:hover {
-    color: ${({ theme }) => theme.font.color.secondary};
+    color: ${themeCssVariables.font.color.secondary};
   }
 `;
 
 const StyledContentContainer = styled.div`
-  background: ${({ theme }) => theme.background.transparent.lighter};
-  border: 1px solid ${({ theme }) => theme.border.color.light};
-  border-radius: ${({ theme }) => theme.border.radius.sm};
+  background: ${themeCssVariables.background.transparent.lighter};
+  border: 1px solid ${themeCssVariables.border.color.light};
+  border-radius: ${themeCssVariables.border.radius.sm};
   min-width: 0;
-  padding: ${({ theme }) => theme.spacing(3)};
+  padding: ${themeCssVariables.spacing[3]};
 `;
 
 const StyledJsonTreeContainer = styled.div`
@@ -52,48 +52,52 @@ const StyledJsonTreeContainer = styled.div`
 `;
 
 const StyledTabContainer = styled.div`
-  border-bottom: 1px solid ${({ theme }) => theme.border.color.light};
+  border-bottom: 1px solid ${themeCssVariables.border.color.light};
   display: flex;
-  gap: ${({ theme }) => theme.spacing(3)};
-  margin-bottom: ${({ theme }) => theme.spacing(3)};
+  gap: ${themeCssVariables.spacing[3]};
+  margin-bottom: ${themeCssVariables.spacing[3]};
 `;
 
 const StyledTab = styled.div<{ isActive: boolean }>`
-  color: ${({ theme, isActive }) =>
-    isActive ? theme.font.color.primary : theme.font.color.tertiary};
-  font-size: ${({ theme }) => theme.font.size.sm};
-  font-weight: ${({ theme, isActive }) =>
-    isActive ? theme.font.weight.medium : theme.font.weight.regular};
+  color: ${({ isActive }) =>
+    isActive
+      ? themeCssVariables.font.color.primary
+      : themeCssVariables.font.color.tertiary};
   cursor: pointer;
-  transition: color ${({ theme }) => theme.animation.duration.normal}s;
-  padding-bottom: ${({ theme }) => theme.spacing(2)};
+  font-size: ${themeCssVariables.font.size.sm};
+  font-weight: ${({ isActive }) =>
+    isActive
+      ? themeCssVariables.font.weight.medium
+      : themeCssVariables.font.weight.regular};
+  padding-bottom: ${themeCssVariables.spacing[2]};
+  transition: color calc(${themeCssVariables.animation.duration.normal} * 1s);
 
   &:hover {
-    color: ${({ theme }) => theme.font.color.secondary};
+    color: ${themeCssVariables.font.color.secondary};
   }
 `;
 
 const StyledTimingSection = styled.div`
   display: flex;
   flex-direction: column;
-  gap: ${({ theme }) => theme.spacing(2)};
+  gap: ${themeCssVariables.spacing[2]};
 `;
 
 const StyledTimingRow = styled.div`
   align-items: center;
   display: flex;
-  font-size: ${({ theme }) => theme.font.size.sm};
+  font-size: ${themeCssVariables.font.size.sm};
   justify-content: space-between;
-  padding: ${({ theme }) => theme.spacing(1)} 0;
+  padding: ${themeCssVariables.spacing[1]} 0;
 `;
 
 const StyledTimingLabel = styled.span`
-  color: ${({ theme }) => theme.font.color.secondary};
+  color: ${themeCssVariables.font.color.secondary};
 `;
 
 const StyledTimingValue = styled.span`
-  color: ${({ theme }) => theme.font.color.primary};
-  font-weight: ${({ theme }) => theme.font.weight.medium};
+  color: ${themeCssVariables.font.color.primary};
+  font-weight: ${themeCssVariables.font.weight.medium};
 `;
 
 type TabType = 'timing' | 'details' | 'context';
@@ -152,45 +156,51 @@ type TimingTabProps = {
 };
 
 const TimingTab = ({ debug }: TimingTabProps) => {
+  const { t } = useLingui();
   const totalTime =
     debug.agentExecutionStartTimeMs !== undefined
       ? `${debug.agentExecutionStartTimeMs + (debug.agentExecutionTimeMs || 0)}ms`
       : undefined;
 
+  const totalCost =
+    debug.totalCostInCredits !== undefined
+      ? formatNumber(debug.totalCostInCredits)
+      : undefined;
+
   return (
     <StyledTimingSection>
       <TimingRow
-        label="Routing decision"
+        label={t`Routing decision`}
         value={debug.routingTimeMs && `${debug.routingTimeMs}ms`}
       />
       <TimingRow
-        label="Context building (routing)"
+        label={t`Context building (routing)`}
         value={debug.contextBuildTimeMs && `${debug.contextBuildTimeMs}ms`}
       />
       <TimingRow
-        label="Context building (agent)"
+        label={t`Context building (agent)`}
         value={
           debug.agentContextBuildTimeMs && `${debug.agentContextBuildTimeMs}ms`
         }
       />
       <TimingRow
-        label="Tool generation"
+        label={t`Tool generation`}
         value={debug.toolGenerationTimeMs && `${debug.toolGenerationTimeMs}ms`}
       />
       <TimingRow
-        label="AI request prep"
+        label={t`AI request prep`}
         value={debug.aiRequestPrepTimeMs && `${debug.aiRequestPrepTimeMs}ms`}
       />
       <TimingRow
-        label="Agent execution"
+        label={t`Agent execution`}
         value={debug.agentExecutionTimeMs && `${debug.agentExecutionTimeMs}ms`}
       />
-      <TimingRow label="Total time" value={totalTime} />
-      <TimingRow label="Available tools" value={debug.toolCount} />
-      <TimingRow label="Tool calls made" value={debug.toolCallCount} />
-      <TimingRow label="Context records" value={debug.contextRecordCount} />
+      <TimingRow label={t`Total time`} value={totalTime} />
+      <TimingRow label={t`Available tools`} value={debug.toolCount} />
+      <TimingRow label={t`Tool calls made`} value={debug.toolCallCount} />
+      <TimingRow label={t`Context records`} value={debug.contextRecordCount} />
       <TimingRow
-        label="Context size"
+        label={t`Context size`}
         value={
           debug.contextSizeBytes !== undefined
             ? formatBytes(debug.contextSizeBytes)
@@ -198,7 +208,7 @@ const TimingTab = ({ debug }: TimingTabProps) => {
         }
       />
       <TimingRow
-        label="Routing tokens"
+        label={t`Routing tokens`}
         value={
           debug.routingTotalTokens !== undefined
             ? formatTokenBreakdown(
@@ -210,7 +220,7 @@ const TimingTab = ({ debug }: TimingTabProps) => {
         }
       />
       <TimingRow
-        label="Agent tokens"
+        label={t`Agent tokens`}
         value={
           debug.agentTotalTokens !== undefined
             ? formatTokenBreakdown(
@@ -222,12 +232,8 @@ const TimingTab = ({ debug }: TimingTabProps) => {
         }
       />
       <TimingRow
-        label="Total cost"
-        value={
-          debug.totalCostInCredits !== undefined
-            ? `${formatNumber(debug.totalCostInCredits)} credits`
-            : undefined
-        }
+        label={t`Total cost`}
+        value={totalCost !== undefined ? t`${totalCost} credits` : undefined}
       />
     </StyledTimingSection>
   );
@@ -279,7 +285,7 @@ const ContextTab = ({ debug, copyToClipboard }: ContextTabProps) => {
   if (!debug.context) {
     return (
       <StyledTimingLabel>
-        No context was provided for this request
+        {t`No context was provided for this request`}
       </StyledTimingLabel>
     );
   }
@@ -302,9 +308,10 @@ const ContextTab = ({ debug, copyToClipboard }: ContextTabProps) => {
       </StyledJsonTreeContainer>
     );
   } catch {
+    const contextValue = debug.context;
     return (
       <StyledTimingLabel>
-        Failed to parse context: {debug.context}
+        {t`Failed to parse context: ${contextValue}`}
       </StyledTimingLabel>
     );
   }
@@ -315,7 +322,8 @@ type RoutingDebugDisplayProps = {
 };
 
 export const RoutingDebugDisplay = ({ debug }: RoutingDebugDisplayProps) => {
-  const theme = useTheme();
+  const { theme } = useContext(ThemeContext);
+  const { t } = useLingui();
   const { copyToClipboard } = useCopyToClipboard();
   const [isExpanded, setIsExpanded] = useState(false);
   const [activeTab, setActiveTab] = useState<TabType>('timing');
@@ -323,7 +331,7 @@ export const RoutingDebugDisplay = ({ debug }: RoutingDebugDisplayProps) => {
   return (
     <StyledContainer>
       <StyledToggleButton onClick={() => setIsExpanded(!isExpanded)}>
-        <StyledTimingLabel>Debug Info</StyledTimingLabel>
+        <StyledTimingLabel>{t`Debug Info`}</StyledTimingLabel>
         {isExpanded ? (
           <IconChevronUp size={theme.icon.size.sm} />
         ) : (
@@ -338,20 +346,20 @@ export const RoutingDebugDisplay = ({ debug }: RoutingDebugDisplayProps) => {
               isActive={activeTab === 'timing'}
               onClick={() => setActiveTab('timing')}
             >
-              Timing
+              {t`Timing`}
             </StyledTab>
             <StyledTab
               isActive={activeTab === 'details'}
               onClick={() => setActiveTab('details')}
             >
-              Details
+              {t`Details`}
             </StyledTab>
             {debug.context && (
               <StyledTab
                 isActive={activeTab === 'context'}
                 onClick={() => setActiveTab('context')}
               >
-                Context
+                {t`Context`}
               </StyledTab>
             )}
           </StyledTabContainer>

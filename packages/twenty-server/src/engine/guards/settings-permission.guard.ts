@@ -8,9 +8,9 @@ import {
 import { GqlExecutionContext } from '@nestjs/graphql';
 
 import { msg } from '@lingui/core/macro';
+import { type PermissionFlagType } from 'twenty-shared/constants';
 import { WorkspaceActivationStatus } from 'twenty-shared/workspace';
 
-import { type PermissionFlagType } from 'src/engine/metadata-modules/permissions/constants/permission-flag-type.constants';
 import {
   PermissionsException,
   PermissionsExceptionCode,
@@ -47,6 +47,7 @@ export const SettingsPermissionGuard = (
           setting: requiredPermission,
           workspaceId,
           apiKeyId: ctx.getContext().req.apiKey?.id,
+          applicationId: ctx.getContext().req.application?.id,
         });
 
       if (hasPermission === true) {

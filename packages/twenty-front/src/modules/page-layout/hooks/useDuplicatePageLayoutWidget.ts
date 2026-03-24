@@ -2,19 +2,19 @@ import { PageLayoutComponentInstanceContext } from '@/page-layout/states/context
 import { pageLayoutCurrentLayoutsComponentState } from '@/page-layout/states/pageLayoutCurrentLayoutsComponentState';
 import { pageLayoutDraftComponentState } from '@/page-layout/states/pageLayoutDraftComponentState';
 import { pageLayoutEditingWidgetIdComponentState } from '@/page-layout/states/pageLayoutEditingWidgetIdComponentState';
+import { type PageLayoutWidget } from '@/page-layout/types/PageLayoutWidget';
 import { addWidgetToTab } from '@/page-layout/utils/addWidgetToTab';
+import { generateDuplicatedTimestamps } from '@/page-layout/utils/generateDuplicatedTimestamps';
 import { getScrollWrapperInstanceIdFromPageLayoutId } from '@/page-layout/utils/getScrollWrapperInstanceIdFromPageLayoutId';
 import { getUpdatedTabLayouts } from '@/page-layout/utils/getUpdatedTabLayouts';
 import { useScrollWrapperHTMLElement } from '@/ui/utilities/scroll/hooks/useScrollWrapperHTMLElement';
 import { useAvailableComponentInstanceIdOrThrow } from '@/ui/utilities/state/component-state/hooks/useAvailableComponentInstanceIdOrThrow';
-import { useRecoilComponentCallbackState } from '@/ui/utilities/state/component-state/hooks/useRecoilComponentCallbackState';
-import { useSetRecoilComponentState } from '@/ui/utilities/state/component-state/hooks/useSetRecoilComponentState';
-import { useRecoilCallback } from 'recoil';
-import { isDefined } from 'twenty-shared/utils';
+import { useAtomComponentStateCallbackState } from '@/ui/utilities/state/jotai/hooks/useAtomComponentStateCallbackState';
+import { useSetAtomComponentState } from '@/ui/utilities/state/jotai/hooks/useSetAtomComponentState';
+import { useStore } from 'jotai';
+import { useCallback } from 'react';
+import { appendCopySuffix, isDefined } from 'twenty-shared/utils';
 import { v4 as uuidv4 } from 'uuid';
-import { type PageLayoutWidget } from '~/generated/graphql';
-import { generateDuplicatedTimestamps } from '../utils/generateDuplicatedTimestamps';
-import { getDuplicatedTitle } from '../utils/getDuplicatedTitle';
 
 export const useDuplicatePageLayoutWidget = (
   pageLayoutIdFromProps?: string,
@@ -24,17 +24,17 @@ export const useDuplicatePageLayoutWidget = (
     pageLayoutIdFromProps,
   );
 
-  const pageLayoutDraftState = useRecoilComponentCallbackState(
+  const pageLayoutDraftState = useAtomComponentStateCallbackState(
     pageLayoutDraftComponentState,
     pageLayoutId,
   );
 
-  const pageLayoutCurrentLayoutsState = useRecoilComponentCallbackState(
+  const pageLayoutCurrentLayoutsState = useAtomComponentStateCallbackState(
     pageLayoutCurrentLayoutsComponentState,
     pageLayoutId,
   );
 
-  const setEditingWidgetId = useSetRecoilComponentState(
+  const setPageLayoutEditingWidgetId = useSetAtomComponentState(
     pageLayoutEditingWidgetIdComponentState,
     pageLayoutId,
   );
@@ -43,107 +43,105 @@ export const useDuplicatePageLayoutWidget = (
     getScrollWrapperInstanceIdFromPageLayoutId(pageLayoutId),
   );
 
-  const duplicateWidget = useRecoilCallback(
-    ({ snapshot, set }) =>
-      (widgetId: string): string => {
-        const pageLayoutDraft = snapshot
-          .getLoadable(pageLayoutDraftState)
-          .getValue();
+  const store = useStore();
 
-        const allTabLayouts = snapshot
-          .getLoadable(pageLayoutCurrentLayoutsState)
-          .getValue();
+  const duplicateWidget = useCallback(
+    (widgetId: string): string => {
+      const pageLayoutDraft = store.get(pageLayoutDraftState);
 
-        const sourceWidget = pageLayoutDraft.tabs
-          .flatMap((tab) => tab.widgets)
-          .find((widget) => widget.id === widgetId);
+      const allTabLayouts = store.get(pageLayoutCurrentLayoutsState);
 
-        if (!isDefined(sourceWidget)) {
-          throw new Error(`Widget with id ${widgetId} not found`);
-        }
+      const sourceWidget = pageLayoutDraft.tabs
+        .flatMap((tab) => tab.widgets)
+        .find((widget) => widget.id === widgetId);
 
-        const sourceTab = pageLayoutDraft.tabs.find(
-          (tab) => tab.id === sourceWidget.pageLayoutTabId,
+      if (!isDefined(sourceWidget)) {
+        throw new Error(`Widget with id ${widgetId} not found`);
+      }
+
+      const sourceTab = pageLayoutDraft.tabs.find(
+        (tab) => tab.id === sourceWidget.pageLayoutTabId,
+      );
+
+      if (!isDefined(sourceTab)) {
+        throw new Error(
+          `Tab with id ${sourceWidget.pageLayoutTabId} not found`,
         );
+      }
 
-        if (!isDefined(sourceTab)) {
-          throw new Error(
-            `Tab with id ${sourceWidget.pageLayoutTabId} not found`,
+      const newWidgetId = uuidv4();
+
+      const clonedWidget: PageLayoutWidget = {
+        ...sourceWidget,
+        id: newWidgetId,
+        title: appendCopySuffix(sourceWidget.title),
+        ...generateDuplicatedTimestamps(),
+      };
+
+      const currentTabLayouts = allTabLayouts[sourceTab.id] ?? {
+        desktop: [],
+        mobile: [],
+      };
+
+      const sourceLayout = currentTabLayouts.desktop.find(
+        (layout) => layout.i === widgetId,
+      );
+
+      if (!isDefined(sourceLayout)) {
+        throw new Error(`Layout for widget ${widgetId} not found`);
+      }
+
+      const maxY = currentTabLayouts.desktop.reduce(
+        (max, layout) => Math.max(max, layout.y + layout.h),
+        0,
+      );
+
+      const newLayout = {
+        ...sourceLayout,
+        i: newWidgetId,
+        y: maxY,
+      };
+
+      const updatedLayouts = getUpdatedTabLayouts(
+        allTabLayouts,
+        sourceTab.id,
+        newLayout,
+      );
+
+      store.set(pageLayoutCurrentLayoutsState, updatedLayouts);
+
+      store.set(pageLayoutDraftState, (prev) => ({
+        ...prev,
+        tabs: addWidgetToTab(prev.tabs, sourceTab.id, clonedWidget),
+      }));
+
+      setPageLayoutEditingWidgetId(newWidgetId);
+
+      const { scrollWrapperElement } = getScrollWrapperElement();
+
+      if (isDefined(scrollWrapperElement)) {
+        requestAnimationFrame(() => {
+          const widgetElement = scrollWrapperElement.querySelector(
+            `[data-widget-id="${newWidgetId}"]`,
           );
-        }
 
-        const newWidgetId = uuidv4();
+          if (isDefined(widgetElement)) {
+            widgetElement.scrollIntoView({
+              behavior: 'smooth',
+              block: 'nearest',
+            });
+          }
+        });
+      }
 
-        const clonedWidget: PageLayoutWidget = {
-          ...sourceWidget,
-          id: newWidgetId,
-          title: getDuplicatedTitle(sourceWidget.title),
-          ...generateDuplicatedTimestamps(),
-        };
-
-        const currentTabLayouts = allTabLayouts[sourceTab.id] || {
-          desktop: [],
-          mobile: [],
-        };
-
-        const sourceLayout = currentTabLayouts.desktop.find(
-          (layout) => layout.i === widgetId,
-        );
-
-        if (!isDefined(sourceLayout)) {
-          throw new Error(`Layout for widget ${widgetId} not found`);
-        }
-
-        const maxY = currentTabLayouts.desktop.reduce(
-          (max, layout) => Math.max(max, layout.y + layout.h),
-          0,
-        );
-
-        const newLayout = {
-          ...sourceLayout,
-          i: newWidgetId,
-          y: maxY,
-        };
-
-        const updatedLayouts = getUpdatedTabLayouts(
-          allTabLayouts,
-          sourceTab.id,
-          newLayout,
-        );
-
-        set(pageLayoutCurrentLayoutsState, updatedLayouts);
-
-        set(pageLayoutDraftState, (prev) => ({
-          ...prev,
-          tabs: addWidgetToTab(prev.tabs, sourceTab.id, clonedWidget),
-        }));
-
-        setEditingWidgetId(newWidgetId);
-
-        const { scrollWrapperElement } = getScrollWrapperElement();
-
-        if (isDefined(scrollWrapperElement)) {
-          requestAnimationFrame(() => {
-            const widgetElement = scrollWrapperElement.querySelector(
-              `[data-widget-id="${newWidgetId}"]`,
-            );
-
-            if (isDefined(widgetElement)) {
-              widgetElement.scrollIntoView({
-                behavior: 'smooth',
-                block: 'nearest',
-              });
-            }
-          });
-        }
-
-        return newWidgetId;
-      },
+      return newWidgetId;
+    },
     [
       pageLayoutCurrentLayoutsState,
       pageLayoutDraftState,
-      setEditingWidgetId,
+      setPageLayoutEditingWidgetId,
       getScrollWrapperElement,
+      store,
     ],
   );
 

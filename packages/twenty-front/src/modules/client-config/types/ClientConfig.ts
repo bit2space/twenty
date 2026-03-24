@@ -19,7 +19,6 @@ export type ClientConfig = {
   calendarBookingPageId?: string;
   canManageFeatureFlags: boolean;
   captcha: Captcha;
-  chromeExtensionId?: string;
   defaultSubdomain?: string;
   frontDomain: string;
   isAttachmentPreviewEnabled: boolean;
@@ -32,9 +31,12 @@ export type ClientConfig = {
   isMultiWorkspaceEnabled: boolean;
   isImapSmtpCaldavEnabled: boolean;
   isEmailingDomainsEnabled: boolean;
+  isCloudflareIntegrationEnabled: boolean;
+  isClickHouseConfigured: boolean;
   publicFeatureFlags: Array<PublicFeatureFlag>;
   sentry: Sentry;
   signInPrefilled: boolean;
   support: Support;
   isTwoFactorAuthenticationEnabled: boolean;
+  allowRequestsToTwentyIcons: boolean;
 };

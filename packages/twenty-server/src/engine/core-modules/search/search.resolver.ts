@@ -1,8 +1,11 @@
 import { UseFilters, UseGuards, UsePipes } from '@nestjs/common';
-import { Args, Query, Resolver } from '@nestjs/graphql';
+import { Args, Query } from '@nestjs/graphql';
 
 import { isDefined } from 'twenty-shared/utils';
 
+import { CoreResolver } from 'src/engine/api/graphql/graphql-config/decorators/core-resolver.decorator';
+import { ApiKeyEntity } from 'src/engine/core-modules/api-key/api-key.entity';
+import { ApiKeyRoleService } from 'src/engine/core-modules/api-key/services/api-key-role.service';
 import { PreventNestToAutoLogGraphqlErrorsFilter } from 'src/engine/core-modules/graphql/filters/prevent-nest-to-auto-log-graphql-errors.filter';
 import { ResolverValidationPipe } from 'src/engine/core-modules/graphql/pipes/resolver-validation.pipe';
 import { SearchArgs } from 'src/engine/core-modules/search/dtos/search-args';
@@ -10,12 +13,16 @@ import { SearchResultConnectionDTO } from 'src/engine/core-modules/search/dtos/s
 import { SearchApiExceptionFilter } from 'src/engine/core-modules/search/filters/search-api-exception.filter';
 import { SearchService } from 'src/engine/core-modules/search/services/search.service';
 import { WorkspaceEntity } from 'src/engine/core-modules/workspace/workspace.entity';
+import { AuthApiKey } from 'src/engine/decorators/auth/auth-api-key.decorator';
+import { AuthUserWorkspaceId } from 'src/engine/decorators/auth/auth-user-workspace-id.decorator';
 import { AuthWorkspace } from 'src/engine/decorators/auth/auth-workspace.decorator';
 import { CustomPermissionGuard } from 'src/engine/guards/custom-permission.guard';
 import { WorkspaceAuthGuard } from 'src/engine/guards/workspace-auth.guard';
 import { WorkspaceManyOrAllFlatEntityMapsCacheService } from 'src/engine/metadata-modules/flat-entity/services/workspace-many-or-all-flat-entity-maps-cache.service';
+import { UserRoleService } from 'src/engine/metadata-modules/user-role/user-role.service';
+import { type RolePermissionConfig } from 'src/engine/twenty-orm/types/role-permission-config';
 
-@Resolver()
+@CoreResolver()
 @UseFilters(SearchApiExceptionFilter, PreventNestToAutoLogGraphqlErrorsFilter)
 @UsePipes(ResolverValidationPipe)
 @UseGuards(WorkspaceAuthGuard, CustomPermissionGuard)
@@ -23,11 +30,16 @@ export class SearchResolver {
   constructor(
     private readonly searchService: SearchService,
     private readonly workspaceManyOrAllFlatEntityMapsCacheService: WorkspaceManyOrAllFlatEntityMapsCacheService,
+    private readonly userRoleService: UserRoleService,
+    private readonly apiKeyRoleService: ApiKeyRoleService,
   ) {}
 
   @Query(() => SearchResultConnectionDTO)
   async search(
     @AuthWorkspace() workspace: WorkspaceEntity,
+    @AuthUserWorkspaceId({ allowUndefined: true })
+    userWorkspaceId: string | undefined,
+    @AuthApiKey() apiKey: ApiKeyEntity | undefined,
     @Args()
     {
       searchInput,
@@ -47,7 +59,7 @@ export class SearchResolver {
       );
 
     const flatObjectMetadatas = Object.values(
-      flatObjectMetadataMaps.byId,
+      flatObjectMetadataMaps.byUniversalIdentifier,
     ).filter(isDefined);
 
     const filteredObjectMetadataItems =
@@ -56,6 +68,29 @@ export class SearchResolver {
         includedObjectNameSingulars: includedObjectNameSingulars ?? [],
         excludedObjectNameSingulars: excludedObjectNameSingulars ?? [],
       });
+
+    // TODO: move to a service
+    let rolePermissionConfig: RolePermissionConfig | undefined;
+
+    if (isDefined(apiKey)) {
+      const roleId = await this.apiKeyRoleService.getRoleIdForApiKeyId(
+        apiKey.id,
+        workspace.id,
+      );
+
+      if (isDefined(roleId)) {
+        rolePermissionConfig = { unionOf: [roleId] };
+      }
+    } else if (isDefined(userWorkspaceId)) {
+      const roleId = await this.userRoleService.getRoleIdForUserWorkspace({
+        userWorkspaceId,
+        workspaceId: workspace.id,
+      });
+
+      if (isDefined(roleId)) {
+        rolePermissionConfig = { unionOf: [roleId] };
+      }
+    }
 
     const allRecordsWithObjectMetadataItems =
       await this.searchService.getAllRecordsWithObjectMetadataItems({
@@ -67,6 +102,8 @@ export class SearchResolver {
         includedObjectNameSingulars,
         excludedObjectNameSingulars,
         after,
+        workspaceId: workspace.id,
+        rolePermissionConfig,
       });
 
     return this.searchService.computeSearchObjectResults({

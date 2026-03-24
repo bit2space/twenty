@@ -8,10 +8,12 @@ import { DropdownMenuItemsContainer } from '@/ui/layout/dropdown/components/Drop
 import { SelectableList } from '@/ui/layout/selectable-list/components/SelectableList';
 import { SelectableListItem } from '@/ui/layout/selectable-list/components/SelectableListItem';
 import { selectedItemIdComponentState } from '@/ui/layout/selectable-list/states/selectedItemIdComponentState';
-import { useRecoilComponentValue } from '@/ui/utilities/state/component-state/hooks/useRecoilComponentValue';
+import { useAtomComponentStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomComponentStateValue';
+import { useAtomStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomStateValue';
+import { useSetAtomState } from '@/ui/utilities/state/jotai/hooks/useSetAtomState';
 import { useUpdateCurrentView } from '@/views/hooks/useUpdateCurrentView';
 import { t } from '@lingui/core/macro';
-import { useRecoilValue, useSetRecoilState } from 'recoil';
+import { Pill } from 'twenty-ui/components';
 import {
   IconCalendarMonth,
   IconCalendarWeek,
@@ -23,15 +25,15 @@ import { ViewCalendarLayout } from '~/generated-metadata/graphql';
 
 export const ObjectOptionsDropdownCalendarViewContent = () => {
   const { resetContent } = useObjectOptionsDropdown();
-  const recordIndexCalendarLayout = useRecoilValue(
+  const recordIndexCalendarLayout = useAtomStateValue(
     recordIndexCalendarLayoutState,
   );
-  const setRecordIndexCalendarLayout = useSetRecoilState(
+  const setRecordIndexCalendarLayout = useSetAtomState(
     recordIndexCalendarLayoutState,
   );
   const { updateCurrentView } = useUpdateCurrentView();
 
-  const selectedItemId = useRecoilComponentValue(
+  const selectedItemId = useAtomComponentStateValue(
     selectedItemIdComponentState,
     OBJECT_OPTIONS_DROPDOWN_ID,
   );
@@ -81,6 +83,8 @@ export const ObjectOptionsDropdownCalendarViewContent = () => {
               text={t`Week`}
               selected={recordIndexCalendarLayout === ViewCalendarLayout.WEEK}
               focused={selectedItemId === ViewCalendarLayout.WEEK}
+              contextualText={<Pill label={t`Soon`} />}
+              contextualTextPosition="right"
               disabled
             />
           </SelectableListItem>
@@ -105,6 +109,8 @@ export const ObjectOptionsDropdownCalendarViewContent = () => {
               text={t`Timeline`}
               selected={recordIndexCalendarLayout === ViewCalendarLayout.DAY}
               focused={selectedItemId === ViewCalendarLayout.DAY}
+              contextualText={<Pill label={t`Soon`} />}
+              contextualTextPosition="right"
               disabled
             />
           </SelectableListItem>

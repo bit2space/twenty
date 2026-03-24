@@ -1,7 +1,7 @@
 {
   "name": "fireflies",
-  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "packages/twenty-apps/fireflies/src",
+  "$schema": "../../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "packages/twenty-apps/community/fireflies/src",
   "projectType": "application",
   "tags": [
     "scope:apps"
@@ -13,7 +13,7 @@
         "{workspaceRoot}/coverage/{projectRoot}"
       ],
       "options": {
-        "jestConfig": "packages/twenty-apps/fireflies/jest.config.mjs",
+        "jestConfig": "packages/twenty-apps/community/fireflies/jest.config.mjs",
         "passWithNoTests": true
       },
       "configurations": {
@@ -24,26 +24,8 @@
       }
     },
     "typecheck": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "tsc --noEmit --project {projectRoot}/tsconfig.json"
-      }
+      "dependsOn": ["^build"]
     },
-    "lint": {
-      "executor": "@nx/eslint:lint",
-      "outputs": [
-        "{options.outputFile}"
-      ],
-      "options": {
-        "lintFilePatterns": [
-          "packages/twenty-apps/fireflies/**/*.{ts,tsx,js,jsx}"
-        ]
-      },
-      "configurations": {
-        "fix": {
-          "fix": true
-        }
-      }
-    }
+    "lint": {}
   }
 }

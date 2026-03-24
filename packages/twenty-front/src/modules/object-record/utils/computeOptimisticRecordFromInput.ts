@@ -1,7 +1,7 @@
 import { isNull, isUndefined } from '@sniptt/guards';
 
 import { type CurrentWorkspaceMember } from '@/auth/states/currentWorkspaceMemberState';
-import { type ObjectMetadataItem } from '@/object-metadata/types/ObjectMetadataItem';
+import { type EnrichedObjectMetadataItem } from '@/object-metadata/types/EnrichedObjectMetadataItem';
 import { getFieldMetadataFromGqlField } from '@/object-record/cache/utils/getFieldMetadataFromGqlField';
 import { getMorphRelationFromFieldMetadataAndGqlField } from '@/object-record/cache/utils/getMorphRelationFromFieldMetadataAndGqlField';
 import {
@@ -21,7 +21,7 @@ import { computeMorphRelationFieldName, isDefined } from 'twenty-shared/utils';
 import { FieldMetadataType, RelationType } from '~/generated-metadata/graphql';
 
 type ComputeOptimisticCacheRecordInputArgs = {
-  objectMetadataItem: ObjectMetadataItem;
+  objectMetadataItem: EnrichedObjectMetadataItem;
   recordInput: Partial<ObjectRecord>;
   currentWorkspaceMember: CurrentWorkspaceMember | null;
 } & Pick<
@@ -53,10 +53,12 @@ export const computeOptimisticRecordFromInput = ({
         objectMetadataItem.fields.find((field) => {
           if (!isFieldMorphRelation(field)) return false;
 
-          return getFieldMetadataFromGqlField({
-            objectMetadataItem,
-            gqlField: recordKey,
-          });
+          return isDefined(
+            getFieldMetadataFromGqlField({
+              objectMetadataItem,
+              gqlField: recordKey,
+            }),
+          );
         });
 
       const isUnknownField =
@@ -140,12 +142,6 @@ export const computeOptimisticRecordFromInput = ({
         continue;
       }
 
-      if (!isUndefined(recordInputFieldValue)) {
-        throw new Error(
-          `Should never provide relation mutation through anything else than the fieldId e.g companyId and not company, encountered: ${fieldMetadataItem.name}`,
-        );
-      }
-
       const relationGqlFieldWithId = getForeignKeyNameFromRelationFieldName(
         fieldMetadataItem.name,
       );
@@ -200,12 +196,6 @@ export const computeOptimisticRecordFromInput = ({
       const isManyToOneRelation = relationType === RelationType.MANY_TO_ONE;
       if (!isManyToOneRelation) {
         continue;
-      }
-
-      if (!isUndefined(recordInputFieldValue)) {
-        throw new Error(
-          `Should never provide relation mutation through anything else than the fieldId e.g companyId and not company, encountered: ${fieldMetadataItem.name}`,
-        );
       }
 
       const relationGqlFields = fieldMetadataItem.morphRelations?.map(

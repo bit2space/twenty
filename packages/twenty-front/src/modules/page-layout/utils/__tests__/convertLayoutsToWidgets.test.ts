@@ -1,11 +1,12 @@
 import {
   AggregateOperations,
   GraphOrderBy,
-  GraphType,
+  PageLayoutTabLayoutMode,
+  WidgetConfigurationType,
   WidgetType,
   type PageLayoutWidget,
 } from '~/generated-metadata/graphql';
-import { convertLayoutsToWidgets } from '../convertLayoutsToWidgets';
+import { convertLayoutsToWidgets } from '@/page-layout/utils/convertLayoutsToWidgets';
 
 describe('convertLayoutsToWidgets', () => {
   const mockWidgets: PageLayoutWidget[] = [
@@ -22,11 +23,12 @@ describe('convertLayoutsToWidgets', () => {
         columnSpan: 2,
       },
       configuration: {
-        graphType: GraphType.AGGREGATE,
+        configurationType: WidgetConfigurationType.AGGREGATE_CHART,
         aggregateOperation: AggregateOperations.COUNT,
         aggregateFieldMetadataId: 'id',
         displayDataLabel: false,
       },
+      isOverridden: false,
       createdAt: '2024-01-01T00:00:00Z',
       updatedAt: '2024-01-01T00:00:00Z',
       deletedAt: null,
@@ -44,13 +46,14 @@ describe('convertLayoutsToWidgets', () => {
         columnSpan: 2,
       },
       configuration: {
-        graphType: GraphType.PIE,
+        configurationType: WidgetConfigurationType.PIE_CHART,
         aggregateOperation: AggregateOperations.COUNT,
         aggregateFieldMetadataId: 'id',
         groupByFieldMetadataId: 'status',
         orderBy: GraphOrderBy.VALUE_DESC,
         displayDataLabel: false,
       },
+      isOverridden: false,
       createdAt: '2024-01-01T00:00:00Z',
       updatedAt: '2024-01-01T00:00:00Z',
       deletedAt: null,
@@ -73,7 +76,23 @@ describe('convertLayoutsToWidgets', () => {
       columnSpan: 4,
       rowSpan: 5,
     });
+    expect(result[0].position).toEqual({
+      __typename: 'PageLayoutWidgetGridPosition',
+      layoutMode: PageLayoutTabLayoutMode.GRID,
+      column: 2,
+      row: 3,
+      columnSpan: 4,
+      rowSpan: 5,
+    });
     expect(result[1].gridPosition).toEqual({
+      column: 6,
+      row: 7,
+      columnSpan: 8,
+      rowSpan: 9,
+    });
+    expect(result[1].position).toEqual({
+      __typename: 'PageLayoutWidgetGridPosition',
+      layoutMode: PageLayoutTabLayoutMode.GRID,
       column: 6,
       row: 7,
       columnSpan: 8,

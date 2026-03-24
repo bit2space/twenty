@@ -1,4 +1,3 @@
-import { CalendarStartDay } from 'twenty-shared';
 import { DateFormat } from '@/localization/constants/DateFormat';
 import { NumberFormat } from '@/localization/constants/NumberFormat';
 import { TimeFormat } from '@/localization/constants/TimeFormat';
@@ -7,7 +6,8 @@ import { detectDateFormat } from '@/localization/utils/detection/detectDateForma
 import { detectNumberFormat } from '@/localization/utils/detection/detectNumberFormat';
 import { detectTimeFormat } from '@/localization/utils/detection/detectTimeFormat';
 import { detectTimeZone } from '@/localization/utils/detection/detectTimeZone';
-import { createState } from 'twenty-ui/utilities';
+import { createAtomState } from '@/ui/utilities/state/jotai/utils/createAtomState';
+import { CalendarStartDay } from 'twenty-shared/constants';
 
 export type WorkspaceMemberFormatPreferences = {
   timeZone: string;
@@ -18,7 +18,7 @@ export type WorkspaceMemberFormatPreferences = {
 };
 
 export const workspaceMemberFormatPreferencesState =
-  createState<WorkspaceMemberFormatPreferences>({
+  createAtomState<WorkspaceMemberFormatPreferences>({
     key: 'workspaceMemberFormatPreferencesState',
     defaultValue: {
       timeZone: detectTimeZone(),

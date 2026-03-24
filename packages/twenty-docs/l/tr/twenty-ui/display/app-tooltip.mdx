@@ -1,16 +1,16 @@
 ---
-title: App Tooltip
+title: Uygulama Araç İpucu
 image: /images/user-guide/tips/light-bulb.png
 ---
 
 <Frame>
-  <img src="/images/user-guide/tips/light-bulb.png" alt="Header" />
+  <img src="/images/user-guide/tips/light-bulb.png" alt="Başlık" />
 </Frame>
 
 Kullanıcı bir öğeyle etkileşimde bulunduğunda ek bilgi gösteren kısa bir mesaj.
 
 <Tabs>
-<Tab title="Usage">
+<Tab title="Kullanım">
 
 ```jsx
 import { AppTooltip } from "@/ui/display/tooltip/AppTooltip";
@@ -39,19 +39,22 @@ export const MyComponent = () => {
 
 </Tab>
 
-<Tab title="Props">
+<Tab title="Özellikler">
 
-| Özellikler       | Tür                                           | Açıklama                                                                                                                                                                                                                                       |
-| ---------------- | --------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| sınıfAdı         | metin                                         | Ek stil tanımlamaları için isteğe bağlı CSS sınıfı                                                                                                                                                                                             |
-| anchorSelect     | CSS seçici                                    | Tooltip'in bağlantı elementi için seçici (tooltip'i tetikleyen öğe)                                                                                                                                                         |
-| içerik           | metin                                         | Tooltip içinde göstermek istediğiniz içerik                                                                                                                                                                                                    |
-| delayHide        | sayı                                          | İmleç bağlantıdan ayrıldıktan sonra tooltip'in gizlenmesi için beklenen süre (saniye)                                                                                                                                       |
-| offset           | sayı                                          | Tooltip'in konumlandırılması için piksel cinsinden ofset                                                                                                                                                                                       |
-| noArrow          | boolean                                       | `doğru` ise, tooltip'teki oku gizler                                                                                                                                                                                                           |
-| isOpen           | boolean                                       | `doğru` ise, tooltip varsayılan olarak açıktır                                                                                                                                                                                                 |
+
+| Özellikler       | Tür                                           | Açıklama                                                                                                                                                                                                       |
+| ---------------- | --------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| className        | dize                                          | Ek stil tanımlamaları için isteğe bağlı CSS sınıfı                                                                                                                                                             |
+| anchorSelect     | CSS seçici                                    | Tooltip'in bağlantı elementi için seçici (tooltip'i tetikleyen öğe)                                                                                                                                            |
+| içerik           | dize                                          | Tooltip içinde göstermek istediğiniz içerik                                                                                                                                                                    |
+| delayHide        | sayı                                          | İmleç bağlantıdan ayrıldıktan sonra tooltip'in gizlenmesi için beklenen süre (saniye)                                                                                                                          |
+| offset           | sayı                                          | Tooltip'in konumlandırılması için piksel cinsinden ofset                                                                                                                                                       |
+| noArrow          | boolean                                       | `doğru` ise, tooltip'teki oku gizler                                                                                                                                                                           |
+| isOpen           | boolean                                       | `doğru` ise, tooltip varsayılan olarak açıktır                                                                                                                                                                 |
 | place            | `react-tooltip`'dan `PlacesType` string       | Tooltip'in yerleşimini belirtir. Değerler şunları içerir: `alt`, `sol`, `sağ`, `üst`, `üst-başlangıç`, `üst-bitiş`, `sağ-başlangıç`, `sağ-bitiş`, `alt-başlangıç`, `alt-bitiş`, `sol-başlangıç` ve `sol-bitiş` |
-| positionStrategy | `react-tooltip`'dan `PositionStrategy` string | Tooltip'in pozisyon stratejisi. Has two values: `absolute` and `fixed`                                                                                                                                         |
+| positionStrategy | `react-tooltip`'dan `PositionStrategy` string | Tooltip'in pozisyon stratejisi. İki değeri vardır: `absolute` ve `fixed`                                                                                                                                       |
+
+
 
 </Tab>
 
@@ -62,7 +65,7 @@ export const MyComponent = () => {
 Taşan metinleri ele alır ve metin taştığında bir tooltip gösterir.
 
 <Tabs>
-<Tab title="Usage">
+<Tab title="Kullanım">
 
 ```jsx
 import { OverflowingTextWithTooltip } from 'twenty-ui/display';
@@ -77,11 +80,14 @@ export const MyComponent = () => {
 
 </Tab>
 
-<Tab title="Props">
+<Tab title="Özellikler">
 
-| Özellikler | Tür   | Açıklama                                          |
-| ---------- | ----- | ------------------------------------------------- |
-| metin      | metin | Taşan metin alanında göstermek istediğiniz içerik |
+
+| Özellikler | Tür  | Açıklama                                          |
+| ---------- | ---- | ------------------------------------------------- |
+| metin      | dize | Taşan metin alanında göstermek istediğiniz içerik |
+
+
 
 </Tab>
 

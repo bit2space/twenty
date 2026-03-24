@@ -1,11 +1,13 @@
 import { Injectable } from '@nestjs/common';
 
+import { isDefined } from 'twenty-shared/utils';
+
 import { ExceptionHandlerService } from 'src/engine/core-modules/exception-handler/exception-handler.service';
 import {
   type TwentyORMException,
   TwentyORMExceptionCode,
 } from 'src/engine/twenty-orm/exceptions/twenty-orm.exception';
-import { TwentyORMManager } from 'src/engine/twenty-orm/twenty-orm.manager';
+import { MessageChannelDataAccessService } from 'src/engine/metadata-modules/message-channel/data-access/services/message-channel-data-access.service';
 import { MessageChannelSyncStatusService } from 'src/modules/messaging/common/services/message-channel-sync-status.service';
 import {
   MessageChannelSyncStatus,
@@ -27,7 +29,7 @@ export enum MessageImportSyncStep {
 @Injectable()
 export class MessageImportExceptionHandlerService {
   constructor(
-    private readonly twentyORMManager: TwentyORMManager,
+    private readonly messageChannelDataAccessService: MessageChannelDataAccessService,
     private readonly messageChannelSyncStatusService: MessageChannelSyncStatusService,
     private readonly exceptionHandlerService: ExceptionHandlerService,
   ) {}
@@ -106,10 +108,9 @@ export class MessageImportExceptionHandlerService {
     messageChannel: Pick<MessageChannelWorkspaceEntity, 'id'>,
     workspaceId: string,
   ): Promise<void> {
-    await this.messageChannelSyncStatusService.markAsFailed(
+    await this.messageChannelSyncStatusService.resetAndMarkAsMessagesListFetchPending(
       [messageChannel.id],
       workspaceId,
-      MessageChannelSyncStatus.FAILED_UNKNOWN,
     );
   }
 
@@ -134,12 +135,14 @@ export class MessageImportExceptionHandlerService {
       this.exceptionHandlerService.captureExceptions(
         [
           new Error(
-            `Temporary error occurred ${MESSAGING_THROTTLE_MAX_ATTEMPTS} times while importing messages for message channel ${messageChannel.id.slice(0, 5)}... in workspace ${workspaceId}: ${exception?.message}`,
+            `Temporary error occurred ${MESSAGING_THROTTLE_MAX_ATTEMPTS} times while importing messages for message channel ${messageChannel.id} in workspace ${workspaceId}: ${exception?.message}`,
           ),
         ],
         {
           additionalData: {
             messageChannelId: messageChannel.id,
+            syncStep,
+            throttleFailureCount: messageChannel.throttleFailureCount,
           },
           workspace: { id: workspaceId },
         },
@@ -148,17 +151,26 @@ export class MessageImportExceptionHandlerService {
       return;
     }
 
-    const messageChannelRepository =
-      await this.twentyORMManager.getRepository<MessageChannelWorkspaceEntity>(
-        'messageChannel',
-      );
-
-    await messageChannelRepository.increment(
+    await this.messageChannelDataAccessService.increment(
+      workspaceId,
       { id: messageChannel.id },
       'throttleFailureCount',
       1,
-      undefined,
-      ['throttleFailureCount', 'id'],
+    );
+
+    const throttleRetryAfter =
+      exception instanceof MessageImportDriverException
+        ? exception.throttleRetryAfter
+        : undefined;
+
+    await this.messageChannelDataAccessService.update(
+      workspaceId,
+      { id: messageChannel.id },
+      {
+        throttleRetryAfter: isDefined(throttleRetryAfter)
+          ? throttleRetryAfter.toISOString()
+          : null,
+      },
     );
 
     switch (syncStep) {
@@ -242,6 +254,7 @@ export class MessageImportExceptionHandlerService {
         {
           additionalData: {
             messageChannelId: messageChannel.id,
+            syncStep,
           },
           workspace: { id: workspaceId },
         },

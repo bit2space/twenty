@@ -1,11 +1,15 @@
-import { hasRecordGroupsComponentSelector } from '@/object-record/record-group/states/selectors/hasRecordGroupsComponentSelector';
 import { RecordTableColumnWidthEffect } from '@/object-record/record-table/components/RecordTableColumnWidthEffect';
-import { RecordTableStyleWrapper } from '@/object-record/record-table/components/RecordTableStyleWrapper';
+import {
+  getRecordTableColumnWidthInlineStyles,
+  RecordTableStyleWrapper,
+} from '@/object-record/record-table/components/RecordTableStyleWrapper';
 import { RecordTableWidthEffect } from '@/object-record/record-table/components/RecordTableWidthEffect';
 import { RECORD_TABLE_COLUMN_ADD_COLUMN_BUTTON_WIDTH } from '@/object-record/record-table/constants/RecordTableColumnAddColumnButtonWidth';
 import { RECORD_TABLE_COLUMN_CHECKBOX_WIDTH } from '@/object-record/record-table/constants/RecordTableColumnCheckboxWidth';
 import { RECORD_TABLE_COLUMN_DRAG_AND_DROP_WIDTH } from '@/object-record/record-table/constants/RecordTableColumnDragAndDropWidth';
-import { RECORD_TABLE_HTML_ID } from '@/object-record/record-table/constants/RecordTableHtmlId';
+import { isRecordTableCheckboxColumnHiddenComponentState } from '@/object-record/record-table/states/isRecordTableCheckboxColumnHiddenComponentState';
+import { isRecordTableDragColumnHiddenComponentState } from '@/object-record/record-table/states/isRecordTableDragColumnHiddenComponentState';
+import { getRecordTableHtmlId } from '@/object-record/record-table/utils/getRecordTableHtmlId';
 import { useRecordTableContextOrThrow } from '@/object-record/record-table/contexts/RecordTableContext';
 import { RecordTableEmptyState } from '@/object-record/record-table/empty-state/components/RecordTableEmptyState';
 import { RecordTableHeader } from '@/object-record/record-table/record-table-header/components/RecordTableHeader';
@@ -15,8 +19,9 @@ import { resizeFieldOffsetComponentState } from '@/object-record/record-table/st
 import { shouldCompactRecordTableFirstColumnComponentState } from '@/object-record/record-table/states/shouldCompactRecordTableFirstColumnComponentState';
 import { computeVisibleRecordFieldsWidthOnTable } from '@/object-record/record-table/utils/computeVisibleRecordFieldsWidthOnTable';
 import { RecordTableVirtualizedDataChangedEffect } from '@/object-record/record-table/virtualization/components/RecordTableVirtualizedDataChangedEffect';
-import { useRecoilComponentValue } from '@/ui/utilities/state/component-state/hooks/useRecoilComponentValue';
-import styled from '@emotion/styled';
+import { useAtomComponentStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomComponentStateValue';
+import { styled } from '@linaria/react';
+import { useMemo } from 'react';
 import { isDefined } from 'twenty-shared/utils';
 
 const StyledEmptyStateContainer = styled.div<{ width: number }>`
@@ -30,23 +35,31 @@ export interface RecordTableEmptyProps {
 }
 
 export const RecordTableEmpty = ({ tableBodyRef }: RecordTableEmptyProps) => {
-  const { visibleRecordFields } = useRecordTableContextOrThrow();
+  const { visibleRecordFields, recordTableId } = useRecordTableContextOrThrow();
 
-  const recordTableWidth = useRecoilComponentValue(
+  const isRecordTableDragColumnHidden = useAtomComponentStateValue(
+    isRecordTableDragColumnHiddenComponentState,
+  );
+
+  const isRecordTableCheckboxColumnHidden = useAtomComponentStateValue(
+    isRecordTableCheckboxColumnHiddenComponentState,
+  );
+
+  const recordTableWidth = useAtomComponentStateValue(
     recordTableWidthComponentState,
   );
 
-  const resizedFieldMetadataId = useRecoilComponentValue(
+  const resizedFieldMetadataId = useAtomComponentStateValue(
     resizedFieldMetadataIdComponentState,
   );
 
-  const resizeFieldOffset = useRecoilComponentValue(
+  const resizeFieldOffset = useAtomComponentStateValue(
     resizeFieldOffsetComponentState,
   );
 
   const isResizing = isDefined(resizedFieldMetadataId);
 
-  const shouldCompactRecordTableFirstColumn = useRecoilComponentValue(
+  const shouldCompactRecordTableFirstColumn = useAtomComponentStateValue(
     shouldCompactRecordTableFirstColumnComponentState,
   );
 
@@ -63,10 +76,19 @@ export const RecordTableEmpty = ({ tableBodyRef }: RecordTableEmptyProps) => {
     visibleRecordFields,
   });
 
+  const dragColumnWidth = isRecordTableDragColumnHidden
+    ? 0
+    : RECORD_TABLE_COLUMN_DRAG_AND_DROP_WIDTH;
+
+  const checkboxColumnWidth = isRecordTableCheckboxColumnHidden
+    ? 0
+    : RECORD_TABLE_COLUMN_CHECKBOX_WIDTH;
+
+  const leftColumnsWidth = dragColumnWidth + checkboxColumnWidth;
+
   const emptyTableContainerComputedWidth =
     visibleRecordFieldsWidth +
-    RECORD_TABLE_COLUMN_CHECKBOX_WIDTH +
-    RECORD_TABLE_COLUMN_DRAG_AND_DROP_WIDTH +
+    leftColumnsWidth +
     RECORD_TABLE_COLUMN_ADD_COLUMN_BUTTON_WIDTH +
     totalColumnsBorderWidth +
     resizeOffsetToAddOnlyIfItMakesTableContainerGrow;
@@ -76,17 +98,17 @@ export const RecordTableEmpty = ({ tableBodyRef }: RecordTableEmptyProps) => {
     emptyTableContainerComputedWidth,
   );
 
-  const hasRecordGroups = useRecoilComponentValue(
-    hasRecordGroupsComponentSelector,
+  const columnWidthStyles = useMemo(
+    () => getRecordTableColumnWidthInlineStyles({ visibleRecordFields }),
+    [visibleRecordFields],
   );
 
   return (
     <StyledEmptyStateContainer width={tableContainerWidth}>
       <RecordTableStyleWrapper
         ref={tableBodyRef}
-        visibleRecordFields={visibleRecordFields}
-        id={RECORD_TABLE_HTML_ID}
-        hasRecordGroups={hasRecordGroups}
+        style={columnWidthStyles}
+        id={getRecordTableHtmlId(recordTableId)}
       >
         <RecordTableHeader />
       </RecordTableStyleWrapper>

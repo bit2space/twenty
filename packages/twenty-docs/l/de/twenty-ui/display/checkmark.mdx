@@ -4,13 +4,13 @@ image: /images/user-guide/tasks/tasks_header.png
 ---
 
 <Frame>
-  <img src="/images/user-guide/tasks/tasks_header.png" alt="Header" />
+  <img src="/images/user-guide/tasks/tasks_header.png" alt="Kopfzeile" />
 </Frame>
 
 Stellt eine erfolgreiche oder abgeschlossene Aktion dar.
 
 <Tabs>
-<Tab title="Usage">
+<Tab title="&#x22;Verwendung&#x22;">
 
 ```jsx
 import { Checkmark } from 'twenty-ui/display';
@@ -20,9 +20,10 @@ export const MyComponent = () => {
 };
 ```
 
+
 </Tab>
 
-<Tab title="Props">
+<Tab title="&#x22;Eigenschaften&#x22;">
 
 Erweitert `React.ComponentPropsWithoutRef<'div'>` und akzeptiert alle Eigenschaften eines regulären `div`-Elements.
 
@@ -36,7 +37,7 @@ Stellt ein Häkchen-Symbol mit der zusätzlichen Funktion der Animation dar.
 
 <Tabs>
 
-<Tab title="Usage">
+<Tab title="Verwendung">
 
 ```jsx
 import { AnimatedCheckmark } from 'twenty-ui/display';
@@ -55,14 +56,17 @@ export const MyComponent = () => {
 
 </Tab>
 
-<Tab title="Props">
+<Tab title="Eigenschaften">
 
-| Props       | Typ          | Beschreibung                          | Standard     |
-| ----------- | ------------ | ------------------------------------- | ------------ |
-| isAnimating | boolesch     | Steuert, ob das Häkchen animiert wird | falsch       |
-| farbe       | Zeichenkette | Farbe des Häkchens                    |              |
-| Dauer       | nummer       | Die Dauer der Animation in Sekunden   | 0,5 Sekunden |
-| größe       | nummer       | Die Größe des Häkchens                | 28 Pixel     |
+
+| Eigenschaften | Typ          | Beschreibung                          | Standard     |
+| ------------- | ------------ | ------------------------------------- | ------------ |
+| isAnimating   | boolesch     | Steuert, ob das Häkchen animiert wird | falsch       |
+| farbe         | Zeichenkette | Farbe des Häkchens                    |              |
+| Dauer         | nummer       | Die Dauer der Animation in Sekunden   | 0,5 Sekunden |
+| größe         | nummer       | Die Größe des Häkchens                | 28 Pixel     |
+
+
 
 </Tab>
 

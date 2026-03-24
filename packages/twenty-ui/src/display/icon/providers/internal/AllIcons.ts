@@ -1,4 +1,4 @@
-/* eslint-disable no-restricted-imports */
+/* oxlint-disable no-restricted-imports */
 import {
   IconNumber123 as Icon123,
   IconAB,
@@ -317,6 +317,7 @@ import {
   IconBackslash,
   IconBackspace,
   IconBadge,
+  IconBadge2k,
   IconBadge3d,
   IconBadge4k,
   IconBadge8k,
@@ -990,6 +991,7 @@ import {
   IconCameraX,
   IconCamper,
   IconCampfire,
+  IconCancel,
   IconCandle,
   IconCandy,
   IconCandyOff,
@@ -8363,4 +8365,6 @@ export const ALL_ICONS = {
   IconZoomReset,
   IconZzz,
   IconZzzOff,
+  IconCancel,
+  IconBadge2k,
 };

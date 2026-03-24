@@ -9,12 +9,17 @@ import {
 } from 'src/engine/api/graphql/workspace-query-builder/interfaces/object-record.interface';
 
 import { GraphqlQueryFilterConditionParser } from 'src/engine/api/graphql/graphql-query-runner/graphql-query-parsers/graphql-query-filter/graphql-query-filter-condition.parser';
-import { GraphqlQueryOrderFieldParser } from 'src/engine/api/graphql/graphql-query-runner/graphql-query-parsers/graphql-query-order/graphql-query-order.parser';
+import { GraphqlQueryOrderGroupByParser } from 'src/engine/api/graphql/graphql-query-runner/graphql-query-parsers/graphql-query-order/graphql-query-order-group-by.parser';
+import {
+  GraphqlQueryOrderFieldParser,
+  type OrderByClause,
+  type RelationJoinInfo,
+} from 'src/engine/api/graphql/graphql-query-runner/graphql-query-parsers/graphql-query-order/graphql-query-order.parser';
 import {
   GraphqlQuerySelectedFieldsParser,
   type GraphqlQuerySelectedFieldsResult,
 } from 'src/engine/api/graphql/graphql-query-runner/graphql-query-parsers/graphql-query-selected-fields/graphql-selected-fields.parser';
-import { type GroupByField } from 'src/engine/api/graphql/graphql-query-runner/group-by/resolvers/types/group-by-field.types';
+import { type GroupByField } from 'src/engine/api/common/common-query-runners/types/group-by-field.types';
 import { type FlatEntityMaps } from 'src/engine/metadata-modules/flat-entity/types/flat-entity-maps.type';
 import { type FlatFieldMetadata } from 'src/engine/metadata-modules/flat-field-metadata/types/flat-field-metadata.type';
 import { type FlatObjectMetadata } from 'src/engine/metadata-modules/flat-object-metadata/types/flat-object-metadata.type';
@@ -26,6 +31,7 @@ export class GraphqlQueryParser {
   private flatFieldMetadataMaps: FlatEntityMaps<FlatFieldMetadata>;
   private filterConditionParser: GraphqlQueryFilterConditionParser;
   private orderFieldParser: GraphqlQueryOrderFieldParser;
+  private orderGroupByParser: GraphqlQueryOrderGroupByParser;
 
   constructor(
     flatObjectMetadata: FlatObjectMetadata,
@@ -45,14 +51,19 @@ export class GraphqlQueryParser {
       this.flatObjectMetadataMaps,
       this.flatFieldMetadataMaps,
     );
+    this.orderGroupByParser = new GraphqlQueryOrderGroupByParser(
+      this.flatObjectMetadata,
+      this.flatObjectMetadataMaps,
+      this.flatFieldMetadataMaps,
+    );
   }
 
   public applyFilterToBuilder(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // oxlint-disable-next-line @typescripttypescript/no-explicit-any
     queryBuilder: WorkspaceSelectQueryBuilder<any>,
     objectNameSingular: string,
     recordFilter: Partial<ObjectRecordFilter>,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // oxlint-disable-next-line @typescripttypescript/no-explicit-any
   ): WorkspaceSelectQueryBuilder<any> {
     return this.filterConditionParser.parse(
       queryBuilder,
@@ -62,10 +73,10 @@ export class GraphqlQueryParser {
   }
 
   public applyDeletedAtToBuilder(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // oxlint-disable-next-line @typescripttypescript/no-explicit-any
     queryBuilder: WorkspaceSelectQueryBuilder<any>,
     recordFilter: Partial<ObjectRecordFilter>,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // oxlint-disable-next-line @typescripttypescript/no-explicit-any
   ): WorkspaceSelectQueryBuilder<any> {
     if (this.checkForDeletedAtFilter(recordFilter)) {
       queryBuilder.withDeleted();
@@ -101,60 +112,118 @@ export class GraphqlQueryParser {
   };
 
   public applyOrderToBuilder(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // oxlint-disable-next-line @typescripttypescript/no-explicit-any
     queryBuilder: WorkspaceSelectQueryBuilder<any>,
     orderBy: ObjectRecordOrderBy | OrderByWithGroupBy,
     objectNameSingular: string,
     isForwardPagination = true,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  ): WorkspaceSelectQueryBuilder<any> {
-    const parsedOrderBys = this.orderFieldParser.parse(
+  ): Record<string, OrderByClause> {
+    const parseResult = this.orderFieldParser.parse(
       orderBy as ObjectRecordOrderBy,
       objectNameSingular,
       isForwardPagination,
     );
 
-    return queryBuilder.orderBy(parsedOrderBys);
+    // Add LEFT JOINs for relation ordering
+    for (const joinInfo of parseResult.relationJoins) {
+      queryBuilder.leftJoin(
+        `${objectNameSingular}.${joinInfo.joinAlias}`,
+        joinInfo.joinAlias,
+      );
+    }
+
+    queryBuilder.orderBy(parseResult.orderBy);
+
+    // Return parsed orderBy so caller can add relation columns after setFindOptions
+    return parseResult.orderBy;
+  }
+
+  public addRelationOrderColumnsToBuilder(
+    // oxlint-disable-next-line @typescripttypescript/no-explicit-any
+    queryBuilder: WorkspaceSelectQueryBuilder<any>,
+    parsedOrderBy: Record<string, OrderByClause>,
+    objectNameSingular: string,
+    columnsToSelect: Record<string, boolean>,
+  ): void {
+    // Add ORDER BY columns with underscore alias for DISTINCT compatibility
+    // This must be called AFTER setFindOptions because setFindOptions clears addSelect
+    // We need to add columns that are in orderBy but NOT in the selected columns
+    for (const orderByKey of Object.keys(parsedOrderBy)) {
+      const parts = orderByKey.split('.');
+
+      if (parts.length === 2) {
+        const [alias, column] = parts;
+
+        // For relation columns: always add (they're never in columnsToSelect)
+        // For main entity columns: only add if NOT already in columnsToSelect
+        const isMainEntity = alias === objectNameSingular;
+        const isAlreadySelected = isMainEntity && columnsToSelect[column];
+
+        if (!isAlreadySelected) {
+          queryBuilder.addSelect(
+            `"${alias}"."${column}"`,
+            `${alias}_${column}`,
+          );
+        }
+      }
+    }
   }
 
   public getOrderByRawSQL(
     orderBy: ObjectRecordOrderBy | OrderByWithGroupBy,
     objectNameSingular: string,
     isForwardPagination = true,
-  ): string {
-    const parsedOrderBys = this.orderFieldParser.parse(
+  ): { orderByRawSQL: string; relationJoins: RelationJoinInfo[] } {
+    const parseResult = this.orderFieldParser.parse(
       orderBy as ObjectRecordOrderBy,
       objectNameSingular,
       isForwardPagination,
     );
 
-    const orderByRawSQLClauseArray = Object.entries(parsedOrderBys).map(
+    const orderByRawSQLClauseArray = Object.entries(parseResult.orderBy).map(
       ([orderByField, orderByCondition]) => {
         const nullsCondition = isDefined(orderByCondition.nulls)
           ? ` ${orderByCondition.nulls}`
           : '';
 
-        return `${orderByField} ${orderByCondition.order}${nullsCondition}`;
+        // Convert "alias.column" to quoted SQL identifier "alias"."column"
+        const parts = orderByField.split('.');
+        const quotedColumn =
+          parts.length === 2
+            ? `"${parts[0]}"."${parts[1]}"`
+            : `"${orderByField}"`;
+
+        // Build column expression with optional ::text cast and LOWER()
+        let columnExpr = quotedColumn;
+
+        if (orderByCondition.castToText) {
+          columnExpr = `${columnExpr}::text`;
+        }
+        if (orderByCondition.useLower) {
+          columnExpr = `LOWER(${columnExpr})`;
+        }
+
+        return `${columnExpr} ${orderByCondition.order}${nullsCondition}`;
       },
     );
 
     const orderByRawSQLString = orderByRawSQLClauseArray.join(', ');
 
-    const orderByCompleteSQLClause = isNonEmptyString(orderByRawSQLString)
+    const orderByRawSQL = isNonEmptyString(orderByRawSQLString)
       ? `ORDER BY ${orderByRawSQLString}`
       : '';
 
-    return orderByCompleteSQLClause;
+    return { orderByRawSQL, relationJoins: parseResult.relationJoins };
   }
 
   public applyGroupByOrderToBuilder(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // oxlint-disable-next-line @typescripttypescript/no-explicit-any
     queryBuilder: WorkspaceSelectQueryBuilder<any>,
     orderBy: ObjectRecordOrderBy | OrderByWithGroupBy,
     groupByFields: GroupByField[],
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // oxlint-disable-next-line @typescripttypescript/no-explicit-any
   ): WorkspaceSelectQueryBuilder<any> {
-    const parsedOrderBys = this.orderFieldParser.parseForGroupBy({
+    const parsedOrderBys = this.orderGroupByParser.parse({
       orderBy,
       groupByFields,
     });
@@ -173,7 +242,7 @@ export class GraphqlQueryParser {
   }
 
   public parseSelectedFields(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // oxlint-disable-next-line @typescripttypescript/no-explicit-any
     graphqlSelectedFields: Partial<Record<string, any>>,
   ): GraphqlQuerySelectedFieldsResult {
     const selectedFieldsParser = new GraphqlQuerySelectedFieldsParser(

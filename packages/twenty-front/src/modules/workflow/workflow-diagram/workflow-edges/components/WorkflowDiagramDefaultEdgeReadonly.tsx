@@ -2,10 +2,11 @@ import { WorkflowDiagramEdgeLabel } from '@/workflow/workflow-diagram/workflow-e
 import { WorkflowDiagramEdgeLabelContainer } from '@/workflow/workflow-diagram/workflow-edges/components/WorkflowDiagramEdgeLabelContainer';
 import { type WorkflowDiagramEdgeComponentProps } from '@/workflow/workflow-diagram/workflow-edges/types/WorkflowDiagramEdgeComponentProps';
 import { getEdgePath } from '@/workflow/workflow-diagram/workflow-edges/utils/getEdgePath';
-import { useTheme } from '@emotion/react';
 import { i18n } from '@lingui/core';
 import { BaseEdge, EdgeLabelRenderer } from '@xyflow/react';
 import { isDefined } from 'twenty-shared/utils';
+import { ThemeContext } from 'twenty-ui/theme-constants';
+import { useContext } from 'react';
 
 type WorkflowDiagramDefaultEdgeReadonlyProps =
   WorkflowDiagramEdgeComponentProps;
@@ -21,9 +22,11 @@ export const WorkflowDiagramDefaultEdgeReadonly = ({
   markerEnd,
   data,
 }: WorkflowDiagramDefaultEdgeReadonlyProps) => {
-  const theme = useTheme();
-
-  const { segments } = getEdgePath({
+  const { theme } = useContext(ThemeContext);
+  const {
+    segments,
+    overlayPosition: [labelX, labelY],
+  } = getEdgePath({
     sourceX,
     sourceY,
     sourcePosition,
@@ -43,7 +46,9 @@ export const WorkflowDiagramDefaultEdgeReadonly = ({
           markerStart={segment.markerStart}
           markerEnd={segment.markerEnd}
           path={segment.path}
-          style={{ stroke: theme.border.color.strong }}
+          style={{
+            stroke: theme.border.color.strong,
+          }}
         />
       ))}
 
@@ -53,8 +58,13 @@ export const WorkflowDiagramDefaultEdgeReadonly = ({
             sourceX={sourceX}
             sourceY={sourceY}
             position={data.labelOptions.position}
+            centerX={labelX}
+            centerY={labelY}
           >
-            <WorkflowDiagramEdgeLabel label={i18n._(data.labelOptions.label)} />
+            <WorkflowDiagramEdgeLabel
+              label={i18n._(data.labelOptions.label)}
+              elseIfIndex={data.labelOptions.elseIfIndex}
+            />
           </WorkflowDiagramEdgeLabelContainer>
         )}
       </EdgeLabelRenderer>

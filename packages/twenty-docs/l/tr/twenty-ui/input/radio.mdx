@@ -4,13 +4,13 @@ image: /images/user-guide/create-workspace/workspace-cover.png
 ---
 
 <Frame>
-  <img src="/images/user-guide/create-workspace/workspace-cover.png" alt="Header" />
+  <img src="/images/user-guide/create-workspace/workspace-cover.png" alt="Başlık" />
 </Frame>
 
 Kullanıcıların bir dizi seçenekte yalnızca bir seçeneği seçebildiği durumlarda kullanılır.
 
 <Tabs>
-<Tab title="Usage">
+<Tab title="Kullanım">
 
 ```jsx
 import { Radio } from "twenty-ui/display";
@@ -41,20 +41,25 @@ export const MyComponent = () => {
 
 ```
 
-</Tab>
-<Tab title="Props">
 
-| Özellikler      | Tür                     | Açıklama                                                                                                        |
-| --------------- | ----------------------- | --------------------------------------------------------------------------------------------------------------- |
-| stil            | `React.CSS` özellikleri | Bileşen için ek satır içi stiller                                                                               |
-| sınıfAdı        | metin                   | Ek stil tanımlamaları için isteğe bağlı CSS sınıfı                                                              |
-| işaretli        | boolean                 | Indicates whether the radio button is checked                                                                   |
-| değer           | metin                   | Radyo butonuyla ilişkili etiket veya metin                                                                      |
-| onChange        | fonksiyon               | Seçili radyo butonu değiştirildiğinde çağrılan fonksiyon                                                        |
-| onCheckedChange | fonksiyon               | `checked` durumu değiştiğinde çağrılan fonksiyon                                                                |
-| boyut           | metin                   | Radyo butonunun boyutu. Seçenekler: `büyük` ve `küçük`                          |
-| devre dışı      | boolean                 | Eğer `true` ise, radyo butonu devre dışı bırakılır ve tıklanamaz                                                |
-| etiketPozisyonu | metin                   | Etiket metninin radyo butonuna göre konumu. İki seçeneği vardır: `sol` ve `sağ` |
+</Tab>
+<Tab title="Özellikler">
+
+
+| Özellikler      | Tür                     | Açıklama                                                                        |
+| --------------- | ----------------------- | ------------------------------------------------------------------------------- |
+| stil            | `React.CSS` özellikleri | Bileşen için ek satır içi stiller                                               |
+| sınıfAdı        | dize                    | Ek stil tanımlamaları için isteğe bağlı CSS sınıfı                              |
+| işaretli        | boolean                 | Indicates whether the radio button is checked                                   |
+| değer           | dize                    | Radyo butonuyla ilişkili etiket veya metin                                      |
+| onChange        | fonksiyon               | Seçili radyo butonu değiştirildiğinde çağrılan fonksiyon                        |
+| onCheckedChange | fonksiyon               | `checked` durumu değiştiğinde çağrılan fonksiyon                                |
+| boyut           | dize                    | Radyo butonunun boyutu. Seçenekler: `büyük` ve `küçük`                          |
+| devre dışı      | boolean                 | Eğer `true` ise, radyo butonu devre dışı bırakılır ve tıklanamaz                |
+| etiketPozisyonu | dize                    | Etiket metninin radyo butonuna göre konumu. İki seçeneği vardır: `sol` ve `sağ` |
+
+
+
 
 </Tab>
 </Tabs>
@@ -64,7 +69,7 @@ export const MyComponent = () => {
 İlişkili radyo düğmelerini birlikte gruplar.
 
 <Tabs>
-<Tab title="Usage">
+<Tab title="Kullanım">
 
 ```jsx
 import React, { useState } from "react";
@@ -90,14 +95,18 @@ export const MyComponent = () => {
 ```
 
 </Tab>
-<Tab title="Props">
+<Tab title="Özellikler">
 
-| Özellikler    | Tür               | Açıklama                                                                                    |
-| ------------- | ----------------- | ------------------------------------------------------------------------------------------- |
-| değer         | metin             | Şu anda seçili radyo butonunun değeri                                                       |
-| onChange      | fonksiyon         | Radyo butonu değiştirildiğinde tetiklenen geri çağırım fonksiyonu                           |
-| onValueChange | function          | Grup içindeki seçili değer değiştiğinde tetiklenen geri çağırım fonksiyonu. |
-| çocuklar      | `React.ReactNode` | Radyo Grubu'na çocuklar olarak Radyo gibi React bileşenlerini iletmenize izin verir         |
+
+| Özellikler    | Tür               | Açıklama                                                                            |
+| ------------- | ----------------- | ----------------------------------------------------------------------------------- |
+| değer         | dize              | Şu anda seçili radyo butonunun değeri                                               |
+| onChange      | fonksiyon         | Radyo butonu değiştirildiğinde tetiklenen geri çağırım fonksiyonu                   |
+| onValueChange | fonksiyon         | Grup içindeki seçili değer değiştiğinde tetiklenen geri çağırım fonksiyonu.         |
+| çocuklar      | `React.ReactNode` | Radyo Grubu'na çocuklar olarak Radyo gibi React bileşenlerini iletmenize izin verir |
+
+
+
 
 </Tab>
 

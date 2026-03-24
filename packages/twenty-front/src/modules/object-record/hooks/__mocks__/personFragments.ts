@@ -1,5 +1,11 @@
 export const PERSON_FRAGMENT_WITH_DEPTH_ZERO_RELATIONS = `
       __typename
+      avatarFile {
+        fileId
+        label
+        extension
+        url
+      }
       avatarUrl
       city
       companyId
@@ -36,6 +42,12 @@ export const PERSON_FRAGMENT_WITH_DEPTH_ZERO_RELATIONS = `
       }
       position
       updatedAt
+      updatedBy {
+        source
+        workspaceMemberId
+        name
+        context
+      }
       whatsapp {
         primaryPhoneNumber
         primaryPhoneCountryCode
@@ -61,6 +73,12 @@ export const PERSON_FRAGMENT_WITH_DEPTH_ONE_RELATIONS = `
           }
         }
       }
+      avatarFile {
+        fileId
+        label
+        extension
+        url
+      }
       avatarUrl
       calendarEventParticipants {
         edges {
@@ -68,6 +86,19 @@ export const PERSON_FRAGMENT_WITH_DEPTH_ONE_RELATIONS = `
             __typename
             handle
             id
+          }
+        }
+      }
+      caredForPets {
+        edges {
+          node {
+            __typename
+            id
+            pet {
+              __typename
+              id
+              name
+            }
           }
         }
       }
@@ -129,6 +160,11 @@ export const PERSON_FRAGMENT_WITH_DEPTH_ONE_RELATIONS = `
           node {
             __typename
             id
+            note {
+              __typename
+              id
+              title
+            }
           }
         }
       }
@@ -149,11 +185,34 @@ export const PERSON_FRAGMENT_WITH_DEPTH_ONE_RELATIONS = `
         }
       }
       position
+      previousCompanies {
+        edges {
+          node {
+            __typename
+            company {
+              __typename
+              domainName {
+                primaryLinkUrl
+                primaryLinkLabel
+                secondaryLinks
+              }
+              id
+              name
+            }
+            id
+          }
+        }
+      }
       taskTargets {
         edges {
           node {
             __typename
             id
+            task {
+              __typename
+              id
+              title
+            }
           }
         }
       }
@@ -162,10 +221,17 @@ export const PERSON_FRAGMENT_WITH_DEPTH_ONE_RELATIONS = `
           node {
             __typename
             id
+            name
           }
         }
       }
       updatedAt
+      updatedBy {
+        source
+        workspaceMemberId
+        name
+        context
+      }
       whatsapp {
         primaryPhoneNumber
         primaryPhoneCountryCode

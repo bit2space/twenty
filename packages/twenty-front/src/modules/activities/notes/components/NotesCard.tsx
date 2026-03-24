@@ -1,12 +1,13 @@
+import { CustomResolverFetchMoreLoader } from '@/activities/components/CustomResolverFetchMoreLoader';
 import { SkeletonLoader } from '@/activities/components/SkeletonLoader';
 import { useOpenCreateActivityDrawer } from '@/activities/hooks/useOpenCreateActivityDrawer';
 import { NoteList } from '@/activities/notes/components/NoteList';
 import { useNotes } from '@/activities/notes/hooks/useNotes';
 import { useObjectMetadataItem } from '@/object-metadata/hooks/useObjectMetadataItem';
-import { CoreObjectNameSingular } from '@/object-metadata/types/CoreObjectNameSingular';
+import { CoreObjectNameSingular } from 'twenty-shared/types';
 import { useObjectPermissionsForObject } from '@/object-record/hooks/useObjectPermissionsForObject';
 import { useTargetRecord } from '@/ui/layout/contexts/useTargetRecord';
-import styled from '@emotion/styled';
+import { styled } from '@linaria/react';
 import { t } from '@lingui/core/macro';
 import { IconPlus } from 'twenty-ui/display';
 import { Button } from 'twenty-ui/input';
@@ -29,13 +30,20 @@ const StyledNotesContainer = styled.div`
 
 export const NotesCard = () => {
   const targetRecord = useTargetRecord();
-  const { notes, loading } = useNotes(targetRecord);
+  const { notes, loading, totalCountNotes, fetchMoreNotes, hasNextPage } =
+    useNotes(targetRecord);
+
+  const handleLastRowVisible = async () => {
+    if (hasNextPage) {
+      await fetchMoreNotes();
+    }
+  };
 
   const openCreateActivity = useOpenCreateActivityDrawer({
     activityObjectNameSingular: CoreObjectNameSingular.Note,
   });
 
-  const isNotesEmpty = !notes || notes.length === 0;
+  const isNotesEmpty = notes.length === 0;
 
   const { objectMetadataItem } = useObjectMetadataItem({
     objectNameSingular: targetRecord.targetObjectNameSingular,
@@ -54,16 +62,16 @@ export const NotesCard = () => {
   if (isNotesEmpty) {
     return (
       <AnimatedPlaceholderEmptyContainer
-        // eslint-disable-next-line react/jsx-props-no-spreading
+        // oxlint-disable-next-line react/jsx-props-no-spreading
         {...EMPTY_PLACEHOLDER_TRANSITION_PROPS}
       >
         <AnimatedPlaceholder type="noNote" />
         <AnimatedPlaceholderEmptyTextContainer>
           <AnimatedPlaceholderEmptyTitle>
-            No notes
+            {t`No notes`}
           </AnimatedPlaceholderEmptyTitle>
           <AnimatedPlaceholderEmptySubTitle>
-            There are no associated notes with this record.
+            {t`There are no associated notes with this record.`}
           </AnimatedPlaceholderEmptySubTitle>
         </AnimatedPlaceholderEmptyTextContainer>
         {hasObjectUpdatePermissions && (
@@ -87,6 +95,7 @@ export const NotesCard = () => {
       <NoteList
         title={t`All`}
         notes={notes}
+        totalCount={totalCountNotes}
         button={
           hasObjectUpdatePermissions && (
             <Button
@@ -102,6 +111,10 @@ export const NotesCard = () => {
             />
           )
         }
+      />
+      <CustomResolverFetchMoreLoader
+        loading={loading}
+        onLastRowVisible={handleLastRowVisible}
       />
     </StyledNotesContainer>
   );

@@ -1,4 +1,4 @@
-import { type ObjectMetadataItem } from '@/object-metadata/types/ObjectMetadataItem';
+import { type EnrichedObjectMetadataItem } from '@/object-metadata/types/EnrichedObjectMetadataItem';
 import { Table } from '@/ui/layout/table/components/Table';
 import { TableBody } from '@/ui/layout/table/components/TableBody';
 import { TableHeader } from '@/ui/layout/table/components/TableHeader';
@@ -6,13 +6,14 @@ import { TableHeader } from '@/ui/layout/table/components/TableHeader';
 import { t } from '@lingui/core/macro';
 import { H2Title } from 'twenty-ui/display';
 import { Section } from 'twenty-ui/layout';
+import { TableRow } from '@/ui/layout/table/components/TableRow';
 import {
+  AVAILABLE_STANDARD_OBJECTS_GRID_TEMPLATE_COLUMNS,
   SettingsAvailableStandardObjectItemTableRow,
-  StyledAvailableStandardObjectTableRow,
 } from './SettingsAvailableStandardObjectItemTableRow';
 
 type SettingsAvailableStandardObjectsSectionProps = {
-  objectItems: ObjectMetadataItem[];
+  objectItems: EnrichedObjectMetadataItem[];
   onChange: (selectedIds: Record<string, boolean>) => void;
   selectedIds: Record<string, boolean>;
 };
@@ -28,12 +29,14 @@ export const SettingsAvailableStandardObjectsSection = ({
       description={t`Select one or several standard objects to activate below`}
     />
     <Table>
-      <StyledAvailableStandardObjectTableRow>
+      <TableRow
+        gridTemplateColumns={AVAILABLE_STANDARD_OBJECTS_GRID_TEMPLATE_COLUMNS}
+      >
         <TableHeader></TableHeader>
-        <TableHeader>Name</TableHeader>
-        <TableHeader>Description</TableHeader>
-        <TableHeader align="right">Fields</TableHeader>
-      </StyledAvailableStandardObjectTableRow>
+        <TableHeader>{t`Name`}</TableHeader>
+        <TableHeader>{t`Description`}</TableHeader>
+        <TableHeader align="right">{t`Fields`}</TableHeader>
+      </TableRow>
       <TableBody>
         {objectItems.map((objectItem) => (
           <SettingsAvailableStandardObjectItemTableRow

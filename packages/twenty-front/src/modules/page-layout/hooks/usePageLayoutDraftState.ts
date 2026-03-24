@@ -1,10 +1,10 @@
 import { PageLayoutComponentInstanceContext } from '@/page-layout/states/contexts/PageLayoutComponentInstanceContext';
 import { useAvailableComponentInstanceIdOrThrow } from '@/ui/utilities/state/component-state/hooks/useAvailableComponentInstanceIdOrThrow';
-import { useRecoilComponentState } from '@/ui/utilities/state/component-state/hooks/useRecoilComponentState';
-import { useRecoilComponentValue } from '@/ui/utilities/state/component-state/hooks/useRecoilComponentValue';
+import { useAtomComponentState } from '@/ui/utilities/state/jotai/hooks/useAtomComponentState';
+import { useAtomComponentStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomComponentStateValue';
 import { isDeeplyEqual } from '~/utils/isDeeplyEqual';
-import { pageLayoutDraftComponentState } from '../states/pageLayoutDraftComponentState';
-import { pageLayoutPersistedComponentState } from '../states/pageLayoutPersistedComponentState';
+import { pageLayoutDraftComponentState } from '@/page-layout/states/pageLayoutDraftComponentState';
+import { pageLayoutPersistedComponentState } from '@/page-layout/states/pageLayoutPersistedComponentState';
 
 export const usePageLayoutDraftState = (pageLayoutIdFromProps?: string) => {
   const pageLayoutId = useAvailableComponentInstanceIdOrThrow(
@@ -12,11 +12,11 @@ export const usePageLayoutDraftState = (pageLayoutIdFromProps?: string) => {
     pageLayoutIdFromProps,
   );
 
-  const [pageLayoutDraft, setPageLayoutDraft] = useRecoilComponentState(
+  const [pageLayoutDraft, setPageLayoutDraft] = useAtomComponentState(
     pageLayoutDraftComponentState,
     pageLayoutId,
   );
-  const pageLayoutPersisted = useRecoilComponentValue(
+  const pageLayoutPersisted = useAtomComponentStateValue(
     pageLayoutPersistedComponentState,
     pageLayoutId,
   );

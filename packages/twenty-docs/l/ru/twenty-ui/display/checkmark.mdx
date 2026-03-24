@@ -4,13 +4,13 @@ image: /images/user-guide/tasks/tasks_header.png
 ---
 
 <Frame>
-  <img src="/images/user-guide/tasks/tasks_header.png" alt="Header" />
+  <img src="/images/user-guide/tasks/tasks_header.png" alt="Заголовок" />
 </Frame>
 
 Представляет успешное или завершенное действие.
 
 <Tabs>
-<Tab title="Usage">
+<Tab title="Использование">
 
 ```jsx
 import { Checkmark } from 'twenty-ui/display';
@@ -20,9 +20,10 @@ export const MyComponent = () => {
 };
 ```
 
+
 </Tab>
 
-<Tab title="Props">
+<Tab title="Свойства">
 
 Расширяет `React.ComponentPropsWithoutRef<'div'>` и принимает все свойства обычного элемента `div`.
 
@@ -36,7 +37,7 @@ export const MyComponent = () => {
 
 <Tabs>
 
-<Tab title="Usage">
+<Tab title="Использование">
 
 ```jsx
 import { AnimatedCheckmark } from 'twenty-ui/display';
@@ -55,14 +56,17 @@ export const MyComponent = () => {
 
 </Tab>
 
-<Tab title="Props">
+<Tab title="Свойства">
 
-| Свойства          | Тип     | Описание                         | По умолчанию                |
-| ----------------- | ------- | -------------------------------- | --------------------------- |
-| isAnimating       | boolean | Управляет анимацией галочки      | ложь                        |
-| цвет              | строка  | Цвет галочки                     |                             |
-| Продолжительность | число   | Длительность анимации в секундах | 0.5 секунды |
-| размер            | число   | Размер галочки                   | 28 пикселей                 |
+
+| Свойства          | Тип    | Описание                         | По умолчанию |
+| ----------------- | ------ | -------------------------------- | ------------ |
+| isAnimating       | булево | Управляет анимацией галочки      | ложь         |
+| цвет              | строка | Цвет галочки                     |              |
+| Продолжительность | число  | Длительность анимации в секундах | 0.5 секунды  |
+| размер            | число  | Размер галочки                   | 28 пикселей  |
+
+
 
 </Tab>
 

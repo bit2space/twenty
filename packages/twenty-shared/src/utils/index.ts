@@ -8,36 +8,68 @@
  */
 
 export { applyDiff } from './applyDiff';
+export { compareArraysOfObjectsByProperty } from './array/compareArraysOfObjectsByProperty';
+export { filterDuplicatesById } from './array/filterDuplicatesById';
 export { filterOutByProperty } from './array/filterOutByProperty';
 export { findById } from './array/findById';
 export { findByProperty } from './array/findByProperty';
 export { findOrThrow } from './array/findOrThrow';
 export { getContiguousIncrementalValues } from './array/getContiguousIncrementalValues';
 export { isNonEmptyArray } from './array/isNonEmptyArray';
+export { mapById } from './array/mapById';
+export { mapByProperty } from './array/mapByProperty';
 export { sumByProperty } from './array/sumByProperty';
-export { upsertIntoArrayOfObjectsComparingId } from './array/upsertIntoArrayOfObjectComparingId';
+export { upsertIntoArrayOfObjectsComparingId } from './array/upsertIntoArrayOfObjectsComparingId';
+export { upsertPropertiesOfItemIntoArrayOfObjectsComparingId } from './array/upsertPropertiesOfItemIntoArrayOfObjectsComparingId';
 export { assertUnreachable } from './assertUnreachable';
+export { base64UrlEncode } from './base64UrlEncode';
+export { conditionalAvailabilityParser } from './command-menu-items/conditionalAvailabilityParser';
+export { evaluateConditionalAvailabilityExpression } from './command-menu-items/evaluateConditionalAvailabilityExpression';
+export { interpolateCommandMenuItemLabel } from './command-menu-items/interpolateCommandMenuItemLabel';
+export { safeGetNestedProperty } from './command-menu-items/safeGetNestedProperty';
 export { computeDiffBetweenObjects } from './compute-diff-between-objects';
+export { isPlainDateAfter } from './date/isPlainDateAfter';
+export { isPlainDateBefore } from './date/isPlainDateBefore';
+export { isPlainDateBeforeOrEqual } from './date/isPlainDateBeforeOrEqual';
+export { isPlainDateInSameMonth } from './date/isPlainDateInSameMonth';
+export { isPlainDateInWeekend } from './date/isPlainDateInWeekend';
+export { isSamePlainDate } from './date/isSamePlainDate';
+export { parseToPlainDateOrThrow } from './date/parseToPlainDateOrThrow';
+export { sortPlainDate } from './date/sortPlainDate';
+export { turnJSDateToPlainDate } from './date/turnJSDateToPlainDate';
+export { turnPlainDateIntoUserTimeZoneInstantString } from './date/turnPlainDateIntoUserTimeZoneInstantString';
+export { turnPlainDateToShiftedDateInSystemTimeZone } from './date/turnPlainDateToShiftedDateInSystemTimeZone';
 export { deepMerge } from './deepMerge';
 export { CustomError } from './errors/CustomError';
+export { evalFromContext } from './evalFromContext';
 export { extractAndSanitizeObjectStringFields } from './extractAndSanitizeObjectStringFields';
 export { computeMorphRelationFieldName } from './fieldMetadata/compute-morph-relation-field-name';
+export { isFieldMetadataArrayKind } from './fieldMetadata/isFieldMetadataArrayKind';
 export { isFieldMetadataDateKind } from './fieldMetadata/isFieldMetadataDateKind';
+export { isFieldMetadataNumericKind } from './fieldMetadata/isFieldMetadataNumericKind';
+export { isFieldMetadataSelectKind } from './fieldMetadata/isFieldMetadataSelectKind';
+export { isFieldMetadataTextKind } from './fieldMetadata/isFieldMetadataTextKind';
+export { extractFolderPathFilenameAndTypeOrThrow } from './files/extractFolderPathFilenameAndTypeOrThrow.util';
 export { checkIfShouldComputeEmptinessFilter } from './filter/checkIfShouldComputeEmptinessFilter';
-export { checkIfShouldSkipFiltering } from './filter/checkIfShouldSkipFiltering';
 export { computeGqlOperationFilterForEmails } from './filter/compute-record-gql-operation-filter/for-composite-field/computeGqlOperationFilterForEmails';
 export { computeGqlOperationFilterForLinks } from './filter/compute-record-gql-operation-filter/for-composite-field/computeGqlOperationFilterForLinks';
 export { computeEmptyGqlOperationFilterForEmails } from './filter/computeEmptyGqlOperationFilterForEmails';
 export { computeEmptyGqlOperationFilterForLinks } from './filter/computeEmptyGqlOperationFilterForLinks';
 export { computeRecordGqlOperationFilter } from './filter/computeRecordGqlOperationFilter';
+export type { DateTimePeriod } from './filter/dates/types/DateTimePeriod';
 export { addUnitToDateTime } from './filter/dates/utils/addUnitToDateTime';
-export type { FirstDayOfTheWeek } from './filter/dates/utils/firstDayOfWeekSchema';
+export { addUnitToZonedDateTime } from './filter/dates/utils/addUnitToZonedDateTime';
+export { convertCalendarStartDayNonIsoNumberToFirstDayOfTheWeek } from './filter/dates/utils/convertCalendarStartDayNonIsoNumberToFirstDayOfTheWeek';
+export { convertFirstDayOfTheWeekToCalendarStartDayNumber } from './filter/dates/utils/convertFirstDayOfTheWeekToCalendarStartDayNumber';
+export type { FirstDayOfTheWeekSchema } from './filter/dates/utils/firstDayOfWeekSchema';
 export { firstDayOfWeekSchema } from './filter/dates/utils/firstDayOfWeekSchema';
-export { getDateFromPlainDate } from './filter/dates/utils/getDateFromPlainDate';
-export { getEndUnitOfDateTime } from './filter/dates/utils/getEndUnitOfDateTime';
 export { getFirstDayOfTheWeekAsANumberForDateFNS } from './filter/dates/utils/getFirstDayOfTheWeekAsANumberForDateFNS';
-export { getPlainDateFromDate } from './filter/dates/utils/getPlainDateFromDate';
-export { getStartUnitOfDateTime } from './filter/dates/utils/getStartUnitOfDateTime';
+export { getFirstDayOfTheWeekAsISONumber } from './filter/dates/utils/getFirstDayOfTheWeekAsISONumber';
+export {
+  FIRST_DAY_OF_WEEK_ISO_8601_MONDAY,
+  getNextPeriodStart,
+} from './filter/dates/utils/getNextPeriodStart';
+export { getPeriodStart } from './filter/dates/utils/getPeriodStart';
 export { relativeDateFilterAmountSchema } from './filter/dates/utils/relativeDateFilterAmountSchema';
 export type { RelativeDateFilterDirection } from './filter/dates/utils/relativeDateFilterDirectionSchema';
 export { relativeDateFilterDirectionSchema } from './filter/dates/utils/relativeDateFilterDirectionSchema';
@@ -54,9 +86,12 @@ export { resolveRelativeDateFilter } from './filter/dates/utils/resolveRelativeD
 export { resolveRelativeDateFilterStringified } from './filter/dates/utils/resolveRelativeDateFilterStringified';
 export { resolveRelativeDateTimeFilter } from './filter/dates/utils/resolveRelativeDateTimeFilter';
 export { resolveRelativeDateTimeFilterStringified } from './filter/dates/utils/resolveRelativeDateTimeFilterStringified';
-export { shiftPointInTimeFromTimezoneDifferenceInMinutesWithSystemTimezone } from './filter/dates/utils/shiftPointInTimeFromTimezoneDifferenceInMinutesWithSystemTimezone';
 export { subUnitFromDateTime } from './filter/dates/utils/subUnitFromDateTime';
+export { subUnitFromZonedDateTime } from './filter/dates/utils/subUnitFromZonedDateTime';
+export { filterOutInvalidRecordFilters } from './filter/filterOutInvalidRecordFilters';
 export { isEmptinessOperand } from './filter/isEmptinessOperand';
+export { isRecordFilterOperandExpectingValue } from './filter/isRecordFilterOperandExpectingValue';
+export { isRecordFilterValueValid } from './filter/isRecordFilterValueValid';
 export { turnAnyFieldFilterIntoRecordGqlFilter } from './filter/turnAnyFieldFilterIntoRecordGqlFilter';
 export type {
   RecordFilter,
@@ -65,7 +100,6 @@ export type {
 export { turnRecordFilterGroupsIntoGqlOperationFilter } from './filter/turnRecordFilterGroupIntoGqlOperationFilter';
 export { turnRecordFilterIntoRecordGqlOperationFilter } from './filter/turnRecordFilterIntoGqlOperationFilter';
 export { combineFilters } from './filter/utils/combineFilters';
-export { computeTimezoneDifferenceInMinutes } from './filter/utils/computeTimezoneDifferenceInMinutes';
 export { convertViewFilterOperandToCoreOperand } from './filter/utils/convert-view-filter-operand-to-core-operand.util';
 export { convertViewFilterValueToString } from './filter/utils/convertViewFilterValueToString';
 export { createAnyFieldRecordFilterBaseProperties } from './filter/utils/createAnyFieldRecordFilterBaseProperties';
@@ -79,12 +113,27 @@ export { generateILikeFiltersForCompositeFields } from './filter/utils/generateI
 export { getEmptyRecordGqlOperationFilter } from './filter/utils/getEmptyRecordGqlOperationFilter';
 export { getFilterTypeFromFieldType } from './filter/utils/getFilterTypeFromFieldType';
 export { isExpectedSubFieldName } from './filter/utils/isExpectedSubFieldName';
+export { isMatchingArrayFilter } from './filter/utils/isMatchingArrayFilter';
+export { isMatchingBooleanFilter } from './filter/utils/isMatchingBooleanFilter';
+export { isMatchingCurrencyFilter } from './filter/utils/isMatchingCurrencyFilter';
+export { isMatchingDateFilter } from './filter/utils/isMatchingDateFilter';
+export { isMatchingFilesFilter } from './filter/utils/isMatchingFilesFilter';
+export { isMatchingFloatFilter } from './filter/utils/isMatchingFloatFilter';
+export { isMatchingMultiSelectFilter } from './filter/utils/isMatchingMultiSelectFilter';
+export { isMatchingRatingFilter } from './filter/utils/isMatchingRatingFilter';
+export { isMatchingRawJsonFilter } from './filter/utils/isMatchingRawJsonFilter';
+export { isMatchingRichTextFilter } from './filter/utils/isMatchingRichTextFilter';
+export { isMatchingSelectFilter } from './filter/utils/isMatchingSelectFilter';
+export { isMatchingStringFilter } from './filter/utils/isMatchingStringFilter';
+export { isMatchingTSVectorFilter } from './filter/utils/isMatchingTSVectorFilter';
+export { isMatchingUUIDFilter } from './filter/utils/isMatchingUUIDFilter';
 export { arrayOfStringsOrVariablesSchema } from './filter/utils/validation-schemas/arrayOfStringsOrVariablesSchema';
 export { arrayOfUuidOrVariableSchema } from './filter/utils/validation-schemas/arrayOfUuidsOrVariablesSchema';
 export {
   relationFilterValueSchemaObject,
   jsonRelationFilterValueSchema,
 } from './filter/utils/validation-schemas/jsonRelationFilterValueSchema';
+export { formatToShortNumber } from './format/formatToShortNumber';
 export { fromArrayToUniqueKeyRecord } from './from-array-to-unique-key-record.util';
 export { fromArrayToValuesByKeyRecord } from './fromArrayToValuesByKeyRecord.util';
 export { getURLSafely } from './getURLSafely';
@@ -94,15 +143,24 @@ export {
   getLogoUrlFromDomainName,
 } from './image/getLogoUrlFromDomainName';
 export { getUniqueConstraintsFields } from './indexMetadata/getUniqueConstraintsFields';
+export { fastDeepEqual } from './json/fast-deep-equal';
 export { getAppPath } from './navigation/getAppPath';
 export { getSettingsPath } from './navigation/getSettingsPath';
 export { parseJson } from './parseJson';
 export { removePropertiesFromRecord } from './removePropertiesFromRecord';
 export { removeUndefinedFields } from './removeUndefinedFields';
+export { resolveRichTextVariables } from './rich-text-variable-resolver';
 export { safeParseRelativeDateFilterJSONStringified } from './safeParseRelativeDateFilterJSONStringified';
 export { getGenericOperationName } from './sentry/getGenericOperationName';
 export { getHumanReadableNameFromCode } from './sentry/getHumanReadableNameFromCode';
+export { appendCopySuffix } from './strings/appendCopySuffix';
+export { camelToKebab } from './strings/camelToKebab';
+export { camelToSnakeCase } from './strings/camelToSnakeCase';
 export { capitalize } from './strings/capitalize';
+export { kebabToCamelCase } from './strings/kebabToCamelCase';
+export { pascalCase } from './strings/pascalCase';
+export { pascalToKebab } from './strings/pascalToKebab';
+export { stringifySafely } from './strings/stringifySafely';
 export { uncapitalize } from './strings/uncapitalize';
 export type {
   TipTapMarkType,
@@ -118,21 +176,27 @@ export {
 export type { StringPropertyKeys } from './trim-and-remove-duplicated-whitespaces-from-object-string-properties';
 export { trimAndRemoveDuplicatedWhitespacesFromObjectStringProperties } from './trim-and-remove-duplicated-whitespaces-from-object-string-properties';
 export { trimAndRemoveDuplicatedWhitespacesFromString } from './trim-and-remove-duplicated-whitespaces-from-string';
+export { isMetadataGqlOperationSignature } from './typeguard/isMetadataGqlOperationSignature';
+export { isPlainObject } from './typeguard/isPlainObject';
+export { isRecordGqlOperationSignature } from './typeguard/isRecordGqlOperationSignature';
 export { throwIfNotDefined } from './typeguard/throwIfNotDefined';
 export { absoluteUrlSchema } from './url/absoluteUrlSchema';
 export { buildSignedPath } from './url/buildSignedPath';
-export { getAbsoluteUrl } from './url/getAbsoluteUrl';
+export { ensureAbsoluteUrl } from './url/ensureAbsoluteUrl';
 export { getAbsoluteUrlOrThrow } from './url/getAbsoluteUrlOrThrow';
 export { getUrlHostnameOrThrow } from './url/getUrlHostnameOrThrow';
 export { isValidHostname } from './url/isValidHostname';
 export { isValidUrl } from './url/isValidUrl';
-export { lowercaseUrlOriginAndRemoveTrailingSlash } from './url/lowercaseUrlOriginAndRemoveTrailingSlash';
+export { normalizeUrl } from './url/normalizeUrl';
+export { normalizeUrlOrigin } from './url/normalizeUrlOrigin';
+export { safeDecodeURIComponent } from './url/safeDecodeURIComponent';
 export { uuidToBase36 } from './uuidToBase36';
 export { assertIsDefinedOrThrow } from './validation/assertIsDefinedOrThrow';
 export { isDefined } from './validation/isDefined';
 export { isEmptyObject } from './validation/isEmptyObject';
 export { isLabelIdentifierFieldMetadataTypes } from './validation/isLabelIdentifierFieldMetadataTypes';
 export { isValidLocale } from './validation/isValidLocale';
+export { isValidTwentySubdomain } from './validation/isValidTwentySubdomain';
 export { isValidUuid } from './validation/isValidUuid';
 export { isValidVariable } from './validation/isValidVariable';
 export { normalizeLocale } from './validation/normalizeLocale';

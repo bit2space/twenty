@@ -4,13 +4,13 @@ image: /images/user-guide/tasks/tasks_header.png
 ---
 
 <Frame>
-  <img src="/images/user-guide/tasks/tasks_header.png" alt="Header" />
+  <img src="/images/user-guide/tasks/tasks_header.png" alt="Başlık" />
 </Frame>
 
 Başarılı veya tamamlanmış bir işlemi temsil eder.
 
 <Tabs>
-<Tab title="Usage">
+<Tab title="Kullanım">
 
 ```jsx
 import { Checkmark } from 'twenty-ui/display';
@@ -20,9 +20,10 @@ export const MyComponent = () => {
 };
 ```
 
+
 </Tab>
 
-<Tab title="Props">
+<Tab title="Özellikler">
 
 `React.ComponentPropsWithoutRef<'div'>` öğesini genişletir ve normal bir `div` elemanının tüm özelliklerini kabul eder.
 
@@ -36,7 +37,7 @@ Animasyon özelliği eklenmiş bir onay işareti simgesini temsil eder.
 
 <Tabs>
 
-<Tab title="Usage">
+<Tab title="Kullanım">
 
 ```jsx
 import { AnimatedCheckmark } from 'twenty-ui/display';
@@ -55,14 +56,17 @@ export const MyComponent = () => {
 
 </Tab>
 
-<Tab title="Props">
+<Tab title="Özellikler">
 
-| Özellikler  | Tür     | Açıklama                                                 | Varsayılan                 |
-| ----------- | ------- | -------------------------------------------------------- | -------------------------- |
-| isAnimating | boolean | Onay işaretinin animasyonlu olup olmadığını kontrol eder | yanlış                     |
-| renk        | metin   | Onay işaretinin rengi                                    |                            |
+
+| Özellikler  | Tür     | Açıklama                                                 | Varsayılan |
+| ----------- | ------- | -------------------------------------------------------- | ---------- |
+| isAnimating | boolean | Onay işaretinin animasyonlu olup olmadığını kontrol eder | yanlış     |
+| renk        | dize    | Onay işaretinin rengi                                    |            |
 | süre        | sayı    | Animasyonun süresi, saniye cinsinden                     | 0.5 saniye |
-| boyut       | sayı    | Onay işaretinin boyutu                                   | 28 piksel                  |
+| boyut       | sayı    | Onay işaretinin boyutu                                   | 28 piksel  |
+
+
 
 </Tab>
 

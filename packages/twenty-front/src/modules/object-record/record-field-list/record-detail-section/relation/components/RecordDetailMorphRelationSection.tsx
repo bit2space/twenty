@@ -1,6 +1,7 @@
 import { useContext } from 'react';
 
 import { useObjectMetadataItems } from '@/object-metadata/hooks/useObjectMetadataItems';
+import { useRecordFieldsScopeContextOrThrow } from '@/object-record/record-field-list/contexts/RecordFieldsScopeContext';
 import { RecordDetailSectionContainer } from '@/object-record/record-field-list/record-detail-section/components/RecordDetailSectionContainer';
 import { FieldContext } from '@/object-record/record-field/ui/contexts/FieldContext';
 import {
@@ -11,7 +12,7 @@ import { type FieldMorphRelationMetadata } from '@/object-record/record-field/ui
 import { getRecordFieldCardRelationPickerDropdownId } from '@/object-record/record-show/utils/getRecordFieldCardRelationPickerDropdownId';
 import { isDropdownOpenComponentState } from '@/ui/layout/dropdown/states/isDropdownOpenComponentState';
 import { useIsMobile } from '@/ui/utilities/responsive/hooks/useIsMobile';
-import { useRecoilComponentValue } from '@/ui/utilities/state/component-state/hooks/useRecoilComponentValue';
+import { useAtomComponentStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomComponentStateValue';
 
 import { RecordDetailMorphRelationSectionDropdown } from '@/object-record/record-field-list/record-detail-section/relation/components/RecordDetailMorphRelationSectionDropdown';
 import { RecordDetailRelationRecordsList } from '@/object-record/record-field-list/record-detail-section/relation/components/RecordDetailRelationRecordsList';
@@ -26,6 +27,7 @@ type RecordDetailMorphRelationSectionProps = {
 export const RecordDetailMorphRelationSection = ({
   loading,
 }: RecordDetailMorphRelationSectionProps) => {
+  const { scopeInstanceId } = useRecordFieldsScopeContextOrThrow();
   const { recordId, fieldDefinition } = useContext(FieldContext);
 
   const metadata = fieldDefinition.metadata as FieldMorphRelationMetadata;
@@ -44,9 +46,10 @@ export const RecordDetailMorphRelationSection = ({
   const dropdownId = getRecordFieldCardRelationPickerDropdownId({
     fieldDefinition,
     recordId,
+    instanceId: scopeInstanceId,
   });
 
-  const isDropdownOpen = useRecoilComponentValue(
+  const isDropdownOpen = useAtomComponentStateValue(
     isDropdownOpenComponentState,
     dropdownId,
   );
@@ -71,10 +74,12 @@ export const RecordDetailMorphRelationSection = ({
 
   const handleSubmit: FieldInputEvent = ({ newValue }) => {
     if (!isDefined(newValue)) {
-      throw new CustomError(
-        'Value to persist is required',
-        'VALUE_TO_PERSIST_IS_REQUIRED',
-      );
+      persistMorphManyToOne({
+        recordId,
+        fieldDefinition,
+        valueToPersist: null,
+      });
+      return;
     }
 
     const { id, objectMetadataId } = newValue as {

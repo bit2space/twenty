@@ -1,8 +1,11 @@
-import { useRecoilComponentValue } from '@/ui/utilities/state/component-state/hooks/useRecoilComponentValue';
+import { useContextStoreObjectMetadataItemOrThrow } from '@/context-store/hooks/useContextStoreObjectMetadataItemOrThrow';
+import { useAtomComponentStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomComponentStateValue';
+import { useAtomFamilySelectorValue } from '@/ui/utilities/state/jotai/hooks/useAtomFamilySelectorValue';
+import { viewsFromObjectMetadataItemFamilySelector } from '@/views/states/selectors/viewsFromObjectMetadataItemFamilySelector';
 import { ViewType } from '@/views/types/ViewType';
 import { useCreateViewFromCurrentState } from '@/views/view-picker/hooks/useCreateViewFromCurrentState';
-import { useDeleteViewFromCurrentState } from '@/views/view-picker/hooks/useDeleteViewFromCurrentState';
-import { useGetAvailableFieldsForKanban } from '@/views/view-picker/hooks/useGetAvailableFieldsForKanban';
+import { useDestroyViewFromCurrentState } from '@/views/view-picker/hooks/useDestroyViewFromCurrentState';
+import { useGetAvailableFieldsToGroupRecordsBy } from '@/views/view-picker/hooks/useGetAvailableFieldsToGroupRecordsBy';
 import { useViewPickerMode } from '@/views/view-picker/hooks/useViewPickerMode';
 import { viewPickerIsPersistingComponentState } from '@/views/view-picker/states/viewPickerIsPersistingComponentState';
 import { viewPickerMainGroupByFieldMetadataIdComponentState } from '@/views/view-picker/states/viewPickerMainGroupByFieldMetadataIdComponentState';
@@ -11,40 +14,51 @@ import { t } from '@lingui/core/macro';
 import { Button } from 'twenty-ui/input';
 
 export const ViewPickerEditButton = () => {
-  const { availableFieldsForKanban, navigateToSelectSettings } =
-    useGetAvailableFieldsForKanban();
+  const { availableFieldsForGrouping, navigateToSelectSettings } =
+    useGetAvailableFieldsToGroupRecordsBy();
+
+  const { objectMetadataItem } = useContextStoreObjectMetadataItemOrThrow();
+
+  const viewsOnCurrentObject = useAtomFamilySelectorValue(
+    viewsFromObjectMetadataItemFamilySelector,
+    { objectMetadataItemId: objectMetadataItem.id },
+  );
+
+  const isLastView = viewsOnCurrentObject.length <= 1;
 
   const { viewPickerMode } = useViewPickerMode();
-  const viewPickerType = useRecoilComponentValue(viewPickerTypeComponentState);
-  const viewPickerIsPersisting = useRecoilComponentValue(
+  const viewPickerType = useAtomComponentStateValue(
+    viewPickerTypeComponentState,
+  );
+  const viewPickerIsPersisting = useAtomComponentStateValue(
     viewPickerIsPersistingComponentState,
   );
-  const viewPickerMainGroupByFieldMetadataId = useRecoilComponentValue(
+  const viewPickerMainGroupByFieldMetadataId = useAtomComponentStateValue(
     viewPickerMainGroupByFieldMetadataIdComponentState,
   );
 
   const { createViewFromCurrentState } = useCreateViewFromCurrentState();
-  const { deleteViewFromCurrentState } = useDeleteViewFromCurrentState();
+  const { destroyViewFromCurrentState } = useDestroyViewFromCurrentState();
 
   if (viewPickerMode === 'edit') {
     return (
       <Button
         title={t`Delete`}
-        onClick={deleteViewFromCurrentState}
+        onClick={destroyViewFromCurrentState}
         accent="danger"
         fullWidth
         size="small"
         justify="center"
         focus={false}
         variant="secondary"
-        disabled={viewPickerIsPersisting}
+        disabled={viewPickerIsPersisting || isLastView}
       />
     );
   }
 
   if (
-    viewPickerType === ViewType.Kanban &&
-    availableFieldsForKanban.length === 0
+    viewPickerType === ViewType.KANBAN &&
+    availableFieldsForGrouping.length === 0
   ) {
     return (
       <Button
@@ -59,7 +73,7 @@ export const ViewPickerEditButton = () => {
   }
 
   if (
-    viewPickerType === ViewType.Table ||
+    viewPickerType === ViewType.TABLE ||
     viewPickerMainGroupByFieldMetadataId !== ''
   ) {
     return (
@@ -72,7 +86,7 @@ export const ViewPickerEditButton = () => {
         justify="center"
         disabled={
           viewPickerIsPersisting ||
-          (viewPickerType === ViewType.Kanban &&
+          (viewPickerType === ViewType.KANBAN &&
             viewPickerMainGroupByFieldMetadataId === '')
         }
       />

@@ -1,10 +1,12 @@
 import { Logger, UseGuards } from '@nestjs/common';
-import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
+import { Args, Mutation, Query } from '@nestjs/graphql';
 import { InjectRepository } from '@nestjs/typeorm';
 
 import { msg } from '@lingui/core/macro';
+import { PermissionFlagType } from 'twenty-shared/constants';
 import { Repository } from 'typeorm';
 
+import { MetadataResolver } from 'src/engine/api/graphql/graphql-config/decorators/metadata-resolver.decorator';
 import { UUIDScalarType } from 'src/engine/api/graphql/workspace-schema-builder/graphql-types/scalars';
 import { NotFoundError } from 'src/engine/core-modules/graphql/utils/graphql-errors.util';
 import { InjectMessageQueue } from 'src/engine/core-modules/message-queue/decorators/message-queue.decorator';
@@ -21,10 +23,9 @@ import { AgentTurnEvaluationDTO } from 'src/engine/metadata-modules/ai/ai-agent-
 import { RunEvaluationInputJob } from 'src/engine/metadata-modules/ai/ai-agent-monitor/jobs/run-evaluation-input.job';
 import { AgentTurnGraderService } from 'src/engine/metadata-modules/ai/ai-agent-monitor/services/agent-turn-grader.service';
 import { AgentChatThreadEntity } from 'src/engine/metadata-modules/ai/ai-chat/entities/agent-chat-thread.entity';
-import { PermissionFlagType } from 'src/engine/metadata-modules/permissions/constants/permission-flag-type.constants';
 
 @UseGuards(WorkspaceAuthGuard, SettingsPermissionGuard(PermissionFlagType.AI))
-@Resolver()
+@MetadataResolver()
 export class AgentTurnResolver {
   private readonly logger = new Logger(AgentTurnResolver.name);
 
@@ -41,14 +42,12 @@ export class AgentTurnResolver {
   @Query(() => [AgentTurnDTO])
   async agentTurns(
     @Args('agentId', { type: () => UUIDScalarType }) agentId: string,
-  ): Promise<AgentTurnDTO[]> {
-    const turns = await this.turnRepository.find({
+  ): Promise<AgentTurnEntity[]> {
+    return this.turnRepository.find({
       where: { agentId },
       relations: ['evaluations', 'messages', 'messages.parts'],
       order: { createdAt: 'DESC' },
     });
-
-    return turns;
   }
 
   @Mutation(() => AgentTurnEvaluationDTO)
@@ -66,7 +65,7 @@ export class AgentTurnResolver {
     @Args('input') input: string,
     @AuthWorkspace() workspace: WorkspaceEntity,
     @AuthUserWorkspaceId() userWorkspaceId: string,
-  ): Promise<AgentTurnDTO> {
+  ): Promise<AgentTurnEntity> {
     const thread = this.threadRepository.create({
       userWorkspaceId,
       title: `Eval: ${input.substring(0, 50)}...`,

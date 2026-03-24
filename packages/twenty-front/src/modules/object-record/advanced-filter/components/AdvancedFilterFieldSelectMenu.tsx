@@ -6,7 +6,7 @@ import { DropdownMenuSeparator } from '@/ui/layout/dropdown/components/DropdownM
 import { SelectableList } from '@/ui/layout/selectable-list/components/SelectableList';
 import { SelectableListItem } from '@/ui/layout/selectable-list/components/SelectableListItem';
 import { useSelectableList } from '@/ui/layout/selectable-list/hooks/useSelectableList';
-import { useRecoilComponentValue } from '@/ui/utilities/state/component-state/hooks/useRecoilComponentValue';
+import { useAtomComponentSelectorValue } from '@/ui/utilities/state/jotai/hooks/useAtomComponentSelectorValue';
 
 import { type FieldMetadataItem } from '@/object-metadata/types/FieldMetadataItem';
 import { AdvancedFilterFieldSelectSearchInput } from '@/object-record/advanced-filter/components/AdvancedFilterFieldSelectSearchInput';
@@ -17,15 +17,14 @@ import { ObjectFilterDropdownFilterSelectMenuItem } from '@/object-record/object
 import { fieldMetadataItemIdUsedInDropdownComponentState } from '@/object-record/object-filter-dropdown/states/fieldMetadataItemIdUsedInDropdownComponentState';
 import { objectFilterDropdownIsSelectingCompositeFieldComponentState } from '@/object-record/object-filter-dropdown/states/objectFilterDropdownIsSelectingCompositeFieldComponentState';
 import { objectFilterDropdownSubMenuFieldTypeComponentState } from '@/object-record/object-filter-dropdown/states/objectFilterDropdownSubMenuFieldTypeComponentState';
-import { isCompositeFieldType } from '@/object-record/object-filter-dropdown/utils/isCompositeFieldType';
+import { isCompositeFilterableFieldType } from '@/object-record/object-filter-dropdown/utils/isCompositeFilterableFieldType';
 import { visibleRecordFieldsComponentSelector } from '@/object-record/record-field/states/visibleRecordFieldsComponentSelector';
 import { useFilterableFieldMetadataItems } from '@/object-record/record-filter/hooks/useFilterableFieldMetadataItems';
 import { DropdownContent } from '@/ui/layout/dropdown/components/DropdownContent';
 import { DropdownMenuSectionLabel } from '@/ui/layout/dropdown/components/DropdownMenuSectionLabel';
 import { GenericDropdownContentWidth } from '@/ui/layout/dropdown/constants/GenericDropdownContentWidth';
-import { useRecoilComponentState } from '@/ui/utilities/state/component-state/hooks/useRecoilComponentState';
-import { useSetRecoilComponentState } from '@/ui/utilities/state/component-state/hooks/useSetRecoilComponentState';
-import { shouldDisplayFormField } from '@/workflow/workflow-steps/workflow-actions/utils/shouldDisplayFormField';
+import { useAtomComponentState } from '@/ui/utilities/state/jotai/hooks/useAtomComponentState';
+import { useSetAtomComponentState } from '@/ui/utilities/state/jotai/hooks/useSetAtomComponentState';
 import { useLingui } from '@lingui/react/macro';
 import { useContext } from 'react';
 import { getFilterTypeFromFieldType } from 'twenty-shared/utils';
@@ -42,28 +41,16 @@ export const AdvancedFilterFieldSelectMenu = ({
     advancedFilterFieldSelectDropdownId,
   } = useAdvancedFilterFieldSelectDropdown(recordFilterId);
 
-  const [objectFilterDropdownSearchInput] = useRecoilComponentState(
+  const [objectFilterDropdownSearchInput] = useAtomComponentState(
     objectFilterDropdownSearchInputComponentState,
   );
 
-  const { isWorkflowFindRecords, objectMetadataItem } = useContext(
-    AdvancedFilterContext,
-  );
+  const { objectMetadataItem } = useContext(AdvancedFilterContext);
 
-  const {
-    filterableFieldMetadataItems: filterableFieldMetadataItemsForRecordIndex,
-  } = useFilterableFieldMetadataItems(objectMetadataItem.id);
+  const { filterableFieldMetadataItems: filterableFieldMetadataItems } =
+    useFilterableFieldMetadataItems(objectMetadataItem.id);
 
-  const filterableFieldMetadataItems = isWorkflowFindRecords
-    ? filterableFieldMetadataItemsForRecordIndex.filter((fieldMetadataItem) =>
-        shouldDisplayFormField({
-          fieldMetadataItem,
-          actionType: 'FIND_RECORDS',
-        }),
-      )
-    : filterableFieldMetadataItemsForRecordIndex;
-
-  const visibleRecordFields = useRecoilComponentValue(
+  const visibleRecordFields = useAtomComponentSelectorValue(
     visibleRecordFieldsComponentSelector,
   );
 
@@ -103,16 +90,16 @@ export const AdvancedFilterFieldSelectMenu = ({
   const { selectFieldUsedInAdvancedFilterDropdown } =
     useSelectFieldUsedInAdvancedFilterDropdown();
 
-  const [, setObjectFilterDropdownSubMenuFieldType] = useRecoilComponentState(
+  const [, setObjectFilterDropdownSubMenuFieldType] = useAtomComponentState(
     objectFilterDropdownSubMenuFieldTypeComponentState,
   );
 
   const [, setObjectFilterDropdownIsSelectingCompositeField] =
-    useRecoilComponentState(
+    useAtomComponentState(
       objectFilterDropdownIsSelectingCompositeFieldComponentState,
     );
 
-  const setFieldMetadataItemIdUsedInDropdown = useSetRecoilComponentState(
+  const setFieldMetadataItemIdUsedInDropdown = useSetAtomComponentState(
     fieldMetadataItemIdUsedInDropdownComponentState,
   );
 
@@ -130,7 +117,7 @@ export const AdvancedFilterFieldSelectMenu = ({
       recordFilterId,
     });
 
-    if (isCompositeFieldType(filterType)) {
+    if (isCompositeFilterableFieldType(filterType)) {
       setObjectFilterDropdownSubMenuFieldType(filterType);
 
       setFieldMetadataItemIdUsedInDropdown(selectedFieldMetadataItem.id);

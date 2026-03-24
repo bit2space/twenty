@@ -1,4 +1,6 @@
-import { useContext } from 'react';
+import { useCallback, useContext } from 'react';
+import { useStore } from 'jotai';
+import { v4 } from 'uuid';
 
 import { useActivityTargetObjectRecords } from '@/activities/hooks/useActivityTargetObjectRecords';
 import { useUpdateActivityTargetFromCell } from '@/activities/inline-cell/hooks/useUpdateActivityTargetFromCell';
@@ -6,27 +8,37 @@ import { type NoteTarget } from '@/activities/types/NoteTarget';
 import { type TaskTarget } from '@/activities/types/TaskTarget';
 import { useObjectMetadataItem } from '@/object-metadata/hooks/useObjectMetadataItem';
 import { useObjectMetadataItems } from '@/object-metadata/hooks/useObjectMetadataItems';
-import { CoreObjectNameSingular } from '@/object-metadata/types/CoreObjectNameSingular';
+import { type CoreObjectNameSingular } from 'twenty-shared/types';
 import { getFieldMetadataItemById } from '@/object-metadata/utils/getFieldMetadataItemById';
+import { useCreateOneRecord } from '@/object-record/hooks/useCreateOneRecord';
+import { isActivityTargetField } from '@/object-record/record-field-list/utils/categorizeRelationFields';
 import { FieldContext } from '@/object-record/record-field/ui/contexts/FieldContext';
 import { FieldInputEventContext } from '@/object-record/record-field/ui/contexts/FieldInputEventContext';
+import { useUpdateJunctionRelationFromCell } from '@/object-record/record-field/ui/hooks/useUpdateJunctionRelationFromCell';
 import { useRelationField } from '@/object-record/record-field/ui/meta-types/hooks/useRelationField';
-import { useAddNewRecordAndOpenRightDrawer } from '@/object-record/record-field/ui/meta-types/input/hooks/useAddNewRecordAndOpenRightDrawer';
+import { useAddNewRecordAndOpenSidePanel } from '@/object-record/record-field/ui/meta-types/input/hooks/useAddNewRecordAndOpenSidePanel';
 import { useUpdateRelationOneToManyFieldInput } from '@/object-record/record-field/ui/meta-types/input/hooks/useUpdateRelationOneToManyFieldInput';
 import { RecordFieldComponentInstanceContext } from '@/object-record/record-field/ui/states/contexts/RecordFieldComponentInstanceContext';
 import { recordFieldInputLayoutDirectionComponentState } from '@/object-record/record-field/ui/states/recordFieldInputLayoutDirectionComponentState';
 import { type FieldDefinition } from '@/object-record/record-field/ui/types/FieldDefinition';
 import { type FieldRelationMetadata } from '@/object-record/record-field/ui/types/FieldMetadata';
+import { getJoinColumnName } from '@/object-record/record-field/ui/utils/junction/getJoinColumnName';
+import { getJunctionConfig } from '@/object-record/record-field/ui/utils/junction/getJunctionConfig';
+import { getSourceJoinColumnName } from '@/object-record/record-field/ui/utils/junction/getSourceJoinColumnName';
+import { hasJunctionConfig } from '@/object-record/record-field/ui/utils/junction/hasJunctionConfig';
 import { MultipleRecordPicker } from '@/object-record/record-picker/multiple-record-picker/components/MultipleRecordPicker';
 import { useMultipleRecordPickerPerformSearch } from '@/object-record/record-picker/multiple-record-picker/hooks/useMultipleRecordPickerPerformSearch';
 import { multipleRecordPickerPickableMorphItemsComponentState } from '@/object-record/record-picker/multiple-record-picker/states/multipleRecordPickerPickableMorphItemsComponentState';
+import { recordStoreFamilyState } from '@/object-record/record-store/states/recordStoreFamilyState';
+import { type ObjectRecord } from '@/object-record/types/ObjectRecord';
+import { buildRecordLabelPayload } from '@/object-record/utils/buildRecordLabelPayload';
 import { useAvailableComponentInstanceIdOrThrow } from '@/ui/utilities/state/component-state/hooks/useAvailableComponentInstanceIdOrThrow';
-import { useRecoilComponentCallbackState } from '@/ui/utilities/state/component-state/hooks/useRecoilComponentCallbackState';
-import { useRecoilComponentValue } from '@/ui/utilities/state/component-state/hooks/useRecoilComponentValue';
-import { useRecoilCallback } from 'recoil';
+import { useAtomComponentStateCallbackState } from '@/ui/utilities/state/jotai/hooks/useAtomComponentStateCallbackState';
+import { useAtomComponentStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomComponentStateValue';
 import { CustomError, isDefined } from 'twenty-shared/utils';
 
 export const RelationOneToManyFieldInput = () => {
+  const store = useStore();
   const { fieldDefinition, recordId } = useContext(FieldContext);
   const instanceId = useAvailableComponentInstanceIdOrThrow(
     RecordFieldComponentInstanceContext,
@@ -41,7 +53,7 @@ export const RelationOneToManyFieldInput = () => {
     fieldMetadataId: fieldDefinition.fieldMetadataId,
     objectMetadataItems,
   });
-  if (!fieldMetadataItem || !objectMetadataItem) {
+  if (!isDefined(fieldMetadataItem) || !isDefined(objectMetadataItem)) {
     throw new CustomError(
       'Field metadata item or object metadata item not found',
       'FIELD_METADATA_ITEM_OR_OBJECT_METADATA_ITEM_NOT_FOUND',
@@ -63,11 +75,12 @@ export const RelationOneToManyFieldInput = () => {
     onSubmit?.({ skipPersist: true });
   };
 
-  const isRelationFromActivityTargets =
-    (fieldName === 'noteTargets' &&
-      objectMetadataNameSingular === CoreObjectNameSingular.Note) ||
-    (fieldName === 'taskTargets' &&
-      objectMetadataNameSingular === CoreObjectNameSingular.Task);
+  const isRelationFromActivityTargets = isActivityTargetField(
+    fieldName,
+    objectMetadataNameSingular ?? '',
+  );
+
+  const isJunctionRelation = hasJunctionConfig(fieldMetadataItem.settings);
 
   const { activityTargetObjectRecords } = useActivityTargetObjectRecords(
     recordId,
@@ -76,6 +89,36 @@ export const RelationOneToManyFieldInput = () => {
 
   const relationFieldDefinition =
     fieldDefinition as FieldDefinition<FieldRelationMetadata>;
+
+  const { updateJunctionRelationFromCell, isJunctionConfigValid } =
+    useUpdateJunctionRelationFromCell({
+      fieldMetadataItem,
+      fieldDefinition: relationFieldDefinition,
+      recordId,
+    });
+
+  const junctionConfig =
+    isJunctionRelation && isJunctionConfigValid
+      ? getJunctionConfig({
+          settings: fieldMetadataItem.settings,
+          relationObjectMetadataId:
+            relationFieldDefinition.metadata.relationObjectMetadataId,
+          sourceObjectMetadataId: objectMetadataItem.id,
+          objectMetadataItems,
+        })
+      : null;
+
+  const junctionTargetObjectMetadata = (() => {
+    if (!junctionConfig || junctionConfig.isMorphRelation) {
+      return undefined;
+    }
+    const firstTargetField = junctionConfig.targetFields[0];
+    return objectMetadataItems.find(
+      (item) => item.id === firstTargetField?.relation?.targetObjectMetadata.id,
+    );
+  })();
+
+  const isMorphJunction = junctionConfig?.isMorphRelation ?? false;
 
   const { objectMetadataItem: relationObjectMetadataItem } =
     useObjectMetadataItem({
@@ -93,69 +136,172 @@ export const RelationOneToManyFieldInput = () => {
     );
   }
 
-  const { createNewRecordAndOpenRightDrawer } =
-    useAddNewRecordAndOpenRightDrawer({
-      fieldMetadataItem,
-      objectMetadataItem,
-      relationObjectMetadataNameSingular:
-        relationFieldDefinition.metadata.relationObjectMetadataNameSingular,
-      relationObjectMetadataItem,
-      relationFieldMetadataItem,
-      recordId,
-    });
+  const { createNewRecordAndOpenSidePanel } = useAddNewRecordAndOpenSidePanel({
+    fieldMetadataItem,
+    objectMetadataItem,
+    relationObjectMetadataNameSingular:
+      relationFieldDefinition.metadata.relationObjectMetadataNameSingular,
+    relationObjectMetadataItem,
+    relationFieldMetadataItem,
+    recordId,
+  });
 
-  const layoutDirection = useRecoilComponentValue(
+  const { createOneRecord: createTargetRecord } = useCreateOneRecord({
+    objectNameSingular:
+      junctionTargetObjectMetadata?.nameSingular ??
+      relationFieldDefinition.metadata.relationObjectMetadataNameSingular,
+  });
+  const { createOneRecord: createJunctionRecord } = useCreateOneRecord({
+    objectNameSingular:
+      junctionConfig?.junctionObjectMetadata?.nameSingular ??
+      relationFieldDefinition.metadata.relationObjectMetadataNameSingular,
+  });
+
+  const recordFieldInputLayoutDirection = useAtomComponentStateValue(
     recordFieldInputLayoutDirectionComponentState,
   );
 
   const multipleRecordPickerPickableMorphItemsCallbackState =
-    useRecoilComponentCallbackState(
+    useAtomComponentStateCallbackState(
       multipleRecordPickerPickableMorphItemsComponentState,
       instanceId,
     );
   const { performSearch: multipleRecordPickerPerformSearch } =
     useMultipleRecordPickerPerformSearch();
 
-  const handleCreateNew = useRecoilCallback(
-    ({ snapshot, set }) =>
-      async (searchInput?: string) => {
-        const newRecordId =
-          await createNewRecordAndOpenRightDrawer?.(searchInput);
+  const handleCreateNew = useCallback(
+    async (searchInput?: string) => {
+      const updatePickerState = (
+        newRecordId: string,
+        targetObjectMetadataId: string,
+        searchableObjectMetadataItems: (typeof relationObjectMetadataItem)[],
+      ) => {
+        const currentMorphItems = store.get(
+          multipleRecordPickerPickableMorphItemsCallbackState,
+        );
 
-        if (!isDefined(newRecordId)) {
-          return;
-        }
-
-        const multipleRecordPickerPickableMorphItems = snapshot
-          .getLoadable(multipleRecordPickerPickableMorphItemsCallbackState)
-          .getValue();
-
-        const newMorphItems = multipleRecordPickerPickableMorphItems.concat({
+        const newMorphItems = currentMorphItems.concat({
           recordId: newRecordId,
-          objectMetadataId: relationObjectMetadataItem.id,
+          objectMetadataId: targetObjectMetadataId,
           isSelected: true,
           isMatchingSearchFilter: true,
         });
 
-        set(multipleRecordPickerPickableMorphItemsCallbackState, newMorphItems);
+        store.set(
+          multipleRecordPickerPickableMorphItemsCallbackState,
+          newMorphItems,
+        );
 
         multipleRecordPickerPerformSearch({
           multipleRecordPickerInstanceId: instanceId,
           forceSearchFilter: searchInput,
-          forceSearchableObjectMetadataItems: [relationObjectMetadataItem],
+          forceSearchableObjectMetadataItems: searchableObjectMetadataItems,
           forcePickableMorphItems: newMorphItems,
         });
-      },
+      };
+
+      if (
+        isJunctionRelation &&
+        isDefined(junctionConfig) &&
+        !isMorphJunction &&
+        isDefined(junctionTargetObjectMetadata)
+      ) {
+        const { targetFields, sourceField } = junctionConfig;
+        const targetField = targetFields[0];
+
+        if (!isDefined(targetField) || !isDefined(sourceField)) {
+          return;
+        }
+
+        const sourceJoinColumnName = getSourceJoinColumnName({
+          sourceField,
+          sourceObjectMetadata: objectMetadataItem,
+        });
+
+        const targetJoinColumnName = getJoinColumnName(targetField.settings);
+
+        if (!sourceJoinColumnName || !targetJoinColumnName) {
+          return;
+        }
+
+        const newTargetId = v4();
+        const targetPayload = buildRecordLabelPayload({
+          id: newTargetId,
+          searchInput,
+          objectMetadataItem: junctionTargetObjectMetadata,
+        });
+
+        await createTargetRecord(targetPayload);
+
+        const newJunctionId = v4();
+        const createdJunction = await createJunctionRecord({
+          id: newJunctionId,
+          [sourceJoinColumnName]: recordId,
+          [targetJoinColumnName]: newTargetId,
+        });
+
+        if (isDefined(createdJunction)) {
+          store.set(
+            recordStoreFamilyState.atomFamily(recordId),
+            (currentRecord: ObjectRecord | null | undefined) => {
+              if (!isDefined(currentRecord)) {
+                return currentRecord;
+              }
+              const currentFieldValue = currentRecord[fieldName];
+              const updatedJunctionRecords = Array.isArray(currentFieldValue)
+                ? [...currentFieldValue, createdJunction]
+                : [createdJunction];
+
+              return {
+                ...currentRecord,
+                [fieldName]: updatedJunctionRecords,
+              } as ObjectRecord;
+            },
+          );
+        }
+
+        updatePickerState(newTargetId, junctionTargetObjectMetadata.id, [
+          junctionTargetObjectMetadata,
+        ]);
+        return;
+      }
+
+      const newRecordId = await createNewRecordAndOpenSidePanel?.(searchInput);
+
+      if (isDefined(newRecordId)) {
+        updatePickerState(newRecordId, relationObjectMetadataItem.id, [
+          relationObjectMetadataItem,
+        ]);
+      }
+    },
     [
-      createNewRecordAndOpenRightDrawer,
-      relationObjectMetadataItem,
+      createNewRecordAndOpenSidePanel,
+      createTargetRecord,
+      createJunctionRecord,
+      fieldName,
       instanceId,
+      isMorphJunction,
+      isJunctionRelation,
+      junctionConfig,
+      junctionTargetObjectMetadata,
       multipleRecordPickerPickableMorphItemsCallbackState,
       multipleRecordPickerPerformSearch,
+      objectMetadataItem,
+      recordId,
+      relationObjectMetadataItem,
+      store,
     ],
   );
 
-  const canCreateNew = !isRelationFromActivityTargets;
+  // Disable "Add New" for activity targets and MORPH junction relations
+  // (For MORPH, we don't know which object type to create)
+  const canCreateNew = !isRelationFromActivityTargets && !isMorphJunction;
+
+  // For junction relations, use the target object for "Add New", not the junction object
+  const objectMetadataItemIdForCreate =
+    isJunctionRelation && isDefined(junctionTargetObjectMetadata)
+      ? junctionTargetObjectMetadata.id
+      : relationObjectMetadataItem.id;
 
   return (
     <MultipleRecordPicker
@@ -169,15 +315,19 @@ export const RelationOneToManyFieldInput = () => {
             activityTargetWithTargetRecords: activityTargetObjectRecords,
             recordPickerInstanceId: instanceId,
           });
+        } else if (isJunctionRelation && isJunctionConfigValid) {
+          updateJunctionRelationFromCell({
+            morphItem,
+          });
         } else {
           updateRelation(morphItem);
         }
       }}
       onCreate={canCreateNew ? handleCreateNew : undefined}
-      objectMetadataItemIdForCreate={relationObjectMetadataItem.id}
+      objectMetadataItemIdForCreate={objectMetadataItemIdForCreate}
       onClickOutside={handleSubmit}
       layoutDirection={
-        layoutDirection === 'downward'
+        recordFieldInputLayoutDirection === 'downward'
           ? 'search-bar-on-top'
           : 'search-bar-on-bottom'
       }

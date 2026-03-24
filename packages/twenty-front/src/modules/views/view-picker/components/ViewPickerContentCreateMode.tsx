@@ -1,4 +1,4 @@
-import styled from '@emotion/styled';
+import { styled } from '@linaria/react';
 import { Key } from 'ts-key-enum';
 
 import { useObjectMetadataItemById } from '@/object-metadata/hooks/useObjectMetadataItemById';
@@ -11,9 +11,9 @@ import { DropdownMenuHeaderLeftComponent } from '@/ui/layout/dropdown/components
 import { DropdownMenuItemsContainer } from '@/ui/layout/dropdown/components/DropdownMenuItemsContainer';
 import { DropdownMenuSeparator } from '@/ui/layout/dropdown/components/DropdownMenuSeparator';
 import { useHotkeysOnFocusedElement } from '@/ui/utilities/hotkey/hooks/useHotkeysOnFocusedElement';
-import { useRecoilComponentState } from '@/ui/utilities/state/component-state/hooks/useRecoilComponentState';
-import { useRecoilComponentValue } from '@/ui/utilities/state/component-state/hooks/useRecoilComponentValue';
-import { useSetRecoilComponentState } from '@/ui/utilities/state/component-state/hooks/useSetRecoilComponentState';
+import { useAtomComponentState } from '@/ui/utilities/state/jotai/hooks/useAtomComponentState';
+import { useAtomComponentStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomComponentStateValue';
+import { useSetAtomComponentState } from '@/ui/utilities/state/jotai/hooks/useSetAtomComponentState';
 import { viewObjectMetadataIdComponentState } from '@/views/states/viewObjectMetadataIdComponentState';
 import { ViewType, viewTypeIconMapping } from '@/views/types/ViewType';
 import { ViewPickerCreateButton } from '@/views/view-picker/components/ViewPickerCreateButton';
@@ -27,7 +27,7 @@ import { VIEW_PICKER_TYPE_SELECT_OPTIONS } from '@/views/view-picker/constants/V
 import { VIEW_PICKER_VIEW_TYPE_DROPDOWN_ID } from '@/views/view-picker/constants/ViewPickerViewTypeDropdownId';
 import { useCreateViewFromCurrentState } from '@/views/view-picker/hooks/useCreateViewFromCurrentState';
 import { useGetAvailableFieldsForCalendar } from '@/views/view-picker/hooks/useGetAvailableFieldsForCalendar';
-import { useGetAvailableFieldsForKanban } from '@/views/view-picker/hooks/useGetAvailableFieldsForKanban';
+import { useGetAvailableFieldsToGroupRecordsBy } from '@/views/view-picker/hooks/useGetAvailableFieldsToGroupRecordsBy';
 import { useViewPickerMode } from '@/views/view-picker/hooks/useViewPickerMode';
 import { viewPickerCalendarFieldMetadataIdComponentState } from '@/views/view-picker/states/viewPickerCalendarFieldMetadataIdComponentState';
 import { viewPickerInputNameComponentState } from '@/views/view-picker/states/viewPickerInputNameComponentState';
@@ -36,16 +36,17 @@ import { viewPickerIsPersistingComponentState } from '@/views/view-picker/states
 import { viewPickerMainGroupByFieldMetadataIdComponentState } from '@/views/view-picker/states/viewPickerMainGroupByFieldMetadataIdComponentState';
 import { viewPickerSelectedIconComponentState } from '@/views/view-picker/states/viewPickerSelectedIconComponentState';
 import { viewPickerTypeComponentState } from '@/views/view-picker/states/viewPickerTypeComponentState';
-import { useLingui } from '@lingui/react/macro';
+import { Trans, useLingui } from '@lingui/react/macro';
 import { useMemo, useState } from 'react';
 import { IconX } from 'twenty-ui/display';
+import { themeCssVariables } from 'twenty-ui/theme-constants';
 
 const StyledFieldAvailableContainer = styled.div`
-  color: ${({ theme }) => theme.font.color.light};
+  color: ${themeCssVariables.font.color.light};
   display: flex;
-  margin: ${({ theme }) => theme.spacing(1, 2)};
+  margin: ${themeCssVariables.spacing[1]} ${themeCssVariables.spacing[2]};
   user-select: none;
-  width: calc(100% - ${({ theme }) => theme.spacing(4)});
+  width: calc(100% - ${themeCssVariables.spacing[4]});
 `;
 
 export const ViewPickerContentCreateMode = () => {
@@ -53,46 +54,45 @@ export const ViewPickerContentCreateMode = () => {
   const { viewPickerMode, setViewPickerMode } = useViewPickerMode();
   const [hasManuallySelectedIcon, setHasManuallySelectedIcon] = useState(false);
 
-  const viewObjectMetadataId = useRecoilComponentValue(
+  const viewObjectMetadataId = useAtomComponentStateValue(
     viewObjectMetadataIdComponentState,
   );
   const { objectMetadataItem } = useObjectMetadataItemById({
     objectId: viewObjectMetadataId ?? '',
   });
 
-  const [viewPickerInputName, setViewPickerInputName] = useRecoilComponentState(
+  const [viewPickerInputName, setViewPickerInputName] = useAtomComponentState(
     viewPickerInputNameComponentState,
   );
 
   const [viewPickerSelectedIcon, setViewPickerSelectedIcon] =
-    useRecoilComponentState(viewPickerSelectedIconComponentState);
+    useAtomComponentState(viewPickerSelectedIconComponentState);
 
-  const viewPickerIsPersisting = useRecoilComponentValue(
+  const viewPickerIsPersisting = useAtomComponentStateValue(
     viewPickerIsPersistingComponentState,
   );
-  const setViewPickerIsDirty = useSetRecoilComponentState(
+  const setViewPickerIsDirty = useSetAtomComponentState(
     viewPickerIsDirtyComponentState,
   );
 
   const [
     viewPickerMainGroupByFieldMetadataId,
     setViewPickerMainGroupByFieldMetadataId,
-  ] = useRecoilComponentState(
-    viewPickerMainGroupByFieldMetadataIdComponentState,
-  );
+  ] = useAtomComponentState(viewPickerMainGroupByFieldMetadataIdComponentState);
 
   const [
     viewPickerCalendarFieldMetadataId,
     setViewPickerCalendarFieldMetadataId,
-  ] = useRecoilComponentState(viewPickerCalendarFieldMetadataIdComponentState);
+  ] = useAtomComponentState(viewPickerCalendarFieldMetadataIdComponentState);
 
-  const [viewPickerType, setViewPickerType] = useRecoilComponentState(
+  const [viewPickerType, setViewPickerType] = useAtomComponentState(
     viewPickerTypeComponentState,
   );
 
   const { createViewFromCurrentState } = useCreateViewFromCurrentState();
 
-  const { availableFieldsForKanban } = useGetAvailableFieldsForKanban();
+  const { availableFieldsForGrouping } =
+    useGetAvailableFieldsToGroupRecordsBy();
 
   const { availableFieldsForCalendar } = useGetAvailableFieldsForCalendar();
 
@@ -104,8 +104,8 @@ export const ViewPickerContentCreateMode = () => {
       }
 
       if (
-        viewPickerType === ViewType.Kanban &&
-        availableFieldsForKanban.length === 0
+        viewPickerType === ViewType.KANBAN &&
+        availableFieldsForGrouping.length === 0
       ) {
         return;
       }
@@ -117,7 +117,7 @@ export const ViewPickerContentCreateMode = () => {
       viewPickerIsPersisting,
       createViewFromCurrentState,
       viewPickerType,
-      availableFieldsForKanban,
+      availableFieldsForGrouping,
       availableFieldsForCalendar,
     ],
   });
@@ -148,6 +148,8 @@ export const ViewPickerContentCreateMode = () => {
   const handleClose = async () => {
     setViewPickerMode('list');
   };
+
+  const objectLabel = objectMetadataItem.labelPlural;
 
   return (
     <DropdownContent>
@@ -186,7 +188,7 @@ export const ViewPickerContentCreateMode = () => {
             dropdownId={VIEW_PICKER_VIEW_TYPE_DROPDOWN_ID}
           />
         </ViewPickerSelectContainer>
-        {viewPickerType === ViewType.Kanban && (
+        {viewPickerType === ViewType.KANBAN && (
           <>
             <ViewPickerSelectContainer>
               <Select
@@ -198,8 +200,8 @@ export const ViewPickerContentCreateMode = () => {
                   setViewPickerMainGroupByFieldMetadataId(value);
                 }}
                 options={
-                  availableFieldsForKanban.length > 0
-                    ? availableFieldsForKanban.map((field) => ({
+                  availableFieldsForGrouping.length > 0
+                    ? availableFieldsForGrouping.map((field) => ({
                         value: field.id,
                         label: field.label,
                       }))
@@ -208,15 +210,16 @@ export const ViewPickerContentCreateMode = () => {
                 dropdownId={VIEW_PICKER_KANBAN_FIELD_DROPDOWN_ID}
               />
             </ViewPickerSelectContainer>
-            {availableFieldsForKanban.length === 0 && (
+            {availableFieldsForGrouping.length === 0 && (
               <StyledFieldAvailableContainer>
-                Set up a Select field on {objectMetadataItem.labelPlural} to
-                create a Kanban
+                <Trans>
+                  Set up a Select field on {objectLabel} to create a Kanban
+                </Trans>
               </StyledFieldAvailableContainer>
             )}
           </>
         )}
-        {viewPickerType === ViewType.Calendar && (
+        {viewPickerType === ViewType.CALENDAR && (
           <>
             <ViewPickerSelectContainer>
               <Select
@@ -240,8 +243,9 @@ export const ViewPickerContentCreateMode = () => {
             </ViewPickerSelectContainer>
             {availableFieldsForCalendar.length === 0 && (
               <StyledFieldAvailableContainer>
-                Set up a Date field on {objectMetadataItem.labelPlural} to
-                create a Calendar
+                <Trans>
+                  Set up a Date field on {objectLabel} to create a Calendar
+                </Trans>
               </StyledFieldAvailableContainer>
             )}
           </>

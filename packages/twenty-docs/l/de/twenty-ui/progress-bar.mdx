@@ -4,14 +4,14 @@ image: /images/user-guide/emails/emails_header.png
 ---
 
 <Frame>
-  <img src="/images/user-guide/emails/emails_header.png" alt="Header" />
+  <img src="/images/user-guide/emails/emails_header.png" alt="Kopfzeile" />
 </Frame>
 
 Zeigt den Fortschritt oder Countdown an und bewegt sich von rechts nach links.
 
 <Tabs>
 
-<Tab title="Usage">
+<Tab title="&#x22;Verwendung&#x22;">
 
 ```jsx
 import { ProgressBar } from "twenty-ui/feedback";
@@ -32,16 +32,19 @@ export const MyComponent = () => {
 
 </Tab>
 
-<Tab title="Props">
+<Tab title="&#x22;Eigenschaften&#x22;">
 
-| Props       | Typ          | Beschreibung                                                                         | Standard  |
-| ----------- | ------------ | ------------------------------------------------------------------------------------ | --------- |
-| Dauer       | nummer       | Die Gesamtdauer der Fortschrittsbalken-Animation in Millisekunden                    | 3         |
-| Verzögerung | nummer       | Die Verzögerung beim Starten der Fortschrittsbalken-Animation in Millisekunden       | 0         |
-| Easing      | Zeichenkette | Easing-Funktion für die Fortschrittsbalken-Animation                                 | easeInOut |
-| Balkenhöhe  | nummer       | The height of the bar in pixels                                                      | 24        |
-| Balkenfarbe | Zeichenkette | The color of the bar                                                                 | gray80    |
-| AutoStart   | boolesch     | If `true`, the progress bar animation starts automatically when the component mounts | `wahr`    |
+
+| "Eigenschaften" | Typ          | Beschreibung                                                                                                | Standard  |
+| --------------- | ------------ | ----------------------------------------------------------------------------------------------------------- | --------- |
+| Dauer           | nummer       | Die Gesamtdauer der Fortschrittsbalken-Animation in Millisekunden                                           | 3         |
+| Verzögerung     | nummer       | Die Verzögerung beim Starten der Fortschrittsbalken-Animation in Millisekunden                              | 0         |
+| Easing          | string       | Easing-Funktion für die Fortschrittsbalken-Animation                                                        | easeInOut |
+| Balkenhöhe      | nummer       | Die Höhe des Balkens in Pixeln                                                                              | 24        |
+| Balkenfarbe     | Zeichenkette | Die Farbe des Balkens                                                                                       | gray80    |
+| AutoStart       | boolesch     | Wenn `true`, startet die Animation des Fortschrittsbalkens automatisch, wenn die Komponente gemountet wird. | `wahr`    |
+
+
 
 </Tab>
 </Tabs>
@@ -52,7 +55,7 @@ Zeigt den Fortschritt einer Aufgabe an, wird häufig auf Ladebildschirmen oder i
 
 <Tabs>
 
-<Tab title="Usage">
+<Tab title="Verwendung">
 
 ```jsx
 import { CircularProgressBar } from "@/ui/feedback/progress-bar/components/CircularProgressBar";
@@ -64,13 +67,16 @@ export const MyComponent = () => {
 
 </Tab>
 
-<Tab title="Props">
+<Tab title="Eigenschaften">
 
-| Props        | Typ          | Beschreibung                                 | Standard     |
-| ------------ | ------------ | -------------------------------------------- | ------------ |
-| größe        | nummer       | Die Größe des zirkularen Fortschrittsbalkens | 50           |
-| Balkenbreite | nummer       | Die Breite der Fortschrittsbalkenlinie       | 5            |
-| Balkenfarbe  | Zeichenkette | The color of the progress bar                | currentColor |
+
+| Eigenschaften | Typ          | Beschreibung                                 | Standard     |
+| ------------- | ------------ | -------------------------------------------- | ------------ |
+| größe         | nummer       | Die Größe des zirkularen Fortschrittsbalkens | 50           |
+| Balkenbreite  | nummer       | Die Breite der Fortschrittsbalkenlinie       | 5            |
+| Balkenfarbe   | Zeichenkette | Die Farbe des Fortschrittsbalkens            | currentColor |
+
+
 
 </Tab>
 

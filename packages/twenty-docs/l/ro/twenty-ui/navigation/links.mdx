@@ -4,7 +4,7 @@ image: /images/user-guide/what-is-twenty/20.png
 ---
 
 <Frame>
-  <img src="/images/user-guide/what-is-twenty/20.png" alt="Header" />
+  <img src="/images/user-guide/what-is-twenty/20.png" alt="Antet" />
 </Frame>
 
 ## Link de Contact
@@ -12,7 +12,7 @@ image: /images/user-guide/what-is-twenty/20.png
 Un component de link stilizat pentru afișarea informațiilor de contact.
 
 <Tabs>
-<Tab title="Usage">
+<Tab title="Utilizare">
 
 ```jsx
 import { BrowserRouter as Router } from 'react-router-dom';
@@ -38,15 +38,20 @@ export const MyComponent = () => {
 };
 ```
 
+
 </Tab>
-<Tab title="Props">
+<Tab title="Proprietăți">
+
 
 | Proprietăți | Tip               | Descriere                                               |
 | ----------- | ----------------- | ------------------------------------------------------- |
 | numeClasa   | șir               | Nume opțional pentru stilizare suplimentară             |
-| href        | șir               | URL-ul sau calea țintă pentru link                      |
+| href        | string            | URL-ul sau calea țintă pentru link                      |
 | laClick     | funcție           | Funcția de callback care se declanșează la clic pe link |
 | copii       | `React.ReactNode` | Conținutul de afișat în interiorul linkului             |
+
+
+
 
 </Tab>
 
@@ -57,7 +62,7 @@ export const MyComponent = () => {
 Un component de link stilizat pentru afișarea linkurilor.
 
 <Tabs>
-<Tab title="Usage">
+<Tab title="Utilizare">
 
 ```jsx
 import { RawLink } from "/navigation";
@@ -79,15 +84,20 @@ export const MyComponent = () => {
 
 ```
 
+
 </Tab>
-<Tab title="Props">
+<Tab title="Proprietăți">
+
 
 | Proprietăți | Tip               | Descriere                                               |
 | ----------- | ----------------- | ------------------------------------------------------- |
-| numeClasa   | șir               | Nume opțional pentru stilizare suplimentară             |
-| href        | șir               | URL-ul sau calea țintă pentru link                      |
+| numeClasă   | string            | Nume opțional pentru stilizare suplimentară             |
+| href        | string            | URL-ul sau calea țintă pentru link                      |
 | laClick     | funcție           | Funcția de callback care se declanșează la clic pe link |
 | copii       | `React.ReactNode` | Conținutul de afișat în interiorul linkului             |
+
+
+
 
 </Tab>
 </Tabs>
@@ -97,7 +107,7 @@ export const MyComponent = () => {
 Un link stilizat cu margini rotunjite cu un component Chip pentru linkuri.
 
 <Tabs>
-<Tab title="Usage">
+<Tab title="Utilizare">
 
 ```jsx
 import { RoundedLink } from "/navigation";
@@ -120,13 +130,16 @@ export const MyComponent = () => {
 
 </Tab>
 
-<Tab title="Props">
+<Tab title="Proprietăți">
+
 
 | Proprietăți | Tip               | Descriere                                               |
 | ----------- | ----------------- | ------------------------------------------------------- |
 | href        | șir               | URL-ul sau calea țintă pentru link                      |
 | copii       | `React.ReactNode` | Conținutul de afișat în interiorul linkului             |
 | laClick     | funcție           | Funcția de callback care se declanșează la clic pe link |
+
+
 
 </Tab>
 </Tabs>
@@ -136,7 +149,7 @@ export const MyComponent = () => {
 Linkuri sociale stilizate, cu suport pentru diverse tipuri de linkuri sociale, cum ar fi URL-uri, LinkedIn și X (sau Twitter).
 
 <Tabs>
-<Tab title="Usage">
+<Tab title="Utilizare">
 
 ```jsx
 import { SocialLink } from "twenty-ui/navigation";
@@ -155,14 +168,18 @@ export const MyComponent = () => {
 ```
 
 </Tab>
-<Tab title="Props">
+<Tab title="Proprietăți">
 
-| Proprietăți | Tip               | Descriere                                                                                                  |
-| ----------- | ----------------- | ---------------------------------------------------------------------------------------------------------- |
-| href        | șir               | URL-ul sau calea țintă pentru link                                                                         |
-| copii       | `React.ReactNode` | Conținutul de afișat în interiorul linkului                                                                |
-| tip         | șir               | Tipul linkurilor sociale. Opțiunile includ: `url`, `LinkedIn` și `Twitter` |
-| laClick     | funcție           | Funcția de callback care se declanșează la clic pe link                                                    |
+
+| Proprietăți | Tip               | Descriere                                                                  |
+| ----------- | ----------------- | -------------------------------------------------------------------------- |
+| href        | string            | URL-ul sau calea țintă pentru link                                         |
+| copii       | `React.ReactNode` | Conținutul de afișat în interiorul linkului                                |
+| tip         | string            | Tipul linkurilor sociale. Opțiunile includ: `url`, `LinkedIn` și `Twitter` |
+| laClick     | funcție           | Funcția de callback care se declanșează la clic pe link                    |
+
+
+
 
 </Tab>
 </Tabs>

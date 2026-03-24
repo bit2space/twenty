@@ -1,6 +1,7 @@
-import styled from '@emotion/styled';
+import { styled } from '@linaria/react';
 
 import { useRecordTableContextOrThrow } from '@/object-record/record-table/contexts/RecordTableContext';
+import { RecordTableColumnHead } from '@/object-record/record-table/record-table-header/components/RecordTableColumnHead';
 import { RecordTableColumnHeadWithDropdown } from '@/object-record/record-table/record-table-header/components/RecordTableColumnHeadWithDropdown';
 import { RecordTableHeaderResizeHandler } from '@/object-record/record-table/record-table-header/components/RecordTableHeaderResizeHandler';
 
@@ -9,67 +10,81 @@ import { RecordTableHeaderCellContainer } from '@/object-record/record-table/rec
 import { hasRecordGroupsComponentSelector } from '@/object-record/record-group/states/selectors/hasRecordGroupsComponentSelector';
 import { TABLE_Z_INDEX } from '@/object-record/record-table/constants/TableZIndex';
 import { RecordTableHeaderLabelIdentifierCellPlusButton } from '@/object-record/record-table/record-table-header/components/RecordTableHeaderLabelIdentifierCellPlusButton';
-import { getVisibleFieldWithLowestPosition } from '@/object-record/record-table/record-table-header/utils/getVisibleFieldWithLowestPosition.util';
+import { getVisibleFieldWithLowestPosition } from '@/object-record/record-table/record-table-header/utils/getVisibleFieldWithLowestPosition';
+import { isRecordTableColumnHeadersReadOnlyComponentState } from '@/object-record/record-table/states/isRecordTableColumnHeadersReadOnlyComponentState';
+import { isRecordTableColumnResizableComponentState } from '@/object-record/record-table/states/isRecordTableColumnResizableComponentState';
 import { isRecordTableRowActiveComponentFamilyState } from '@/object-record/record-table/states/isRecordTableRowActiveComponentFamilyState';
 import { isRecordTableRowFocusActiveComponentState } from '@/object-record/record-table/states/isRecordTableRowFocusActiveComponentState';
 import { isRecordTableRowFocusedComponentFamilyState } from '@/object-record/record-table/states/isRecordTableRowFocusedComponentFamilyState';
 import { isRecordTableScrolledVerticallyComponentState } from '@/object-record/record-table/states/isRecordTableScrolledVerticallyComponentState';
 import { resizedFieldMetadataIdComponentState } from '@/object-record/record-table/states/resizedFieldMetadataIdComponentState';
 import { getRecordTableColumnFieldWidthClassName } from '@/object-record/record-table/utils/getRecordTableColumnFieldWidthClassName';
-import { useRecoilComponentFamilyValue } from '@/ui/utilities/state/component-state/hooks/useRecoilComponentFamilyValue';
-import { useRecoilComponentValue } from '@/ui/utilities/state/component-state/hooks/useRecoilComponentValue';
+import { useAtomComponentFamilyStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomComponentFamilyStateValue';
+import { useAtomComponentSelectorValue } from '@/ui/utilities/state/jotai/hooks/useAtomComponentSelectorValue';
+import { useAtomComponentStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomComponentStateValue';
 import { cx } from '@linaria/core';
 import { useState } from 'react';
 import { isDefined } from 'twenty-shared/utils';
 
 const StyledPlusButtonWrapper = styled.div`
   position: absolute;
-  top: 0;
   right: 0;
-  z-index: ${TABLE_Z_INDEX.headerColumns.withoutGroups.headerColumnsSticky};
+  top: 0;
+  z-index: ${TABLE_Z_INDEX.headerColumns.headerColumnsSticky};
 `;
 
 export const RecordTableHeaderFirstCell = () => {
   const { objectMetadataItem, visibleRecordFields } =
     useRecordTableContextOrThrow();
 
+  const isRecordTableColumnHeadersReadOnly = useAtomComponentStateValue(
+    isRecordTableColumnHeadersReadOnlyComponentState,
+  );
+
+  const isRecordTableColumnResizable = useAtomComponentStateValue(
+    isRecordTableColumnResizableComponentState,
+  );
+
   const [iconIsVisible, setIconIsVisible] = useState(false);
 
-  const isFirstRowActive = useRecoilComponentFamilyValue(
+  const isRecordTableRowActive = useAtomComponentFamilyStateValue(
     isRecordTableRowActiveComponentFamilyState,
     0,
   );
 
-  const isFirstRowFocused = useRecoilComponentFamilyValue(
+  const isRecordTableRowFocused = useAtomComponentFamilyStateValue(
     isRecordTableRowFocusedComponentFamilyState,
     0,
   );
 
   const recordField = getVisibleFieldWithLowestPosition(visibleRecordFields);
 
-  const isScrolledVertically = useRecoilComponentValue(
+  const isRecordTableScrolledVertically = useAtomComponentStateValue(
     isRecordTableScrolledVerticallyComponentState,
   );
 
-  const isRowFocusActive = useRecoilComponentValue(
+  const isRecordTableRowFocusActive = useAtomComponentStateValue(
     isRecordTableRowFocusActiveComponentState,
   );
 
   const isFirstRowActiveOrFocused =
-    isFirstRowActive || (isFirstRowFocused && isRowFocusActive);
+    isRecordTableRowActive ||
+    (isRecordTableRowFocused && isRecordTableRowFocusActive);
 
-  const hasRecordGroups = useRecoilComponentValue(
+  const hasRecordGroups = useAtomComponentSelectorValue(
     hasRecordGroupsComponentSelector,
   );
 
-  const resizedFieldMetadataItemId = useRecoilComponentValue(
+  const resizedFieldMetadataId = useAtomComponentStateValue(
     resizedFieldMetadataIdComponentState,
   );
 
-  const isResizingAnyColumn = isDefined(resizedFieldMetadataItemId);
+  const isResizingAnyColumn = isDefined(resizedFieldMetadataId);
 
   const shouldDisplayBorderBottom =
-    hasRecordGroups || !isFirstRowActiveOrFocused || isScrolledVertically;
+    hasRecordGroups ||
+    !isFirstRowActiveOrFocused ||
+    isRecordTableScrolledVertically;
 
   if (!recordField) {
     return <></>;
@@ -83,18 +98,25 @@ export const RecordTableHeaderFirstCell = () => {
       onMouseLeave={() => setIconIsVisible(false)}
       shouldDisplayBorderBottom={shouldDisplayBorderBottom}
       isResizing={isResizingAnyColumn}
+      isReadOnly={isRecordTableColumnHeadersReadOnly}
     >
-      <RecordTableColumnHeadWithDropdown
-        recordField={recordField}
-        objectMetadataId={objectMetadataItem.id}
-      />
-      {iconIsVisible && (
+      {isRecordTableColumnHeadersReadOnly ? (
+        <RecordTableColumnHead recordField={recordField} />
+      ) : (
+        <RecordTableColumnHeadWithDropdown
+          recordField={recordField}
+          objectMetadataId={objectMetadataItem.id}
+        />
+      )}
+      {iconIsVisible && !isRecordTableColumnHeadersReadOnly && (
         <StyledPlusButtonWrapper>
           <RecordTableHeaderLabelIdentifierCellPlusButton />
         </StyledPlusButtonWrapper>
       )}
 
-      <RecordTableHeaderResizeHandler recordFieldIndex={0} position="right" />
+      {isRecordTableColumnResizable && (
+        <RecordTableHeaderResizeHandler recordFieldIndex={0} position="right" />
+      )}
     </RecordTableHeaderCellContainer>
   );
 };

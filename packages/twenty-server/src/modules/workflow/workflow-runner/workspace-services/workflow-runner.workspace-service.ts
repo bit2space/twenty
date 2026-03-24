@@ -16,6 +16,7 @@ import {
   WorkflowVersionStepExceptionCode,
 } from 'src/modules/workflow/common/exceptions/workflow-version-step.exception';
 import { WorkflowRunStatus } from 'src/modules/workflow/common/standard-objects/workflow-run.workspace-entity';
+import { setAllIteratorsStepInfosAsStopped } from 'src/modules/workflow/common/utils/set-all-iterators-step-infos-as-stopped.util';
 import { workflowHasRunningSteps } from 'src/modules/workflow/common/utils/workflow-has-running-steps.util';
 import { WorkflowCommonWorkspaceService } from 'src/modules/workflow/common/workspace-services/workflow-common.workspace-service';
 import { WorkflowVersionStepOperationsWorkspaceService } from 'src/modules/workflow/workflow-builder/workflow-version-step/workflow-version-step-operations.workspace-service';
@@ -83,6 +84,7 @@ export class WorkflowRunnerWorkspaceService {
 
     if (isHardThrottled) {
       return this.createFailedWorkflowRun({
+        workspaceId,
         workflowVersionId,
         initialWorkflowRunId,
         source,
@@ -199,29 +201,47 @@ export class WorkflowRunnerWorkspaceService {
         workspaceId,
       });
 
-    if (workflowRun.status !== WorkflowRunStatus.RUNNING) {
+    const stoppableStatuses = [
+      WorkflowRunStatus.NOT_STARTED,
+      WorkflowRunStatus.ENQUEUED,
+      WorkflowRunStatus.RUNNING,
+    ];
+
+    if (!stoppableStatuses.includes(workflowRun.status)) {
       throw new WorkflowRunException(
-        'Workflow run is not running',
+        'Workflow run cannot be stopped',
         WorkflowRunExceptionCode.INVALID_OPERATION,
         {
-          userFriendlyMessage: msg`Workflow run is not running`,
+          userFriendlyMessage: msg`Workflow run cannot be stopped in its current status`,
         },
       );
     }
 
     let newStatus: WorkflowRunStatus;
 
-    if (
-      workflowHasRunningSteps({
-        stepInfos: workflowRun.state.stepInfos,
-        steps: workflowRun.state.flow.steps,
-      })
-    ) {
+    const stepInfos = workflowRun.state.stepInfos;
+    const steps = workflowRun.state.flow.steps;
+
+    if (workflowHasRunningSteps({ stepInfos, steps })) {
+      const stoppedIteratorStepInfos = setAllIteratorsStepInfosAsStopped({
+        stepInfos,
+        steps,
+      });
+
+      const mergedStepInfos = {
+        ...stepInfos,
+        ...stoppedIteratorStepInfos,
+      };
+
       await this.workflowRunWorkspaceService.updateWorkflowRun({
         workflowRunId,
         workspaceId,
         partialUpdate: {
           status: WorkflowRunStatus.STOPPING,
+          state: {
+            ...workflowRun.state,
+            stepInfos: mergedStepInfos,
+          },
         },
       });
       newStatus = WorkflowRunStatus.STOPPING;
@@ -258,11 +278,13 @@ export class WorkflowRunnerWorkspaceService {
   }
 
   private async createFailedWorkflowRun({
+    workspaceId,
     workflowVersionId,
     initialWorkflowRunId,
     source,
     payload,
   }: {
+    workspaceId: string;
     workflowVersionId: string;
     initialWorkflowRunId?: string;
     source: ActorMetadata;
@@ -276,6 +298,7 @@ export class WorkflowRunnerWorkspaceService {
         status: WorkflowRunStatus.FAILED,
         triggerPayload: payload,
         error: 'Throttle limit reached',
+        workspaceId,
       });
 
     return { workflowRunId };
@@ -301,6 +324,7 @@ export class WorkflowRunnerWorkspaceService {
         createdBy: source,
         status: WorkflowRunStatus.ENQUEUED,
         triggerPayload: payload,
+        workspaceId,
       });
 
     await this.messageQueueService.add<RunWorkflowJobData>(
@@ -334,6 +358,7 @@ export class WorkflowRunnerWorkspaceService {
         createdBy: source,
         status: WorkflowRunStatus.NOT_STARTED,
         triggerPayload: payload,
+        workspaceId,
       });
 
     await this.workflowThrottlingWorkspaceService.increaseWorkflowRunNotStartedCount(

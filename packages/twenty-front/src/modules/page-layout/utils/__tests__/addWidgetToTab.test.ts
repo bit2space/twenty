@@ -1,10 +1,11 @@
-import { GraphType, WidgetType } from '~/generated-metadata/graphql';
+import { type PageLayoutTab } from '@/page-layout/types/PageLayoutTab';
+import { addWidgetToTab } from '@/page-layout/utils/addWidgetToTab';
 import {
   AggregateOperations,
+  WidgetConfigurationType,
+  WidgetType,
   type PageLayoutWidget,
-} from '~/generated/graphql';
-import { type PageLayoutTab } from '../../types/PageLayoutTab';
-import { addWidgetToTab } from '../addWidgetToTab';
+} from '~/generated-metadata/graphql';
 
 describe('addWidgetToTab', () => {
   const mockWidget: PageLayoutWidget = {
@@ -14,13 +15,14 @@ describe('addWidgetToTab', () => {
     title: 'Test Widget',
     type: WidgetType.GRAPH,
     configuration: {
-      graphType: GraphType.AGGREGATE,
+      configurationType: WidgetConfigurationType.AGGREGATE_CHART,
       aggregateOperation: AggregateOperations.COUNT,
       aggregateFieldMetadataId: 'id',
       displayDataLabel: false,
     },
     gridPosition: { row: 0, column: 0, rowSpan: 2, columnSpan: 2 },
     objectMetadataId: null,
+    isOverridden: false,
     createdAt: '2024-01-01T00:00:00Z',
     updatedAt: '2024-01-01T00:00:00Z',
     deletedAt: null,
@@ -29,20 +31,24 @@ describe('addWidgetToTab', () => {
   const mockTabs: PageLayoutTab[] = [
     {
       id: 'tab-1',
+      applicationId: '',
       title: 'Tab 1',
       position: 0,
       pageLayoutId: 'layout-1',
       widgets: [],
+      isOverridden: false,
       createdAt: '2024-01-01T00:00:00Z',
       updatedAt: '2024-01-01T00:00:00Z',
       deletedAt: null,
     },
     {
       id: 'tab-2',
+      applicationId: '',
       title: 'Tab 2',
       position: 1,
       pageLayoutId: 'layout-1',
       widgets: [],
+      isOverridden: false,
       createdAt: '2024-01-01T00:00:00Z',
       updatedAt: '2024-01-01T00:00:00Z',
       deletedAt: null,

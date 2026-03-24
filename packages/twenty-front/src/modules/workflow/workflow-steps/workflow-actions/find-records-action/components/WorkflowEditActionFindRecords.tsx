@@ -1,5 +1,6 @@
-import { useTheme } from '@emotion/react';
-import styled from '@emotion/styled';
+import { styled } from '@linaria/react';
+import { msg } from '@lingui/core/macro';
+import { i18n } from '@lingui/core';
 import { useLingui } from '@lingui/react/macro';
 import { isNumber } from '@sniptt/guards';
 import { useEffect, useState } from 'react';
@@ -31,20 +32,21 @@ import { WorkflowFindRecordsFilters } from '@/workflow/workflow-steps/workflow-a
 import { WorkflowFindRecordsFiltersEffect } from '@/workflow/workflow-steps/workflow-actions/find-records-action/components/WorkflowFindRecordsFiltersEffect';
 import { WorkflowFindRecordsSorts } from '@/workflow/workflow-steps/workflow-actions/find-records-action/components/WorkflowFindRecordsSorts';
 import { WorkflowObjectDropdownContent } from '@/workflow/workflow-steps/workflow-actions/find-records-action/components/WorkflowObjectDropdownContent';
+import { themeCssVariables } from 'twenty-ui/theme-constants';
 
 const StyledLabel = styled.span`
-  color: ${({ theme }) => theme.font.color.light};
+  color: ${themeCssVariables.font.color.light};
   display: block;
-  font-size: ${({ theme }) => theme.font.size.xs};
-  font-weight: ${({ theme }) => theme.font.weight.semiBold};
-  margin-bottom: ${({ theme }) => theme.spacing(1)};
+  font-size: ${themeCssVariables.font.size.xs};
+  font-weight: ${themeCssVariables.font.weight.semiBold};
+  margin-bottom: ${themeCssVariables.spacing[1]};
 `;
 
 const StyledRecordTypeSelectContainer = styled.div<{ fullWidth?: boolean }>`
   width: ${({ fullWidth }) => (fullWidth ? '100%' : 'auto')};
 `;
 
-const DEFAULT_SELECTED_OPTION = { label: 'Select an option', value: '' };
+const defaultSelectedOptionMessage = msg`Select an option`;
 
 type WorkflowEditActionFindRecordsProps = {
   action: WorkflowFindRecordsAction;
@@ -79,7 +81,6 @@ export const WorkflowEditActionFindRecords = ({
   action,
   actionOptions,
 }: WorkflowEditActionFindRecordsProps) => {
-  const theme = useTheme();
   const { t } = useLingui();
   const maxRecordsFormatted = QUERY_MAX_RECORDS.toLocaleString();
 
@@ -115,7 +116,7 @@ export const WorkflowEditActionFindRecords = ({
         label: selectedObjectMetadataItem?.labelPlural,
         value: selectedObjectMetadataItem?.nameSingular,
       }
-    : DEFAULT_SELECTED_OPTION;
+    : { label: i18n._(defaultSelectedOptionMessage), value: '' };
 
   const { objectPermissionsByObjectMetadataId } = useObjectPermissions();
 
@@ -183,7 +184,7 @@ export const WorkflowEditActionFindRecords = ({
     <>
       <WorkflowStepBody>
         <StyledRecordTypeSelectContainer fullWidth>
-          <StyledLabel>Object</StyledLabel>
+          <StyledLabel>{t`Object`}</StyledLabel>
           <Dropdown
             dropdownId={dropdownId}
             dropdownPlacement="bottom-start"
@@ -200,7 +201,7 @@ export const WorkflowEditActionFindRecords = ({
                 />
               )
             }
-            dropdownOffset={{ y: parseInt(theme.spacing(1), 10) }}
+            dropdownOffset={{ y: 4 }}
           />
         </StyledRecordTypeSelectContainer>
 
@@ -271,7 +272,11 @@ export const WorkflowEditActionFindRecords = ({
 
                   const gqlOperationOrderBy =
                     sorts.length > 0
-                      ? turnSortsIntoOrderBy(selectedObjectMetadataItem, sorts)
+                      ? turnSortsIntoOrderBy(
+                          selectedObjectMetadataItem,
+                          sorts,
+                          objectMetadataItems,
+                        )
                       : undefined;
 
                   const newFormData: FindRecordsFormData = {

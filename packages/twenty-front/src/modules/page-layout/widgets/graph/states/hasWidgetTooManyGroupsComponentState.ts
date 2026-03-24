@@ -1,8 +1,9 @@
-import { GraphWidgetComponentInstanceContext } from '@/page-layout/widgets/graph/states/contexts/GraphWidgetComponentInstanceContext';
-import { createComponentState } from '@/ui/utilities/state/component-state/utils/createComponentState';
+import { WidgetComponentInstanceContext } from '@/page-layout/widgets/states/contexts/WidgetComponentInstanceContext';
+import { createAtomComponentState } from '@/ui/utilities/state/jotai/utils/createAtomComponentState';
 
-export const hasWidgetTooManyGroupsComponentState = createComponentState({
-  key: 'hasWidgetTooManyGroupsComponentState',
-  defaultValue: false,
-  componentInstanceContext: GraphWidgetComponentInstanceContext,
-});
+export const hasWidgetTooManyGroupsComponentState =
+  createAtomComponentState<boolean>({
+    key: 'hasWidgetTooManyGroupsComponentState',
+    defaultValue: false,
+    componentInstanceContext: WidgetComponentInstanceContext,
+  });

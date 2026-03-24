@@ -3,13 +3,15 @@ import { isDefined } from 'twenty-shared/utils';
 import { type EntityManager } from 'typeorm';
 
 import { type FlatEntityMaps } from 'src/engine/metadata-modules/flat-entity/types/flat-entity-maps.type';
+import { findFlatEntityByIdInFlatEntityMaps } from 'src/engine/metadata-modules/flat-entity/utils/find-flat-entity-by-id-in-flat-entity-maps.util';
 import { type FlatFieldMetadata } from 'src/engine/metadata-modules/flat-field-metadata/types/flat-field-metadata.type';
 import { type FlatObjectMetadata } from 'src/engine/metadata-modules/flat-object-metadata/types/flat-object-metadata.type';
 import { buildObjectIdByNameMaps } from 'src/engine/metadata-modules/flat-object-metadata/utils/build-object-id-by-name-maps.util';
 import { generateObjectRecordFields } from 'src/modules/workflow/workflow-builder/workflow-schema/utils/generate-object-record-fields';
 
-const QUICK_LEAD_WORKFLOW_ID = '8b213cac-a68b-4ffe-817a-3ec994e9932d';
-const QUICK_LEAD_WORKFLOW_VERSION_ID = 'ac67974f-c524-4288-9d88-af8515400b68';
+export const QUICK_LEAD_WORKFLOW_ID = '8b213cac-a68b-4ffe-817a-3ec994e9932d';
+export const QUICK_LEAD_WORKFLOW_VERSION_ID =
+  'ac67974f-c524-4288-9d88-af8515400b68';
 
 export const prefillWorkflows = async (
   entityManager: EntityManager,
@@ -31,11 +33,15 @@ export const prefillWorkflows = async (
     throw new Error('Company or person object metadata not found');
   }
 
-  const companyObjectMetadata =
-    flatObjectMetadataMaps.byId[companyObjectMetadataId];
+  const companyObjectMetadata = findFlatEntityByIdInFlatEntityMaps({
+    flatEntityId: companyObjectMetadataId,
+    flatEntityMaps: flatObjectMetadataMaps,
+  });
 
-  const personObjectMetadata =
-    flatObjectMetadataMaps.byId[personObjectMetadataId];
+  const personObjectMetadata = findFlatEntityByIdInFlatEntityMaps({
+    flatEntityId: personObjectMetadataId,
+    flatEntityMaps: flatObjectMetadataMaps,
+  });
 
   if (!isDefined(companyObjectMetadata) || !isDefined(personObjectMetadata)) {
     throw new Error('Company or person object metadata not found');
@@ -54,6 +60,9 @@ export const prefillWorkflows = async (
       'createdByWorkspaceMemberId',
       'createdByName',
       'createdByContext',
+      'updatedBySource',
+      'updatedByWorkspaceMemberId',
+      'updatedByName',
     ])
     .orIgnore()
     .values([
@@ -67,6 +76,9 @@ export const prefillWorkflows = async (
         createdByWorkspaceMemberId: null,
         createdByName: 'System',
         createdByContext: {},
+        updatedBySource: FieldActorSource.SYSTEM,
+        updatedByWorkspaceMemberId: null,
+        updatedByName: 'System',
       },
     ])
     .returning('*')
@@ -229,7 +241,6 @@ export const prefillWorkflows = async (
                     flatObjectMetadataMaps,
                     flatFieldMetadataMaps,
                   },
-                  depth: 0,
                 }),
               },
               errorHandlingOptions: {
@@ -260,9 +271,7 @@ export const prefillWorkflows = async (
                       '{{6e089bc9-aabd-435f-865f-f31c01c8f4a7.email}}',
                     additionalEmails: [],
                   },
-                  company: {
-                    id: '{{0715b6cd-7cc1-4b98-971b-00f54dfe643b.id}}',
-                  },
+                  companyId: '{{0715b6cd-7cc1-4b98-971b-00f54dfe643b.id}}',
                 },
               },
               outputSchema: {
@@ -272,7 +281,6 @@ export const prefillWorkflows = async (
                     flatObjectMetadataMaps,
                     flatFieldMetadataMaps,
                   },
-                  depth: 0,
                 }),
               },
               errorHandlingOptions: {

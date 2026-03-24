@@ -4,15 +4,15 @@ import { type WorkspacePostQueryHookInstance } from 'src/engine/api/graphql/work
 
 import { WorkspaceQueryHook } from 'src/engine/api/graphql/workspace-query-runner/workspace-query-hook/decorators/workspace-query-hook.decorator';
 import { WorkspaceQueryHookType } from 'src/engine/api/graphql/workspace-query-runner/workspace-query-hook/types/workspace-query-hook.type';
-import { type AuthContext } from 'src/engine/core-modules/auth/types/auth-context.type';
+import { type WorkspaceAuthContext } from 'src/engine/core-modules/auth/types/workspace-auth-context.type';
 import { RecordPositionService } from 'src/engine/core-modules/record-position/services/record-position.service';
-import { TwentyORMManager } from 'src/engine/twenty-orm/twenty-orm.manager';
+import { WorkspaceNotFoundDefaultError } from 'src/engine/core-modules/workspace/workspace.exception';
+import { GlobalWorkspaceOrmManager } from 'src/engine/twenty-orm/global-workspace-datasource/global-workspace-orm.manager';
 import {
   WorkflowVersionStatus,
   type WorkflowVersionWorkspaceEntity,
 } from 'src/modules/workflow/common/standard-objects/workflow-version.workspace-entity';
 import { type WorkflowWorkspaceEntity } from 'src/modules/workflow/common/standard-objects/workflow.workspace-entity';
-import { WorkspaceNotFoundDefaultError } from 'src/engine/core-modules/workspace/workspace.exception';
 
 @WorkspaceQueryHook({
   key: `workflow.createOne`,
@@ -22,12 +22,12 @@ export class WorkflowCreateOnePostQueryHook
   implements WorkspacePostQueryHookInstance
 {
   constructor(
-    private readonly twentyORMManager: TwentyORMManager,
+    private readonly globalWorkspaceOrmManager: GlobalWorkspaceOrmManager,
     private readonly recordPositionService: RecordPositionService,
   ) {}
 
   async execute(
-    authContext: AuthContext,
+    authContext: WorkspaceAuthContext,
     _objectName: string,
     payload: WorkflowWorkspaceEntity[],
   ): Promise<void> {
@@ -37,25 +37,28 @@ export class WorkflowCreateOnePostQueryHook
 
     const workflow = payload[0];
 
-    const workflowVersionRepository =
-      await this.twentyORMManager.getRepository<WorkflowVersionWorkspaceEntity>(
-        'workflowVersion',
-      );
+    await this.globalWorkspaceOrmManager.executeInWorkspaceContext(async () => {
+      const workflowVersionRepository =
+        await this.globalWorkspaceOrmManager.getRepository<WorkflowVersionWorkspaceEntity>(
+          workspace.id,
+          'workflowVersion',
+        );
 
-    const position = await this.recordPositionService.buildRecordPosition({
-      value: 'first',
-      objectMetadata: {
-        isCustom: false,
-        nameSingular: 'workflowVersion',
-      },
-      workspaceId: workspace.id,
-    });
+      const position = await this.recordPositionService.buildRecordPosition({
+        value: 'first',
+        objectMetadata: {
+          isCustom: false,
+          nameSingular: 'workflowVersion',
+        },
+        workspaceId: workspace.id,
+      });
 
-    await workflowVersionRepository.insert({
-      workflowId: workflow.id,
-      status: WorkflowVersionStatus.DRAFT,
-      name: 'v1',
-      position,
-    });
+      await workflowVersionRepository.insert({
+        workflowId: workflow.id,
+        status: WorkflowVersionStatus.DRAFT,
+        name: 'v1',
+        position,
+      });
+    }, authContext);
   }
 }

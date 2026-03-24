@@ -1,6 +1,8 @@
 import { triggerCreateRecordsOptimisticEffect } from '@/apollo/optimistic-effect/utils/triggerCreateRecordsOptimisticEffect';
 import { triggerDestroyRecordsOptimisticEffect } from '@/apollo/optimistic-effect/utils/triggerDestroyRecordsOptimisticEffect';
+import { dispatchObjectRecordOperationBrowserEvent } from '@/browser-event/utils/dispatchObjectRecordOperationBrowserEvent';
 import { apiConfigState } from '@/client-config/states/apiConfigState';
+import { useRemoveNavigationMenuItemByTargetRecordId } from '@/navigation-menu-item/common/hooks/useRemoveNavigationMenuItemByTargetRecordId';
 import { useApolloCoreClient } from '@/object-metadata/hooks/useApolloCoreClient';
 import { useObjectMetadataItem } from '@/object-metadata/hooks/useObjectMetadataItem';
 import { useObjectMetadataItems } from '@/object-metadata/hooks/useObjectMetadataItems';
@@ -9,11 +11,10 @@ import { DEFAULT_MUTATION_BATCH_SIZE } from '@/object-record/constants/DefaultMu
 import { useDestroyManyRecordsMutation } from '@/object-record/hooks/useDestroyManyRecordsMutation';
 import { useObjectPermissions } from '@/object-record/hooks/useObjectPermissions';
 import { useRefetchAggregateQueries } from '@/object-record/hooks/useRefetchAggregateQueries';
-import { useRegisterObjectOperation } from '@/object-record/hooks/useRegisterObjectOperation';
 import { useUpsertRecordsInStore } from '@/object-record/record-store/hooks/useUpsertRecordsInStore';
 import { type ObjectRecord } from '@/object-record/types/ObjectRecord';
 import { getDestroyManyRecordsMutationResponseField } from '@/object-record/utils/getDestroyManyRecordsMutationResponseField';
-import { useRecoilValue } from 'recoil';
+import { useAtomStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomStateValue';
 import { capitalize, isDefined } from 'twenty-shared/utils';
 import { sleep } from '~/utils/sleep';
 
@@ -31,9 +32,8 @@ export type DestroyManyRecordsProps = {
 export const useDestroyManyRecords = ({
   objectNameSingular,
 }: useDestroyManyRecordProps) => {
-  const { registerObjectOperation } = useRegisterObjectOperation();
   const { upsertRecordsInStore } = useUpsertRecordsInStore();
-  const apiConfig = useRecoilValue(apiConfigState);
+  const apiConfig = useAtomStateValue(apiConfigState);
 
   const mutationPageSize =
     apiConfig?.mutationMaximumAffectedRecords ?? DEFAULT_MUTATION_BATCH_SIZE;
@@ -52,9 +52,9 @@ export const useDestroyManyRecords = ({
 
   const { objectMetadataItems } = useObjectMetadataItems();
   const { objectPermissionsByObjectMetadataId } = useObjectPermissions();
-  const { refetchAggregateQueries } = useRefetchAggregateQueries({
-    objectMetadataNamePlural: objectMetadataItem.namePlural,
-  });
+  const { refetchAggregateQueries } = useRefetchAggregateQueries();
+  const { removeNavigationMenuItemsByTargetRecordIds } =
+    useRemoveNavigationMenuItemByTargetRecordId();
 
   const mutationResponseField = getDestroyManyRecordsMutationResponseField(
     objectMetadataItem.namePlural,
@@ -143,10 +143,17 @@ export const useDestroyManyRecords = ({
       }
     }
 
-    await refetchAggregateQueries();
+    await refetchAggregateQueries({
+      objectMetadataNamePlural: objectMetadataItem.namePlural,
+    });
 
-    registerObjectOperation(objectNameSingular, {
-      type: 'destroy-many',
+    removeNavigationMenuItemsByTargetRecordIds(recordIdsToDestroy);
+
+    dispatchObjectRecordOperationBrowserEvent({
+      objectMetadataItem,
+      operation: {
+        type: 'destroy-many',
+      },
     });
 
     return destroyedRecords;

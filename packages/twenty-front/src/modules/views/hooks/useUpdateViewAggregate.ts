@@ -1,84 +1,74 @@
 import { contextStoreCurrentViewIdComponentState } from '@/context-store/states/contextStoreCurrentViewIdComponentState';
-import { type ObjectMetadataItem } from '@/object-metadata/types/ObjectMetadataItem';
+import { type EnrichedObjectMetadataItem } from '@/object-metadata/types/EnrichedObjectMetadataItem';
 import { useLoadRecordIndexStates } from '@/object-record/record-index/hooks/useLoadRecordIndexStates';
 import { type ExtendedAggregateOperations } from '@/object-record/record-table/types/ExtendedAggregateOperations';
 import { convertExtendedAggregateOperationToAggregateOperation } from '@/object-record/utils/convertExtendedAggregateOperationToAggregateOperation';
-import { useRecoilComponentValue } from '@/ui/utilities/state/component-state/hooks/useRecoilComponentValue';
-import { usePersistView } from '@/views/hooks/internal/usePersistView';
+import { useAtomComponentStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomComponentStateValue';
+import { usePerformViewAPIUpdate } from '@/views/hooks/internal/usePerformViewAPIUpdate';
 import { useCanPersistViewChanges } from '@/views/hooks/useCanPersistViewChanges';
-import { coreViewsState } from '@/views/states/coreViewState';
-import { convertCoreViewToView } from '@/views/utils/convertCoreViewToView';
-import { useRecoilCallback } from 'recoil';
-import {
-  isDefined,
-  upsertIntoArrayOfObjectsComparingId,
-} from 'twenty-shared/utils';
-import { type CoreView } from '~/generated/graphql';
+import { useCallback } from 'react';
+import { isDefined } from 'twenty-shared/utils';
+import { type View as GqlView } from '~/generated-metadata/graphql';
 
 export const useUpdateViewAggregate = () => {
   const { canPersistChanges } = useCanPersistViewChanges();
-  const currentViewId = useRecoilComponentValue(
+  const contextStoreCurrentViewId = useAtomComponentStateValue(
     contextStoreCurrentViewIdComponentState,
   );
-  const { updateView } = usePersistView();
+  const { performViewAPIUpdate } = usePerformViewAPIUpdate();
   const { loadRecordIndexStates } = useLoadRecordIndexStates();
 
-  const updateViewAggregate = useRecoilCallback(
-    ({ set }) =>
-      async ({
-        kanbanAggregateOperationFieldMetadataId,
+  const updateViewAggregate = useCallback(
+    async ({
+      kanbanAggregateOperationFieldMetadataId,
+      kanbanAggregateOperation,
+      objectMetadataItem,
+    }: {
+      kanbanAggregateOperationFieldMetadataId: string | null;
+      kanbanAggregateOperation: ExtendedAggregateOperations | null;
+      objectMetadataItem: EnrichedObjectMetadataItem;
+    }) => {
+      if (!canPersistChanges) {
+        return;
+      }
+
+      const convertedKanbanAggregateOperation = isDefined(
         kanbanAggregateOperation,
-        objectMetadataItem,
-      }: {
-        kanbanAggregateOperationFieldMetadataId: string | null;
-        kanbanAggregateOperation: ExtendedAggregateOperations | null;
-        objectMetadataItem: ObjectMetadataItem;
-      }) => {
-        if (!canPersistChanges) {
+      )
+        ? convertExtendedAggregateOperationToAggregateOperation(
+            kanbanAggregateOperation,
+          )
+        : null;
+
+      if (!isDefined(contextStoreCurrentViewId)) {
+        return;
+      }
+
+      const updatedViewResult = await performViewAPIUpdate({
+        id: contextStoreCurrentViewId,
+        input: {
+          kanbanAggregateOperationFieldMetadataId,
+          kanbanAggregateOperation: convertedKanbanAggregateOperation,
+        },
+      });
+
+      if (updatedViewResult.status === 'successful') {
+        const updatedView = updatedViewResult.response.data
+          ?.updateView as GqlView;
+
+        if (!isDefined(updatedView)) {
           return;
         }
 
-        const convertedKanbanAggregateOperation = isDefined(
-          kanbanAggregateOperation,
-        )
-          ? convertExtendedAggregateOperationToAggregateOperation(
-              kanbanAggregateOperation,
-            )
-          : null;
-
-        if (!isDefined(currentViewId)) {
-          return;
-        }
-
-        const updatedViewResult = await updateView({
-          id: currentViewId,
-          input: {
-            kanbanAggregateOperationFieldMetadataId,
-            kanbanAggregateOperation: convertedKanbanAggregateOperation,
-          },
-        });
-
-        if (updatedViewResult.status === 'successful') {
-          const updatedCoreView = updatedViewResult.response.data
-            ?.updateCoreView as CoreView;
-
-          if (!isDefined(updatedCoreView)) {
-            return;
-          }
-
-          set(coreViewsState, (currentCoreViews) =>
-            upsertIntoArrayOfObjectsComparingId(
-              currentCoreViews,
-              updatedCoreView,
-            ),
-          );
-
-          const updatedView = convertCoreViewToView(updatedCoreView);
-
-          loadRecordIndexStates(updatedView, objectMetadataItem);
-        }
-      },
-    [canPersistChanges, currentViewId, updateView, loadRecordIndexStates],
+        loadRecordIndexStates(updatedView, objectMetadataItem);
+      }
+    },
+    [
+      canPersistChanges,
+      contextStoreCurrentViewId,
+      performViewAPIUpdate,
+      loadRecordIndexStates,
+    ],
   );
 
   return {

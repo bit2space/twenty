@@ -1,10 +1,10 @@
-import { Modal } from '@/ui/layout/modal/components/Modal';
-import styled from '@emotion/styled';
+import { ModalContent } from 'twenty-ui/layout';
+import { styled } from '@linaria/react';
 import { isDefined } from 'twenty-shared/utils';
 import { ChooseYourPlanContent } from '~/pages/onboarding/internal/ChooseYourPlanContent';
-import { useRecoilValue } from 'recoil';
 import { billingState } from '@/client-config/states/billingState';
-import { usePlans } from '@/billing/hooks/usePlans';
+import { useAtomStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomStateValue';
+import { usePlans } from '@/settings/billing/hooks/usePlans';
 
 const StyledChooseYourPlanPlaceholder = styled.div`
   height: 566px;
@@ -12,14 +12,14 @@ const StyledChooseYourPlanPlaceholder = styled.div`
 
 export const ChooseYourPlan = () => {
   const { isPlansLoaded } = usePlans();
-  const billing = useRecoilValue(billingState);
+  const billing = useAtomStateValue(billingState);
   return (
-    <Modal.Content isVerticalCentered>
+    <ModalContent isVerticallyCentered>
       {isDefined(billing) && isPlansLoaded ? (
         <ChooseYourPlanContent billing={billing} />
       ) : (
         <StyledChooseYourPlanPlaceholder />
       )}
-    </Modal.Content>
+    </ModalContent>
   );
 };

@@ -1,3 +1,4 @@
+import { t } from '@lingui/core/macro';
 import { FieldInputEventContext } from '@/object-record/record-field/ui/contexts/FieldInputEventContext';
 
 import { useObjectMetadataItems } from '@/object-metadata/hooks/useObjectMetadataItems';
@@ -11,7 +12,7 @@ import { SingleRecordPicker } from '@/object-record/record-picker/single-record-
 import { type RecordPickerPickableMorphItem } from '@/object-record/record-picker/types/RecordPickerPickableMorphItem';
 import { GenericDropdownContentWidth } from '@/ui/layout/dropdown/constants/GenericDropdownContentWidth';
 import { useAvailableComponentInstanceIdOrThrow } from '@/ui/utilities/state/component-state/hooks/useAvailableComponentInstanceIdOrThrow';
-import { useRecoilComponentValue } from '@/ui/utilities/state/component-state/hooks/useRecoilComponentValue';
+import { useAtomComponentStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomComponentStateValue';
 import { useContext } from 'react';
 import { isDefined } from 'twenty-shared/utils';
 import { IconForbid } from 'twenty-ui/display';
@@ -35,7 +36,12 @@ export const MorphRelationManyToOneFieldInput = () => {
     selectedMorphItem: RecordPickerPickableMorphItem | null | undefined,
   ) => {
     if (!isDefined(selectedMorphItem)) {
-      // Handle detach
+      await persistMorphManyToOne({
+        recordId: recordId,
+        fieldDefinition,
+        valueToPersist: null,
+      });
+      onCancel?.();
       return;
     }
 
@@ -57,15 +63,15 @@ export const MorphRelationManyToOneFieldInput = () => {
     onCancel?.();
   };
 
-  const layoutDirection = useRecoilComponentValue(
+  const recordFieldInputLayoutDirection = useAtomComponentStateValue(
     recordFieldInputLayoutDirectionComponentState,
   );
 
-  const isLoading = useRecoilComponentValue(
+  const recordFieldInputLayoutDirectionLoading = useAtomComponentStateValue(
     recordFieldInputLayoutDirectionLoadingComponentState,
   );
 
-  if (isLoading) {
+  if (recordFieldInputLayoutDirectionLoading) {
     return <></>;
   }
 
@@ -76,18 +82,20 @@ export const MorphRelationManyToOneFieldInput = () => {
     (morphRelation) => morphRelation.targetObjectMetadata.nameSingular,
   );
 
+  const fieldLabel = fieldDefinition.label;
+
   return (
     <SingleRecordPicker
       focusId={instanceId}
       componentInstanceId={instanceId}
       EmptyIcon={IconForbid}
-      emptyLabel={'No ' + fieldDefinition.label}
+      emptyLabel={t`No ${fieldLabel}`}
       onCancel={onCancel}
       onMorphItemSelected={handleMorphItemSelected}
       objectNameSingulars={objectNameSingulars}
       recordPickerInstanceId={instanceId}
       layoutDirection={
-        layoutDirection === 'downward'
+        recordFieldInputLayoutDirection === 'downward'
           ? 'search-bar-on-top'
           : 'search-bar-on-bottom'
       }

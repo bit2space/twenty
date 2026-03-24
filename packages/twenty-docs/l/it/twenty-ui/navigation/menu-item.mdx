@@ -4,13 +4,13 @@ image: /images/user-guide/kanban-views/kanban.png
 ---
 
 <Frame>
-  <img src="/images/user-guide/kanban-views/kanban.png" alt="Header" />
+  <img src="/images/user-guide/kanban-views/kanban.png" alt="Intestazione" />
 </Frame>
 
 Una voce di menu versatile progettata per essere utilizzata in un menu o in un elenco di navigazione.
 
 <Tabs>
-<Tab title="Usage">
+<Tab title="Utilizzo">
 
 ```jsx
 import { IconBell } from "@tabler/icons-react";
@@ -41,24 +41,29 @@ export const MyComponent = () => {
 };
 ```
 
+
 </Tab>
 <Tab title="Props">
 
-| Props         | Tipo            | Descrizione                                                                                                                                  |
-| ------------- | --------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| IconaSinistra | IconaComponente | Un'icona opzionale a sinistra visualizzata prima del testo nella voce di menu                                                                |
-| accento       | string          | Specifica il colore dell'accento della voce di menu. Options include: `default`, `danger`, and `placeholder` |
-| testo         | string          | Il contenuto di testo della voce di menu                                                                                                     |
-| iconButtons   | array           | Un array di oggetti che rappresentano pulsanti icona aggiuntivi associati alla voce di menu                                                  |
-| isTooltipOpen | booleano        | Controlla la visibilità del tooltip associato alla voce di menu                                                                              |
-| testId        | string          | L'attributo data-testid per scopi di test                                                                                                    |
-| onClick       | funzione        | Funzione di callback attivata quando la voce di menu viene cliccata                                                                          |
-| nomeClasse    | string          | Nome opzionale per stile aggiuntivo                                                                                                          |
+
+| Props         | Tipo            | Descrizione                                                                                                    |
+| ------------- | --------------- | -------------------------------------------------------------------------------------------------------------- |
+| IconaSinistra | IconaComponente | Un'icona opzionale a sinistra visualizzata prima del testo nella voce di menu                                  |
+| accento       | stringa         | Specifica il colore dell'accento della voce di menu. Le opzioni includono: `default`, `danger` e `placeholder` |
+| testo         | stringa         | Il contenuto di testo della voce di menu                                                                       |
+| iconButtons   | array           | Un array di oggetti che rappresentano pulsanti icona aggiuntivi associati alla voce di menu                    |
+| isTooltipOpen | booleano        | Controlla la visibilità del tooltip associato alla voce di menu                                                |
+| testId        | stringa         | L'attributo data-testid per scopi di test                                                                      |
+| onClick       | funzione        | Funzione di callback attivata quando la voce di menu viene cliccata                                            |
+| nomeClasse    | stringa         | Nome opzionale per stile aggiuntivo                                                                            |
+
+
+
 
 </Tab>
 </Tabs>
 
-## Variants
+## Varianti
 
 Le diverse varianti del componente voce di menu includono le seguenti:
 
@@ -67,7 +72,7 @@ Le diverse varianti del componente voce di menu includono le seguenti:
 Una voce di menu in stile comando all'interno di un menu per indicare le scorciatoie da tastiera.
 
 <Tabs>
-<Tab title="Usage">
+<Tab title="Utilizzo">
 
 ```jsx
 import { IconBell } from "@tabler/icons-react";
@@ -92,18 +97,22 @@ export const MyComponent = () => {
 };
 ```
 
-</Tab>
-<Tab title="Props">
 
-| Props         | Tipo            | Descrizione                                                                   |
-| ------------- | --------------- | ----------------------------------------------------------------------------- |
-| IconaSinistra | IconaComponente | Un'icona opzionale a sinistra visualizzata prima del testo nella voce di menu |
-| testo         | string          | Il contenuto di testo della voce di menu                                      |
-| firstHotKey   | string          | Il primo collegamento da tastiera associato al comando                        |
-| secondHotKey  | string          | Il secondo collegamento da tastiera associato al comando                      |
-| isSelected    | booleano        | Indica se la voce di menu è selezionata o evidenziata                         |
-| onClick       | funzione        | Funzione di callback attivata quando la voce di menu viene cliccata           |
-| nomeClasse    | string          | Nome opzionale per stile aggiuntivo                                           |
+</Tab>
+<Tab title="Proprietà">
+
+
+| Proprietà    | Tipo            | Descrizione                                                                   |
+| ------------ | --------------- | ----------------------------------------------------------------------------- |
+| LeftIcon     | IconaComponente | Un'icona opzionale a sinistra visualizzata prima del testo nella voce di menu |
+| testo        | stringa         | Il contenuto di testo della voce di menu                                      |
+| firstHotKey  | stringa         | Il primo collegamento da tastiera associato al comando                        |
+| secondHotKey | stringa         | Il secondo collegamento da tastiera associato al comando                      |
+| isSelected   | booleano        | Indica se la voce di menu è selezionata o evidenziata                         |
+| onClick      | funzione        | Funzione di callback attivata quando la voce di menu viene cliccata           |
+| nomeClasse   | stringa         | Nome opzionale per lo stile aggiuntivo                                        |
+
+
 
 </Tab>
 </Tabs>
@@ -113,7 +122,7 @@ export const MyComponent = () => {
 Un componente di menu trascinabile progettato per essere utilizzato in un menu o elenco in cui gli elementi possono essere trascinati e azioni aggiuntive possono essere eseguite tramite pulsanti icona.
 
 <Tabs>
-<Tab title="Usage">
+<Tab title="Utilizzo">
 
 ```jsx
 import { IconBell } from "@tabler/icons-react";
@@ -141,18 +150,22 @@ export const MyComponent = () => {
 ```
 
 </Tab>
-<Tab title="Props">
+<Tab title="Proprietà">
 
-| Props          | Tipo            | Descrizione                                                                                                         |
-| -------------- | --------------- | ------------------------------------------------------------------------------------------------------------------- |
-| IconaSinistra  | IconaComponente | Un'icona opzionale a sinistra visualizzata prima del testo nella voce di menu                                       |
-| accento        | string          | Specifica il colore dell'accento della voce di menu. Può essere `default`, `placeholder` o `danger` |
-| iconButtons    | array           | Un array di oggetti che rappresentano pulsanti icona aggiuntivi associati alla voce di menu                         |
-| isTooltipOpen  | booleano        | Controlla la visibilità del tooltip associato alla voce di menu                                                     |
-| onClick        | funzione        | Funzione di callback da attivare quando si fa clic sul collegamento                                                 |
-| testo          | string          | Il contenuto di testo della voce di menu                                                                            |
-| isDragDisabled | booleano        | Indica se il trascinamento è disabilitato                                                                           |
-| nomeClasse     | string          | Nome opzionale per stile aggiuntivo                                                                                 |
+
+| Proprietà      | Tipo            | Descrizione                                                                                         |
+| -------------- | --------------- | --------------------------------------------------------------------------------------------------- |
+| LeftIcon       | IconaComponente | Un'icona opzionale a sinistra visualizzata prima del testo nella voce di menu                       |
+| accento        | stringa         | Specifica il colore dell'accento della voce di menu. Può essere `default`, `placeholder` o `danger` |
+| iconButtons    | array           | Un array di oggetti che rappresentano pulsanti icona aggiuntivi associati alla voce di menu         |
+| isTooltipOpen  | booleano        | Controlla la visibilità del tooltip associato alla voce di menu                                     |
+| onClick        | funzione        | Funzione di callback attivata quando il link viene cliccato                                         |
+| testo          | stringa         | Il contenuto di testo della voce di menu                                                            |
+| isDragDisabled | booleano        | Indica se il trascinamento è disabilitato                                                           |
+| nomeClasse     | stringa         | Nome opzionale per lo stile aggiuntivo                                                              |
+
+
+
 
 </Tab>
 </Tabs>
@@ -162,7 +175,7 @@ export const MyComponent = () => {
 Fornisce un modo per implementare la funzionalità di selezione multipla con una casella di controllo associata.
 
 <Tabs>
-<Tab title="Usage">
+<Tab title="Utilizzo">
 
 ```jsx
 import { IconBell } from "@tabler/icons-react";
@@ -182,15 +195,19 @@ export const MyComponent = () => {
 ```
 
 </Tab>
-<Tab title="Props">
+<Tab title="Proprietà">
 
-| Props          | Tipo            | Descrizione                                                                     |
+
+| Proprietà      | Tipo            | Descrizione                                                                     |
 | -------------- | --------------- | ------------------------------------------------------------------------------- |
-| IconaSinistra  | IconaComponente | Un'icona opzionale a sinistra visualizzata prima del testo nella voce di menu   |
-| testo          | string          | Il contenuto di testo della voce di menu                                        |
-| selezionato    | booleano        | Indica se la voce di menu è selezionata (segnata)            |
+| LeftIcon       | IconaComponente | Un'icona opzionale a sinistra visualizzata prima del testo nella voce di menu   |
+| testo          | stringa         | Il contenuto di testo della voce di menu                                        |
+| selected       | booleano        | Indica se la voce di menu è selezionata (segnata)                               |
 | onSelectChange | funzione        | Funzione di callback attivata quando cambia lo stato della casella di controllo |
-| nomeClasse     | string          | Nome opzionale per stile aggiuntivo                                             |
+| nomeClasse     | stringa         | Nome opzionale per lo stile aggiuntivo                                          |
+
+
+
 
 </Tab>
 </Tabs>
@@ -200,7 +217,7 @@ export const MyComponent = () => {
 Una voce di menu a selezione multipla con un avatar, una casella di controllo per la selezione e contenuto testuale.
 
 <Tabs>
-<Tab title="Usage">
+<Tab title="Utilizzo">
 
 ```jsx
 import { MenuItemMultiSelectAvatar } from "twenty-ui/display";
@@ -221,15 +238,19 @@ export const MyComponent = () => {
 ```
 
 </Tab>
-<Tab title="Props">
+<Tab title="Proprietà">
 
-| Props          | Tipo        | Descrizione                                                                     |
+
+| Proprietà      | Tipo        | Descrizione                                                                     |
 | -------------- | ----------- | ------------------------------------------------------------------------------- |
-| avatar         | `ReactNode` | L'avatar o l'icona da visualizzare sul lato sinistro della voce di menu         |
-| testo          | string      | Il contenuto di testo della voce di menu                                        |
-| selezionato    | booleano    | Indica se la voce di menu è selezionata (segnata)            |
+| avatar         | `ReactNode` | L'avatar o icona da visualizzare sul lato sinistro della voce di menu           |
+| testo          | stringa     | Il contenuto di testo della voce di menu                                        |
+| selected       | booleano    | Indica se la voce di menu è selezionata (segnata)                               |
 | onSelectChange | funzione    | Funzione di callback attivata quando cambia lo stato della casella di controllo |
-| nomeClasse     | string      | Nome opzionale per stile aggiuntivo                                             |
+| nomeClasse     | stringa     | Nome opzionale per lo stile aggiuntivo                                          |
+
+
+
 
 </Tab>
 </Tabs>
@@ -239,7 +260,7 @@ export const MyComponent = () => {
 Una voce di menu con un'icona opzionale a sinistra, contenuto testuale e un'icona a freccia verso destra.
 
 <Tabs>
-<Tab title="Usage">
+<Tab title="Utilizzo">
 
 ```jsx
 import { IconBell } from "@tabler/icons-react";
@@ -262,14 +283,18 @@ export const MyComponent = () => {
 ```
 
 </Tab>
-<Tab title="Props">
+<Tab title="Proprietà">
 
-| Props         | Tipo            | Descrizione                                                                   |
-| ------------- | --------------- | ----------------------------------------------------------------------------- |
-| IconaSinistra | IconaComponente | Un'icona opzionale a sinistra visualizzata prima del testo nella voce di menu |
-| testo         | string          | Il contenuto di testo della voce di menu                                      |
-| onClick       | funzione        | Funzione di callback attivata quando la voce di menu viene cliccata           |
-| nomeClasse    | string          | Nome opzionale per stile aggiuntivo                                           |
+
+| Proprietà  | Tipo            | Descrizione                                                                   |
+| ---------- | --------------- | ----------------------------------------------------------------------------- |
+| LeftIcon   | IconaComponente | Un'icona opzionale a sinistra visualizzata prima del testo nella voce di menu |
+| testo      | stringa         | Il contenuto di testo della voce di menu                                      |
+| onClick    | funzione        | Funzione di callback attivata quando la voce di menu viene cliccata           |
+| nomeClasse | stringa         | Nome opzionale per lo stile aggiuntivo                                        |
+
+
+
 
 </Tab>
 </Tabs>
@@ -279,7 +304,7 @@ export const MyComponent = () => {
 Una voce di menu selezionabile, con opzioni di contenuto a sinistra (icona e testo) e un indicatore (icona di selezione) per lo stato selezionato.
 
 <Tabs>
-<Tab title="Usage">
+<Tab title="Utilizzo">
 
 ```jsx
 import { IconBell } from "@tabler/icons-react";
@@ -305,17 +330,21 @@ export const MyComponent = () => {
 ```
 
 </Tab>
-<Tab title="Props">
+<Tab title="Proprietà">
 
-| Props         | Tipo            | Descrizione                                                                   |
-| ------------- | --------------- | ----------------------------------------------------------------------------- |
-| IconaSinistra | IconaComponente | Un'icona opzionale a sinistra visualizzata prima del testo nella voce di menu |
-| testo         | string          | Il contenuto di testo della voce di menu                                      |
-| selezionato   | booleano        | Indica se la voce di menu è selezionata (segnata)          |
-| disabilitato  | booleano        | Indica se la voce di menu è disabilitata                                      |
-| hovered       | booleano        | Indica se la voce di menu viene attualmente evidenziata                       |
-| onClick       | funzione        | Funzione di callback attivata quando la voce di menu viene cliccata           |
-| nomeClasse    | string          | Nome opzionale per stile aggiuntivo                                           |
+
+| Proprietà    | Tipo            | Descrizione                                                                   |
+| ------------ | --------------- | ----------------------------------------------------------------------------- |
+| LeftIcon     | IconaComponente | Un'icona opzionale a sinistra visualizzata prima del testo nella voce di menu |
+| testo        | stringa         | Il contenuto di testo della voce di menu                                      |
+| selected     | booleano        | Indica se la voce di menu è selezionata (segnata)                             |
+| disabilitato | booleano        | Indica se la voce di menu è disabilitata                                      |
+| hovered      | booleano        | Indica se la voce di menu viene attualmente evidenziata                       |
+| onClick      | funzione        | Funzione di callback attivata quando la voce di menu viene cliccata           |
+| nomeClasse   | stringa         | Nome opzionale per lo stile aggiuntivo                                        |
+
+
+
 
 </Tab>
 </Tabs>
@@ -325,7 +354,7 @@ export const MyComponent = () => {
 Una voce di menu selezionabile con un avatar, opzioni di contenuto a sinistra (avatar e testo) e un indicatore (icona di selezione) per lo stato selezionato.
 
 <Tabs>
-<Tab title="Usage">
+<Tab title="Utilizzo">
 
 ```jsx
 import { MenuItemSelectAvatar } from "twenty-ui/display";
@@ -355,18 +384,22 @@ export const MyComponent = () => {
 ```
 
 </Tab>
-<Tab title="Props">
+<Tab title="Proprietà">
 
-| Props        | Tipo        | Descrizione                                                             |
+
+| Proprietà    | Tipo        | Descrizione                                                             |
 | ------------ | ----------- | ----------------------------------------------------------------------- |
 | avatar       | `ReactNode` | L'avatar o l'icona da visualizzare sul lato sinistro della voce di menu |
-| testo        | string      | Il contenuto di testo della voce di menu                                |
-| selezionato  | booleano    | Indica se la voce di menu è selezionata (segnata)    |
+| testo        | stringa     | Il contenuto di testo della voce di menu                                |
+| selezionato  | booleano    | Indica se la voce di menu è selezionata (segnata)                       |
 | disabilitato | booleano    | Indica se la voce di menu è disabilitata                                |
 | hovered      | booleano    | Indica se la voce di menu viene attualmente evidenziata                 |
-| testId       | string      | L'attributo data-testid per scopi di test                               |
+| testId       | stringa     | L'attributo data-testid per scopi di test                               |
 | onClick      | funzione    | Funzione di callback attivata quando la voce di menu viene cliccata     |
-| nomeClasse   | string      | Nome opzionale per stile aggiuntivo                                     |
+| nomeClasse   | stringa     | Nome opzionale per lo stile aggiuntivo                                  |
+
+
+
 
 </Tab>
 </Tabs>
@@ -376,7 +409,7 @@ export const MyComponent = () => {
 Una voce di menu selezionabile con un campione di colore per scenari in cui si desidera che gli utenti scelgano un colore da un menu.
 
 <Tabs>
-<Tab title="Usage">
+<Tab title="Utilizzo">
 
 ```jsx
 import { MenuItemSelectColor } from "twenty-ui/display";
@@ -401,27 +434,31 @@ export const MyComponent = () => {
 ```
 
 </Tab>
-<Tab title="Props">
+<Tab title="Proprietà">
 
-| Props        | Tipo     | Descrizione                                                                                                                                                                                                                        |
-| ------------ | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| colore       | string   | Il colore del tema che viene visualizzato come campione nella voce di menu. Le opzioni includono: `verde`, `turchese`, `cielo`, `blu`, `viola`, `rosa`, `rosso`, `arancione`, `giallo`, e `grigio` |
-| selezionato  | booleano | Indica se la voce di menu è selezionata (segnata)                                                                                                                                                               |
-| disabilitato | booleano | Indica se la voce di menu è disabilitata                                                                                                                                                                                           |
-| hovered      | booleano | Indica se la voce di menu viene attualmente evidenziata                                                                                                                                                                            |
-| variante     | string   | La variante del campione di colore. Può essere `default` o `pipeline`                                                                                                                                              |
-| onClick      | funzione | Funzione di callback attivata quando la voce di menu viene cliccata                                                                                                                                                                |
-| nomeClasse   | string   | Nome opzionale per stile aggiuntivo                                                                                                                                                                                                |
+
+| Proprietà    | Tipo     | Descrizione                                                                                                                                                                                        |
+| ------------ | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| colore       | stringa  | Il colore del tema che viene visualizzato come campione nella voce di menu. Le opzioni includono: `verde`, `turchese`, `cielo`, `blu`, `viola`, `rosa`, `rosso`, `arancione`, `giallo`, e `grigio` |
+| selezionato  | booleano | Indica se la voce di menu è selezionata (segnata)                                                                                                                                                  |
+| disabilitato | booleano | Indica se la voce di menu è disabilitata                                                                                                                                                           |
+| hovered      | booleano | Indica se la voce di menu viene attualmente evidenziata                                                                                                                                            |
+| variante     | stringa  | La variante del campione di colore. Può essere `default` o `pipeline`                                                                                                                              |
+| onClick      | funzione | Funzione di callback attivata quando la voce di menu viene cliccata                                                                                                                                |
+| nomeClasse   | stringa  | Nome opzionale per lo stile aggiuntivo                                                                                                                                                             |
+
+
+
 
 </Tab>
 </Tabs>
 
-### Attiva/Disattiva
+### Toggle
 
 Una voce di menu con un interruttore a levetta associato per permettere agli utenti di abilitare o disabilitare una funzionalità specifica
 
 <Tabs>
-<Tab title="Usage">
+<Tab title="Utilizzo">
 
 ```jsx
 import { IconBell } from '@tabler/icons-react';
@@ -443,16 +480,20 @@ export const MyComponent = () => {
 ```
 
 </Tab>
-<Tab title="Props">
+<Tab title="Proprietà">
 
-| Props                  | Tipo            | Descrizione                                                                   |
+
+| Proprietà              | Tipo            | Descrizione                                                                   |
 | ---------------------- | --------------- | ----------------------------------------------------------------------------- |
-| IconaSinistra          | IconaComponente | Un'icona opzionale a sinistra visualizzata prima del testo nella voce di menu |
-| testo                  | string          | Il contenuto di testo della voce di menu                                      |
+| LeftIcon               | IconaComponente | Un'icona opzionale a sinistra visualizzata prima del testo nella voce di menu |
+| testo                  | stringa         | Il contenuto di testo della voce di menu                                      |
 | attivato               | booleano        | Indica se l'interruttore è nello stato "on" o "off"                           |
 | onToggleChange         | funzione        | Funzione di callback attivata quando cambia lo stato dell'interruttore        |
-| dimensioneInterruttore | string          | La dimensione dell'interruttore a levetta. Può essere \\    |
-| nomeClasse             | string          | Nome opzionale per stile aggiuntivo                                           |
+| dimensioneInterruttore | stringa         | La dimensione dell'interruttore a levetta. Può essere \                       |
+| nomeClasse             | stringa         | Nome opzionale per lo stile aggiuntivo                                        |
+
+
+
 
 </Tab>
 </Tabs>

@@ -1,6 +1,6 @@
 import { isNull, isUndefined } from '@sniptt/guards';
 
-import { type ObjectMetadataItem } from '@/object-metadata/types/ObjectMetadataItem';
+import { type EnrichedObjectMetadataItem } from '@/object-metadata/types/EnrichedObjectMetadataItem';
 import { computePossibleMorphGqlFieldForFieldName } from '@/object-record/cache/utils/computePossibleMorphGqlFieldForFieldName';
 import { getFieldMetadataFromGqlField } from '@/object-record/cache/utils/getFieldMetadataFromGqlField';
 import { getMorphRelationFromFieldMetadataAndGqlField } from '@/object-record/cache/utils/getMorphRelationFromFieldMetadataAndGqlField';
@@ -10,9 +10,8 @@ import { getRecordConnectionFromRecords } from '@/object-record/cache/utils/getR
 import { getRefName } from '@/object-record/cache/utils/getRefName';
 import { type RecordGqlNode } from '@/object-record/graphql/types/RecordGqlNode';
 import { type ObjectRecord } from '@/object-record/types/ObjectRecord';
-import { isDefined } from 'twenty-shared/utils';
+import { isDefined, pascalCase } from 'twenty-shared/utils';
 import { FieldMetadataType, RelationType } from '~/generated-metadata/graphql';
-import { pascalCase } from '~/utils/string/pascalCase';
 
 export const getRecordNodeFromRecord = <T extends ObjectRecord>({
   objectMetadataItems,
@@ -22,9 +21,9 @@ export const getRecordNodeFromRecord = <T extends ObjectRecord>({
   computeReferences = true,
   isRootLevel = true,
 }: {
-  objectMetadataItems: ObjectMetadataItem[];
+  objectMetadataItems: EnrichedObjectMetadataItem[];
   objectMetadataItem: Pick<
-    ObjectMetadataItem,
+    EnrichedObjectMetadataItem,
     'fields' | 'namePlural' | 'nameSingular'
   >;
   recordGqlFields?: Record<string, any>;

@@ -1,5 +1,3 @@
-import { useTheme } from '@emotion/react';
-
 import {
   StyledMenuItemIconCheck,
   StyledMenuItemLabel,
@@ -8,6 +6,12 @@ import {
 
 import { ColorSample, type ColorSampleVariant } from '@ui/display';
 import { type ThemeColor } from '@ui/theme';
+import { ThemeContext } from '@ui/theme-constants';
+import { useContext } from 'react';
+import {
+  DEFAULT_COLOR_LABELS,
+  type ColorLabels,
+} from '../constants/DefaultColorLabels';
 import { StyledMenuItemSelect } from './MenuItemSelect';
 
 type MenuItemSelectColorProps = {
@@ -18,34 +22,7 @@ type MenuItemSelectColorProps = {
   focused?: boolean;
   color: ThemeColor;
   variant?: ColorSampleVariant;
-};
-
-export const colorLabels: Record<ThemeColor, string> = {
-  gray: 'Gray',
-  tomato: 'Tomato',
-  red: 'Red',
-  ruby: 'Ruby',
-  crimson: 'Crimson',
-  pink: 'Pink',
-  plum: 'Plum',
-  purple: 'Purple',
-  violet: 'Violet',
-  iris: 'Iris',
-  cyan: 'Cyan',
-  turquoise: 'Turquoise',
-  sky: 'Sky',
-  blue: 'Blue',
-  jade: 'Jade',
-  green: 'Green',
-  grass: 'Grass',
-  mint: 'Mint',
-  lime: 'Lime',
-  bronze: 'Bronze',
-  gold: 'Gold',
-  brown: 'Brown',
-  orange: 'Orange',
-  amber: 'Amber',
-  yellow: 'Yellow',
+  colorLabels?: ColorLabels;
 };
 
 export const MenuItemSelectColor = ({
@@ -56,8 +33,9 @@ export const MenuItemSelectColor = ({
   disabled,
   focused,
   variant = 'default',
+  colorLabels = DEFAULT_COLOR_LABELS,
 }: MenuItemSelectColorProps) => {
-  const theme = useTheme();
+  const { theme } = useContext(ThemeContext);
 
   return (
     <StyledMenuItemSelect

@@ -1,4 +1,4 @@
-import { type ObjectMetadataItem } from '@/object-metadata/types/ObjectMetadataItem';
+import { type EnrichedObjectMetadataItem } from '@/object-metadata/types/EnrichedObjectMetadataItem';
 import {
   type RecordGroupDefinition,
   RecordGroupDefinitionType,
@@ -13,7 +13,7 @@ export const mapViewGroupsToRecordGroupDefinitions = ({
   viewGroups,
 }: {
   mainGroupByFieldMetadataId: string;
-  objectMetadataItem: ObjectMetadataItem;
+  objectMetadataItem: EnrichedObjectMetadataItem;
   viewGroups: ViewGroup[];
 }): RecordGroupDefinition[] => {
   if (viewGroups?.length === 0) {
@@ -41,6 +41,14 @@ export const mapViewGroupsToRecordGroupDefinitions = ({
       const selectedOption = selectFieldMetadataItem.options?.find(
         (option) => option.value === viewGroup.fieldValue,
       );
+
+      if (
+        !selectedOption &&
+        isDefined(viewGroup.fieldValue) &&
+        viewGroup.fieldValue !== ''
+      ) {
+        return null;
+      }
 
       if (!selectedOption && selectFieldMetadataItem.isNullable === false) {
         return null;

@@ -1,12 +1,10 @@
 import { RecordBoardColumnHeader } from '@/object-record/record-board/record-board-column/components/RecordBoardColumnHeader';
 import { RecordBoardColumnContext } from '@/object-record/record-board/record-board-column/contexts/RecordBoardColumnContext';
-import { emptyRecordGroupByIdComponentFamilyState } from '@/object-record/record-group/states/emptyRecordGroupByIdComponentFamilyState';
+import { useShouldHideRecordGroup } from '@/object-record/record-group/hooks/useShouldHideRecordGroup';
 import { recordGroupDefinitionFamilyState } from '@/object-record/record-group/states/recordGroupDefinitionFamilyState';
 import { recordIndexRecordIdsByGroupComponentFamilyState } from '@/object-record/record-index/states/recordIndexRecordIdsByGroupComponentFamilyState';
-import { recordIndexShouldHideEmptyRecordGroupsComponentState } from '@/object-record/record-index/states/recordIndexShouldHideEmptyRecordGroupsComponentState';
-import { useRecoilComponentFamilyValue } from '@/ui/utilities/state/component-state/hooks/useRecoilComponentFamilyValue';
-import { useRecoilComponentValue } from '@/ui/utilities/state/component-state/hooks/useRecoilComponentValue';
-import { useRecoilValue } from 'recoil';
+import { useAtomFamilyStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomFamilyStateValue';
+import { useAtomComponentFamilyStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomComponentFamilyStateValue';
 import { isDefined } from 'twenty-shared/utils';
 
 type RecordBoardColumnHeaderWrapperProps = {
@@ -18,25 +16,19 @@ export const RecordBoardColumnHeaderWrapper = ({
   columnId,
   columnIndex,
 }: RecordBoardColumnHeaderWrapperProps) => {
-  const recordGroupDefinition = useRecoilValue(
-    recordGroupDefinitionFamilyState(columnId),
+  const recordGroupDefinition = useAtomFamilyStateValue(
+    recordGroupDefinitionFamilyState,
+    columnId,
   );
 
-  const recordIdsByGroup = useRecoilComponentFamilyValue(
+  const recordIndexRecordIdsByGroup = useAtomComponentFamilyStateValue(
     recordIndexRecordIdsByGroupComponentFamilyState,
     columnId,
   );
 
-  const shouldHideEmptyRecordGroups = useRecoilComponentValue(
-    recordIndexShouldHideEmptyRecordGroupsComponentState,
-  );
+  const shouldHide = useShouldHideRecordGroup(columnId);
 
-  const isRecordGroupEmpty = useRecoilComponentFamilyValue(
-    emptyRecordGroupByIdComponentFamilyState,
-    columnId,
-  );
-
-  if (shouldHideEmptyRecordGroups && isRecordGroupEmpty) {
+  if (shouldHide) {
     return null;
   }
 
@@ -49,7 +41,7 @@ export const RecordBoardColumnHeaderWrapper = ({
       value={{
         columnId,
         columnDefinition: recordGroupDefinition,
-        recordIds: recordIdsByGroup,
+        recordIds: recordIndexRecordIdsByGroup,
         columnIndex,
       }}
     >

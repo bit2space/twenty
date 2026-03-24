@@ -1,9 +1,8 @@
 import { currentWorkspaceMemberState } from '@/auth/states/currentWorkspaceMemberState';
-import { tzName } from '@date-fns/tz';
-import { useRecoilValue } from 'recoil';
+import { useAtomStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomStateValue';
 
 export const useUserTimezone = () => {
-  const currentWorkspaceMember = useRecoilValue(currentWorkspaceMemberState);
+  const currentWorkspaceMember = useAtomStateValue(currentWorkspaceMemberState);
   const systemTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
   const userTimezone =
@@ -13,13 +12,9 @@ export const useUserTimezone = () => {
 
   const isSystemTimezone = userTimezone === systemTimeZone;
 
-  const getTimezoneAbbreviationForPointInTime = (date: Date) => {
-    return tzName(userTimezone, date, 'short');
-  };
-
   return {
     userTimezone,
     isSystemTimezone,
-    getTimezoneAbbreviationForPointInTime,
+    systemTimeZone,
   };
 };

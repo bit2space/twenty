@@ -4,13 +4,13 @@ image: /images/user-guide/kanban-views/kanban.png
 ---
 
 <Frame>
-  <img src="/images/user-guide/kanban-views/kanban.png" alt="Header" />
+  <img src="/images/user-guide/kanban-views/kanban.png" alt="Başlık" />
 </Frame>
 
 Bir menü veya navigasyon listesinde kullanılmak üzere tasarlanmış çok yönlü bir menü öğesi.
 
 <Tabs>
-<Tab title="Usage">
+<Tab title="Kullanım">
 
 ```jsx
 import { IconBell } from "@tabler/icons-react";
@@ -41,19 +41,24 @@ export const MyComponent = () => {
 };
 ```
 
-</Tab>
-<Tab title="Props">
 
-| Özellikler    | Tür           | Açıklama                                                                                                                      |
-| ------------- | ------------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| Sol Simge     | IconComponent | Metin öncesinde görüntülenen isteğe bağlı bir sol simge                                                                       |
-| vurgula       | metin         | Menü öğesinin vurgu rengini belirtir. Options include: `default`, `danger`, and `placeholder` |
-| metin         | metin         | Menü öğesinin metin içeriği                                                                                                   |
-| simgeDüğmeler | dizi          | Menü öğesiyle ilgili ek simge düğmelerini temsil eden nesnelerin dizisi                                                       |
-| isTooltipOpen | boolean       | Menü öğesiyle ilgili ipucu açıklamasının görünürlüğünü kontrol eder                                                           |
-| testId        | metin         | Test amaçları için data-testid özelliği                                                                                       |
-| tıklandığında | fonksiyon     | Menü öğesi tıklandığında tetiklenen geri çağırma işlevi                                                                       |
-| sınıfAdı      | metin         | Ek stil için isteğe bağlı ad                                                                                                  |
+</Tab>
+<Tab title="Özellikler">
+
+
+| Özellikler    | Tür           | Açıklama                                                                                      |
+| ------------- | ------------- | --------------------------------------------------------------------------------------------- |
+| Sol Simge     | IconComponent | Metin öncesinde görüntülenen isteğe bağlı bir sol simge                                       |
+| vurgula       | dize          | Menü öğesinin vurgu rengini belirtir. Options include: `default`, `danger`, and `placeholder` |
+| metin         | dize          | Menü öğesinin metin içeriği                                                                   |
+| simgeDüğmeler | dizi          | Menü öğesiyle ilgili ek simge düğmelerini temsil eden nesnelerin dizisi                       |
+| isTooltipOpen | boolean       | Menü öğesiyle ilgili ipucu açıklamasının görünürlüğünü kontrol eder                           |
+| testId        | string        | Test amaçları için data-testid özelliği                                                       |
+| tıklandığında | fonksiyon     | Menü öğesi tıklandığında tetiklenen geri çağırma işlevi                                       |
+| sınıfAdı      | dize          | Ek stil için isteğe bağlı isim                                                                |
+
+
+
 
 </Tab>
 </Tabs>
@@ -67,7 +72,7 @@ Menü öğesi bileşeninin farklı varyantları şunları içerir:
 Klavye kısayollarını belirtmek için bir menü içinde komut tarzı bir menü öğesi.
 
 <Tabs>
-<Tab title="Usage">
+<Tab title="Kullanım">
 
 ```jsx
 import { IconBell } from "@tabler/icons-react";
@@ -92,18 +97,22 @@ export const MyComponent = () => {
 };
 ```
 
-</Tab>
-<Tab title="Props">
 
-| Özellikler    | Tür           | Açıklama                                                                      |
-| ------------- | ------------- | ----------------------------------------------------------------------------- |
-| Sol Simge     | IconComponent | Metin öncesinde görüntülenen isteğe bağlı bir sol simge                       |
-| metin         | metin         | Menü öğesinin metin içeriği                                                   |
-| firstHotKey   | metin         | Komutla ilişkilendirilmiş ilk klavye kısayolu                                 |
-| secondHotKey  | metin         | Komutla ilişkilendirilmiş ikinci klavye kısayolu                              |
-| isSelected    | boolean       | Menü öğesinin seçilip seçilmediğini veya vurgulanıp vurgulanmadığını belirtir |
-| tıklandığında | function      | Menü öğesi tıklandığında tetiklenen geri çağırma işlevi                       |
-| sınıfAdı      | metin         | Ek stil için isteğe bağlı ad                                                  |
+</Tab>
+<Tab title="Özellikler">
+
+
+| Özellikler   | Tür           | Açıklama                                                                      |
+| ------------ | ------------- | ----------------------------------------------------------------------------- |
+| LeftIcon     | IconComponent | Metin öncesinde görüntülenen isteğe bağlı bir sol simge                       |
+| metin        | dize          | Menü öğesinin metin içeriği                                                   |
+| firstHotKey  | dize          | Komutla ilişkilendirilmiş ilk klavye kısayolu                                 |
+| secondHotKey | dize          | Komutla ilişkilendirilmiş ikinci klavye kısayolu                              |
+| isSelected   | boolean       | Menü öğesinin seçilip seçilmediğini veya vurgulanıp vurgulanmadığını belirtir |
+| onClick      | fonksiyon     | Menü öğesi tıklandığında tetiklenen geri çağırma işlevi                       |
+| className    | dize          | Ek stil için isteğe bağlı isim                                                |
+
+
 
 </Tab>
 </Tabs>
@@ -113,7 +122,7 @@ export const MyComponent = () => {
 A draggable menu item component designed to be used in a menu or list where items can be dragged, and additional actions can be performed through icon buttons.
 
 <Tabs>
-<Tab title="Usage">
+<Tab title="Kullanım">
 
 ```jsx
 import { IconBell } from "@tabler/icons-react";
@@ -141,18 +150,22 @@ export const MyComponent = () => {
 ```
 
 </Tab>
-<Tab title="Props">
+<Tab title="Özellikler">
 
-| Özellikler     | Tür           | Açıklama                                                                                 |
-| -------------- | ------------- | ---------------------------------------------------------------------------------------- |
-| Sol Simge      | IconComponent | Metin öncesinde görüntülenen isteğe bağlı bir sol simge                                  |
-| vurgula        | metin         | Menü öğesinin vurgu rengi. `default`, `placeholder` ve `danger` olabilir |
-| simgeDüğmeler  | dizi          | Menü öğesiyle ilgili ek simge düğmelerini temsil eden nesnelerin dizisi                  |
-| isTooltipOpen  | boolean       | Menü öğesiyle ilgili ipucu açıklamasının görünürlüğünü kontrol eder                      |
-| tıklandığında  | fonksiyon     | Bağlantıya tıklandığında tetiklenecek callback işlevi                                    |
-| metin          | metin         | Menü öğesinin metin içeriği                                                              |
-| isDragDisabled | boolean       | Sürükleme işleminin devre dışı olup olmadığını belirtir                                  |
-| sınıfAdı       | metin         | Ek stil için isteğe bağlı ad                                                             |
+
+| Özellikler     | Tür           | Açıklama                                                                 |
+| -------------- | ------------- | ------------------------------------------------------------------------ |
+| LeftIcon       | IconComponent | Metin öncesinde görüntülenen isteğe bağlı bir sol simge                  |
+| accent         | dize          | Menü öğesinin vurgu rengi. `default`, `placeholder` ve `danger` olabilir |
+| iconButtons    | dizi          | Menü öğesiyle ilgili ek simge düğmelerini temsil eden nesnelerin dizisi  |
+| isTooltipOpen  | boolean       | Menü öğesiyle ilgili ipucu açıklamasının görünürlüğünü kontrol eder      |
+| onClick        | fonksiyon     | Bağlantıya tıklandığında tetiklenecek callback işlevi                    |
+| metin          | dize          | Menü öğesinin metin içeriği                                              |
+| isDragDisabled | boolean       | Sürükleme işleminin devre dışı olup olmadığını belirtir                  |
+| className      | dize          | Ek stil için isteğe bağlı isim                                           |
+
+
+
 
 </Tab>
 </Tabs>
@@ -162,7 +175,7 @@ export const MyComponent = () => {
 Bir onay kutusu ile birlikte çoklu seçim işlevselliği sağlanır.
 
 <Tabs>
-<Tab title="Usage">
+<Tab title="Kullanım">
 
 ```jsx
 import { IconBell } from "@tabler/icons-react";
@@ -182,15 +195,19 @@ export const MyComponent = () => {
 ```
 
 </Tab>
-<Tab title="Props">
+<Tab title="Özellikler">
 
-| Özellikler     | Tür           | Açıklama                                                                    |
-| -------------- | ------------- | --------------------------------------------------------------------------- |
-| Sol Simge      | IconComponent | Metin öncesinde görüntülenen isteğe bağlı bir sol simge                     |
-| metin          | metin         | Menü öğesinin metin içeriği                                                 |
-| seçili         | boolean       | Menü öğesinin seçili (işaretli) olup olmadığını gösterir |
-| onSelectChange | function      | Onay kutusu durumu değiştiğinde tetiklenen geri çağırma işlevi              |
-| sınıfAdı       | metin         | Ek stil için isteğe bağlı ad                                                |
+
+| Özellikler     | Tür           | Açıklama                                                                     |
+| -------------- | ------------- | ---------------------------------------------------------------------------- |
+| LeftIcon       | IconComponent | Metin öncesinde görüntülenen isteğe bağlı bir sol simge                      |
+| metin          | dize          | Menü öğesinin metin içeriği                                                  |
+| selected       | boolean       | Menü öğesinin seçilip seçilmediğini (işaretlenip işaretlenmediğini) belirtir |
+| onSelectChange | fonksiyon     | Onay kutusu durumu değiştiğinde tetiklenen geri çağırma işlevi               |
+| className      | dize          | Ek stil için isteğe bağlı isim                                               |
+
+
+
 
 </Tab>
 </Tabs>
@@ -200,7 +217,7 @@ export const MyComponent = () => {
 Bir avatar, bir seçim için onay kutusu ve metin içeriği ile bir çoklu seçim menü öğesi.
 
 <Tabs>
-<Tab title="Usage">
+<Tab title="Kullanım">
 
 ```jsx
 import { MenuItemMultiSelectAvatar } from "twenty-ui/display";
@@ -221,15 +238,19 @@ export const MyComponent = () => {
 ```
 
 </Tab>
-<Tab title="Props">
+<Tab title="Özellikler">
 
-| Özellikler     | Tür         | Açıklama                                                                    |
-| -------------- | ----------- | --------------------------------------------------------------------------- |
-| avatar         | `ReactNode` | Menü öğesinin sol tarafında gösterilecek avatar veya simge                  |
-| metin          | metin       | Menü öğesinin metin içeriği                                                 |
-| seçili         | boolean     | Menü öğesinin seçili (işaretli) olup olmadığını gösterir |
-| onSelectChange | fonksiyon   | Onay kutusu durumu değiştiğinde tetiklenen geri çağırma işlevi              |
-| sınıfAdı       | metin       | Ek stil için isteğe bağlı ad                                                |
+
+| Özellikler     | Tür         | Açıklama                                                                     |
+| -------------- | ----------- | ---------------------------------------------------------------------------- |
+| avatar         | `ReactNode` | Menü öğesinin sol tarafında görüntülenecek avatar veya simge                 |
+| metin          | dize        | Menü öğesinin metin içeriği                                                  |
+| selected       | boolean     | Menü öğesinin seçilip seçilmediğini (işaretlenip işaretlenmediğini) belirtir |
+| onSelectChange | fonksiyon   | Onay kutusu durumu değiştiğinde tetiklenen geri çağırma işlevi               |
+| className      | dize        | Ek stil için isteğe bağlı isim                                               |
+
+
+
 
 </Tab>
 </Tabs>
@@ -239,7 +260,7 @@ export const MyComponent = () => {
 İsteğe bağlı bir sol simge, metin içeriği ve sağda bir ok simgesi sunan bir menü öğesi.
 
 <Tabs>
-<Tab title="Usage">
+<Tab title="Kullanım">
 
 ```jsx
 import { IconBell } from "@tabler/icons-react";
@@ -262,14 +283,18 @@ export const MyComponent = () => {
 ```
 
 </Tab>
-<Tab title="Props">
+<Tab title="Özellikler">
 
-| Özellikler    | Tür           | Açıklama                                                |
-| ------------- | ------------- | ------------------------------------------------------- |
-| Sol Simge     | IconComponent | Metin öncesinde görüntülenen isteğe bağlı bir sol simge |
-| metin         | metin         | Menü öğesinin metin içeriği                             |
-| tıklandığında | fonksiyon     | Menü öğesi tıklandığında tetiklenen geri çağırma işlevi |
-| sınıfAdı      | metin         | Ek stil için isteğe bağlı ad                            |
+
+| Özellikler | Tür           | Açıklama                                                  |
+| ---------- | ------------- | --------------------------------------------------------- |
+| LeftIcon   | IconComponent | Metin öncesinde görüntülenen isteğe bağlı bir sol simge   |
+| metin      | dize          | Menü öğesinin metin içeriği                               |
+| onClick    | fonksiyon     | Menü öğesi tıklandığında tetiklenecek geri çağırma işlevi |
+| className  | dize          | Ek stil için isteğe bağlı isim                            |
+
+
+
 
 </Tab>
 </Tabs>
@@ -279,7 +304,7 @@ export const MyComponent = () => {
 Seçilebilir bir menü öğesi, isteğe bağlı sol içerik (simgeler ve metin) ve seçili durum için bir gösterge (kontrol simgesi) içerir.
 
 <Tabs>
-<Tab title="Usage">
+<Tab title="Kullanım">
 
 ```jsx
 import { IconBell } from "@tabler/icons-react";
@@ -305,17 +330,21 @@ export const MyComponent = () => {
 ```
 
 </Tab>
-<Tab title="Props">
+<Tab title="Özellikler">
 
-| Özellikler    | Tür           | Açıklama                                                                    |
-| ------------- | ------------- | --------------------------------------------------------------------------- |
-| Sol Simge     | IconComponent | Metin öncesinde görüntülenen isteğe bağlı bir sol simge                     |
-| metin         | metin         | Menü öğesinin metin içeriği                                                 |
-| seçili        | boolean       | Menü öğesinin seçili (işaretli) olup olmadığını gösterir |
-| devre dışı    | boolean       | Menü öğesinin devre dışı olup olmadığını gösterir                           |
-| hovered       | boolean       | Menü öğesinin şu anda üzerinden geçilip geçilmediğini gösterir              |
-| tıklandığında | function      | Menü öğesi tıklandığında tetiklenen geri çağırma işlevi                     |
-| sınıfAdı      | metin         | Ek stil için isteğe bağlı ad                                                |
+
+| Özellikler | Tür           | Açıklama                                                                     |
+| ---------- | ------------- | ---------------------------------------------------------------------------- |
+| LeftIcon   | IconComponent | Metin öncesinde görüntülenen isteğe bağlı bir sol simge                      |
+| metin      | dize          | Menü öğesinin metin içeriği                                                  |
+| selected   | boolean       | Menü öğesinin seçilip seçilmediğini (işaretlenip işaretlenmediğini) belirtir |
+| devre dışı | boolean       | Menü öğesinin devre dışı bırakılıp bırakılmadığını belirtir                  |
+| hovered    | boolean       | Menü öğesinin üzerine gelinip gelinmediğini belirtir                         |
+| onClick    | fonksiyon     | Menü öğesi tıklandığında tetiklenecek geri çağırma işlevi                    |
+| className  | dize          | Ek stil için isteğe bağlı isim                                               |
+
+
+
 
 </Tab>
 </Tabs>
@@ -325,7 +354,7 @@ export const MyComponent = () => {
 Bir avatar ve seçilmiş durum için gösterge (kontrol simgesi) ile beraber isteğe bağlı sol içerik (avatar ve metin) içeren bir seçilebilir menü öğesi.
 
 <Tabs>
-<Tab title="Usage">
+<Tab title="Kullanım">
 
 ```jsx
 import { MenuItemSelectAvatar } from "twenty-ui/display";
@@ -355,18 +384,22 @@ export const MyComponent = () => {
 ```
 
 </Tab>
-<Tab title="Props">
+<Tab title="Özellikler">
 
-| Özellikler    | Tür         | Açıklama                                                                    |
-| ------------- | ----------- | --------------------------------------------------------------------------- |
-| avatar        | `ReactNode` | Menü öğesinin sol tarafında gösterilecek avatar veya simge                  |
-| metin         | metin       | Menü öğesinin metin içeriği                                                 |
-| seçili        | boolean     | Menü öğesinin seçili (işaretli) olup olmadığını gösterir |
-| devre dışı    | boolean     | Menü öğesinin devre dışı olup olmadığını gösterir                           |
-| hovered       | boolean     | Menü öğesinin şu anda üzerinden geçilip geçilmediğini gösterir              |
-| testId        | metin       | Test amaçları için data-testid özelliği                                     |
-| tıklandığında | fonksiyon   | Menü öğesi tıklandığında tetiklenen geri çağırma işlevi                     |
-| sınıfAdı      | metin       | Ek stil için isteğe bağlı ad                                                |
+
+| Özellikler | Tür         | Açıklama                                                       |
+| ---------- | ----------- | -------------------------------------------------------------- |
+| avatar     | `ReactNode` | Menü öğesinin sol tarafında gösterilecek avatar veya simge     |
+| metin      | dize        | Menü öğesinin metin içeriği                                    |
+| seçili     | boolean     | Menü öğesinin seçili (işaretli) olup olmadığını gösterir       |
+| devre dışı | boolean     | Menü öğesinin devre dışı olup olmadığını gösterir              |
+| hovered    | boolean     | Menü öğesinin şu anda üzerinden geçilip geçilmediğini gösterir |
+| testId     | dize        | Test amaçları için data-testid özelliği                        |
+| onClick    | fonksiyon   | Menü öğesi tıklandığında tetiklenen geri çağırma işlevi        |
+| className  | dize        | Ek stil için isteğe bağlı isim                                 |
+
+
+
 
 </Tab>
 </Tabs>
@@ -376,7 +409,7 @@ export const MyComponent = () => {
 Kullanıcıların bir menüden renk seçmelerini istediğiniz senaryolar için renk örneğiyle birlikte seçilebilir bir menü öğesi.
 
 <Tabs>
-<Tab title="Usage">
+<Tab title="Kullanım">
 
 ```jsx
 import { MenuItemSelectColor } from "twenty-ui/display";
@@ -401,17 +434,21 @@ export const MyComponent = () => {
 ```
 
 </Tab>
-<Tab title="Props">
+<Tab title="Özellikler">
 
-| Özellikler    | Tür      | Açıklama                                                                                                                                                                                      |
-| ------------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| renk          | metin    | Menü öğesinde örnek olarak gösterilecek tema rengi. Seçenekler: `yeşil`, `turkuaz`, `gökyüzü`, `mavi`, `mor`, `pembe`, `kırmızı`, `turuncu`, `sarı`, ve `gri` |
-| seçili        | boolean  | Menü öğesinin seçili (işaretli) olup olmadığını gösterir                                                                                                                   |
-| devre dışı    | boolean  | Menü öğesinin devre dışı olup olmadığını gösterir                                                                                                                                             |
-| hovered       | boolean  | Menü öğesinin şu anda üzerinden geçilip geçilmediğini gösterir                                                                                                                                |
-| variant       | metin    | Renk örneğinin varyantı. Ya `varsayılan` ya da `pipeline` olabilir                                                                                                            |
-| tıklandığında | function | Menü öğesi tıklandığında tetiklenen geri çağırma işlevi                                                                                                                                       |
-| sınıfAdı      | metin    | Ek stil için isteğe bağlı ad                                                                                                                                                                  |
+
+| Özellikler | Tür       | Açıklama                                                                                                                                                      |
+| ---------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| renk       | dize      | Menü öğesinde örnek olarak gösterilecek tema rengi. Seçenekler: `yeşil`, `turkuaz`, `gökyüzü`, `mavi`, `mor`, `pembe`, `kırmızı`, `turuncu`, `sarı`, ve `gri` |
+| seçili     | boolean   | Menü öğesinin seçili (işaretli) olup olmadığını gösterir                                                                                                      |
+| devre dışı | boolean   | Menü öğesinin devre dışı olup olmadığını gösterir                                                                                                             |
+| hovered    | boolean   | Menü öğesinin şu anda üzerinden geçilip geçilmediğini gösterir                                                                                                |
+| varyant    | dize      | Renk örneğinin varyantı. Ya `varsayılan` ya da `pipeline` olabilir                                                                                            |
+| onClick    | fonksiyon | Menü öğesi tıklandığında tetiklenen geri çağırma işlevi                                                                                                       |
+| className  | dize      | Ek stil için isteğe bağlı isim                                                                                                                                |
+
+
+
 
 </Tab>
 </Tabs>
@@ -421,7 +458,7 @@ export const MyComponent = () => {
 A menu item with an associated toggle switch to allow users to enable or disable a specific feature
 
 <Tabs>
-<Tab title="Usage">
+<Tab title="Kullanım">
 
 ```jsx
 import { IconBell } from '@tabler/icons-react';
@@ -443,16 +480,20 @@ export const MyComponent = () => {
 ```
 
 </Tab>
-<Tab title="Props">
+<Tab title="Özellikler">
+
 
 | Özellikler     | Tür           | Açıklama                                                                   |
 | -------------- | ------------- | -------------------------------------------------------------------------- |
 | Sol Simge      | IconComponent | Metin öncesinde görüntülenen isteğe bağlı bir sol simge                    |
-| metin          | metin         | Menü öğesinin metin içeriği                                                |
+| metin          | dize          | Menü öğesinin metin içeriği                                                |
 | toggled        | boolean       | Açma/kapatma anahtarının açık veya kapalı konumda olup olmadığını gösterir |
-| onToggleChange | function      | Açma/kapatma anahtarı durumu değiştiğinde tetiklenen geri çağırma işlevi   |
-| toggleSize     | metin         | Anahtar değiştirme düğmesinin boyutu. It can be either \  |
-| sınıfAdı       | metin         | Ek stil için isteğe bağlı ad                                               |
+| onToggleChange | fonksiyon     | Açma/kapatma anahtarı durumu değiştiğinde tetiklenen geri çağırma işlevi   |
+| toggleSize     | dize          | Anahtar değiştirme düğmesinin boyutu. It can be either \                   |
+| className      | dize          | Ek stil için isteğe bağlı isim                                             |
+
+
+
 
 </Tab>
 </Tabs>

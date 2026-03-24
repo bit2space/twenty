@@ -1,4 +1,5 @@
 import { useObjectMetadataItem } from '@/object-metadata/hooks/useObjectMetadataItem';
+import { useObjectMetadataItems } from '@/object-metadata/hooks/useObjectMetadataItems';
 import { turnSortsIntoOrderBy } from '@/object-record/object-sort-dropdown/utils/turnSortsIntoOrderBy';
 import { currentRecordFilterGroupsComponentState } from '@/object-record/record-filter-group/states/currentRecordFilterGroupsComponentState';
 import { useFilterValueDependencies } from '@/object-record/record-filter/hooks/useFilterValueDependencies';
@@ -7,18 +8,21 @@ import { currentRecordFiltersComponentState } from '@/object-record/record-filte
 import { useCurrentRecordGroupDefinition } from '@/object-record/record-group/hooks/useCurrentRecordGroupDefinition';
 import { useRecordGroupFilter } from '@/object-record/record-group/hooks/useRecordGroupFilter';
 import { currentRecordSortsComponentState } from '@/object-record/record-sort/states/currentRecordSortsComponentState';
-import { useRecoilComponentValue } from '@/ui/utilities/state/component-state/hooks/useRecoilComponentValue';
+import { useAtomComponentStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomComponentStateValue';
 import {
   combineFilters,
   computeRecordGqlOperationFilter,
   turnAnyFieldFilterIntoRecordGqlFilter,
 } from 'twenty-shared/utils';
+
 export const useFindManyRecordIndexTableParams = (
   objectNameSingular: string,
+  instanceId?: string,
 ) => {
   const { objectMetadataItem } = useObjectMetadataItem({
     objectNameSingular,
   });
+  const { objectMetadataItems } = useObjectMetadataItems();
 
   const { recordGroupFilter } = useRecordGroupFilter(
     objectMetadataItem?.fields,
@@ -26,16 +30,19 @@ export const useFindManyRecordIndexTableParams = (
 
   const currentRecordGroupDefinition = useCurrentRecordGroupDefinition();
 
-  const currentRecordFilterGroups = useRecoilComponentValue(
+  const currentRecordFilterGroups = useAtomComponentStateValue(
     currentRecordFilterGroupsComponentState,
+    instanceId,
   );
 
-  const currentRecordSorts = useRecoilComponentValue(
+  const currentRecordSorts = useAtomComponentStateValue(
     currentRecordSortsComponentState,
+    instanceId,
   );
 
-  const currentRecordFilters = useRecoilComponentValue(
+  const currentRecordFilters = useAtomComponentStateValue(
     currentRecordFiltersComponentState,
+    instanceId,
   );
 
   const { filterValueDependencies } = useFilterValueDependencies();
@@ -47,8 +54,9 @@ export const useFindManyRecordIndexTableParams = (
     filterValueDependencies,
   });
 
-  const anyFieldFilterValue = useRecoilComponentValue(
+  const anyFieldFilterValue = useAtomComponentStateValue(
     anyFieldFilterValueComponentState,
+    instanceId,
   );
 
   const { recordGqlOperationFilter: anyFieldFilter } =
@@ -57,11 +65,21 @@ export const useFindManyRecordIndexTableParams = (
       filterValue: anyFieldFilterValue,
     });
 
-  const orderBy = turnSortsIntoOrderBy(objectMetadataItem, currentRecordSorts);
+  const orderBy = turnSortsIntoOrderBy(
+    objectMetadataItem,
+    currentRecordSorts,
+    objectMetadataItems,
+  );
+
+  const combinedFilter = combineFilters([
+    currentFilters,
+    recordGroupFilter,
+    anyFieldFilter,
+  ]);
 
   return {
     objectNameSingular,
-    filter: combineFilters([currentFilters, recordGroupFilter, anyFieldFilter]),
+    filter: combinedFilter,
     orderBy,
     // If we have a current record group definition, we only want to fetch 8 records by page
     ...(currentRecordGroupDefinition ? { limit: 8 } : {}),

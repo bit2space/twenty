@@ -16,7 +16,7 @@ import { ObjectStandardOverridesDTO } from 'src/engine/metadata-modules/object-m
 
 @ObjectType('Object')
 @Authorize({
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // oxlint-disable-next-line @typescripttypescript/no-explicit-any
   authorize: (context: any) => ({
     workspaceId: { eq: context?.req?.workspace?.id },
   }),
@@ -31,6 +31,9 @@ import { ObjectStandardOverridesDTO } from 'src/engine/metadata-modules/object-m
 export class ObjectMetadataDTO {
   @IDField(() => UUIDScalarType)
   id: string;
+
+  @Field()
+  universalIdentifier: string;
 
   @Field()
   nameSingular: string;
@@ -56,6 +59,9 @@ export class ObjectMetadataDTO {
   @Field({ nullable: true })
   shortcut?: string;
 
+  @Field({ nullable: true })
+  color?: string;
+
   @FilterableField()
   isCustom: boolean;
 
@@ -77,8 +83,8 @@ export class ObjectMetadataDTO {
   @HideField()
   workspaceId: string;
 
-  @Field(() => UUIDScalarType, { nullable: true })
-  applicationId?: string;
+  @Field(() => UUIDScalarType)
+  applicationId: string;
 
   @Field()
   createdAt: Date;

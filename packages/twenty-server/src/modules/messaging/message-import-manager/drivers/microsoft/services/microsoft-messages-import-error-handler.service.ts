@@ -13,9 +13,9 @@ export class MicrosoftMessagesImportErrorHandler {
     private readonly microsoftNetworkErrorHandler: MicrosoftNetworkErrorHandler,
   ) {}
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // oxlint-disable-next-line @typescripttypescript/no-explicit-any
   public handleError(error: any): void {
-    this.logger.log(`Error fetching messages`, error);
+    this.logger.error(`Error fetching messages: ${JSON.stringify(error)}`);
 
     const networkError = this.microsoftNetworkErrorHandler.handleError(error);
 

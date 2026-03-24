@@ -2,7 +2,9 @@ import { WorkflowDiagramConnector } from '@/workflow/workflow-diagram/components
 import { VERTICAL_DISTANCE_BETWEEN_TWO_NODES } from '@/workflow/workflow-diagram/constants/VerticalDistanceBetweenTwoNodes';
 import { useStartNodeCreation } from '@/workflow/workflow-diagram/hooks/useStartNodeCreation';
 import { type WorkflowDiagramStepNodeData } from '@/workflow/workflow-diagram/types/WorkflowDiagram';
-import styled from '@emotion/styled';
+import { styled } from '@linaria/react';
+import { t } from '@lingui/core/macro';
+import { isDefined } from 'twenty-shared/utils';
 import { IconPlus } from 'twenty-ui/display';
 import { IconButton } from 'twenty-ui/input';
 
@@ -52,12 +54,12 @@ export const WorkflowDiagramCreateStepElement = ({
         <WorkflowDiagramConnector />
       </StyledVerticalLineContainer>
 
-      {Label && <StyledLabelContainer>{Label}</StyledLabelContainer>}
+      {isDefined(Label) && <StyledLabelContainer>{Label}</StyledLabelContainer>}
 
       <IconButton
         Icon={IconPlus}
         size="small"
-        ariaLabel="Add a step"
+        ariaLabel={t`Add a step`}
         onClick={addNode}
       />
     </StyledContainer>

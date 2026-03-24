@@ -1,17 +1,19 @@
 import { type FieldMetadataItem } from '@/object-metadata/types/FieldMetadataItem';
-import { type ObjectMetadataItem } from '@/object-metadata/types/ObjectMetadataItem';
+import { type EnrichedObjectMetadataItem } from '@/object-metadata/types/EnrichedObjectMetadataItem';
 import { isFieldRelation } from '@/object-record/record-field/ui/types/guards/isFieldRelation';
 import { isDefined, isFieldMetadataDateKind } from 'twenty-shared/utils';
+
+type IsRelationNestedFieldDateKindParams = {
+  relationField: FieldMetadataItem;
+  relationNestedFieldName: string | undefined;
+  objectMetadataItems: EnrichedObjectMetadataItem[];
+};
 
 export const isRelationNestedFieldDateKind = ({
   relationField,
   relationNestedFieldName,
   objectMetadataItems,
-}: {
-  relationField: FieldMetadataItem;
-  relationNestedFieldName: string | undefined;
-  objectMetadataItems: ObjectMetadataItem[];
-}): boolean => {
+}: IsRelationNestedFieldDateKindParams): boolean => {
   if (!isDefined(relationNestedFieldName)) {
     return false;
   }
@@ -20,29 +22,29 @@ export const isRelationNestedFieldDateKind = ({
     return false;
   }
 
-  const targetObjectNameSingular =
-    relationField.relation?.targetObjectMetadata?.nameSingular;
+  const targetObjectId = relationField.relation?.targetObjectMetadata?.id;
 
-  if (!isDefined(targetObjectNameSingular)) {
+  if (!isDefined(targetObjectId)) {
     return false;
   }
 
-  const targetObjectMetadataItem = objectMetadataItems.find(
-    (item) => item.nameSingular === targetObjectNameSingular,
+  const targetObjectMetadata = objectMetadataItems.find(
+    (objectMetadataItem) => objectMetadataItem.id === targetObjectId,
   );
 
-  if (!isDefined(targetObjectMetadataItem)) {
+  if (!isDefined(targetObjectMetadata)) {
     return false;
   }
 
   const nestedFieldName = relationNestedFieldName.split('.')[0];
-  const nestedField = targetObjectMetadataItem.fields.find(
-    (f) => f.name === nestedFieldName,
+
+  const nestedFieldMetadata = targetObjectMetadata.fields.find(
+    (fieldMetadataItem) => fieldMetadataItem.name === nestedFieldName,
   );
 
-  if (!isDefined(nestedField)) {
+  if (!isDefined(nestedFieldMetadata)) {
     return false;
   }
 
-  return isFieldMetadataDateKind(nestedField.type);
+  return isFieldMetadataDateKind(nestedFieldMetadata.type);
 };

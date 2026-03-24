@@ -1,4 +1,4 @@
-import styled from '@emotion/styled';
+import { styled } from '@linaria/react';
 import { useLingui } from '@lingui/react/macro';
 import { FormProvider } from 'react-hook-form';
 import { useParams } from 'react-router-dom';
@@ -14,7 +14,7 @@ import { getSettingsPath } from 'twenty-shared/utils';
 import { useNavigateSettings } from '~/hooks/useNavigateSettings';
 
 import { NotFound } from '~/pages/not-found/NotFound';
-import { useImapSmtpCaldavConnectionForm } from '../hooks/useImapSmtpCaldavConnectionForm';
+import { useImapSmtpCaldavConnectionForm } from '@/settings/accounts/hooks/useImapSmtpCaldavConnectionForm';
 import { SettingsAccountsConnectionForm } from './SettingsAccountsConnectionForm';
 
 const StyledLoadingContainer = styled.div`
@@ -57,7 +57,7 @@ export const SettingsAccountsEditImapSmtpCaldavConnection = () => {
   }
 
   const renderForm = () => (
-    // eslint-disable-next-line react/jsx-props-no-spreading
+    // oxlint-disable-next-line react/jsx-props-no-spreading
     <FormProvider {...formMethods}>
       <SubMenuTopBarContainer
         title={t`Edit Account`}

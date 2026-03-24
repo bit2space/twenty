@@ -4,13 +4,13 @@ image: /images/user-guide/tasks/tasks_header.png
 ---
 
 <Frame>
-  <img src="/images/user-guide/tasks/tasks_header.png" alt="Header" />
+  <img src="/images/user-guide/tasks/tasks_header.png" alt="رأس الصفحة" />
 </Frame>
 
 يمثل إجراءً ناجحًا أو مكتملًا.
 
 <Tabs>
-<Tab title="Usage">
+<Tab title="استخدام">
 
 ```jsx
 import { Checkmark } from 'twenty-ui/display';
@@ -20,9 +20,10 @@ export const MyComponent = () => {
 };
 ```
 
+
 </Tab>
 
-<Tab title="Props">
+<Tab title="المحددات">
 
 يمتد `React.ComponentPropsWithoutRef<'div'>` و يقبل جميع خصائص عنصر `div` العادي.
 
@@ -36,7 +37,7 @@ export const MyComponent = () => {
 
 <Tabs>
 
-<Tab title="Usage">
+<Tab title="استخدام">
 
 ```jsx
 import { AnimatedCheckmark } from 'twenty-ui/display';
@@ -55,14 +56,17 @@ export const MyComponent = () => {
 
 </Tab>
 
-<Tab title="Props">
+<Tab title="الخصائص">
 
-| المحددات    | النوع       | الوصف                                 | الإعداد الافتراضي         |
-| ----------- | ----------- | ------------------------------------- | ------------------------- |
-| isAnimating | قيمة منطقية | يتحكم فيما إذا كانت علامة صحيح متحركة | خاطئ                      |
-| اللون       | string      | Color of the checkmark                |                           |
-| المدة       | رقم         | مدة الحركة بالثواني                   | 0.5 ثانية |
-| الحجم       | رقم         | The size of the checkmark             | 28 بكسل                   |
+
+| الخصائص     | النوع       | الوصف                                 | الإعداد الافتراضي |
+| ----------- | ----------- | ------------------------------------- | ----------------- |
+| isAnimating | قيمة منطقية | يتحكم فيما إذا كانت علامة صحيح متحركة | خاطئ              |
+| اللون       | string      | لون علامة الاختيار                    |                   |
+| المدة       | رقم         | مدة الحركة بالثواني                   | 0.5 ثانية         |
+| الحجم       | رقم         | حجم علامة الاختيار                    | 28 بكسل           |
+
+
 
 </Tab>
 

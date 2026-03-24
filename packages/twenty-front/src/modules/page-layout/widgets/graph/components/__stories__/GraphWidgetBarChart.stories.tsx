@@ -1,9 +1,9 @@
-import { type Meta, type StoryObj } from '@storybook/react';
+import { type Meta, type StoryObj } from '@storybook/react-vite';
 
 import { GraphWidgetTestWrapper } from '@/page-layout/widgets/graph/__tests__/GraphWidgetTestWrapper';
-import { GraphWidgetBarChart } from '@/page-layout/widgets/graph/graphWidgetBarChart/components/GraphWidgetBarChart';
-import { BarChartLayout } from '@/page-layout/widgets/graph/graphWidgetBarChart/types/BarChartLayout';
+import { GraphWidgetBarChart } from '@/page-layout/widgets/graph/graph-widget-bar-chart/components/GraphWidgetBarChart';
 import { CatalogDecorator, ComponentDecorator } from 'twenty-ui/testing';
+import { BarChartLayout } from '~/generated-metadata/graphql';
 
 const meta: Meta<typeof GraphWidgetBarChart> = {
   title: 'Modules/PageLayout/Widgets/GraphWidgetBarChart',
@@ -74,6 +74,17 @@ const meta: Meta<typeof GraphWidgetBarChart> = {
     seriesLabels: {
       control: 'object',
     },
+    colorMode: {
+      control: 'select',
+      options: [
+        'automaticPalette',
+        'explicitSingleColor',
+        'selectFieldOptionColors',
+      ],
+    },
+  },
+  args: {
+    colorMode: 'automaticPalette',
   },
 };
 
@@ -144,6 +155,7 @@ export const Default: Story = {
         yAxisLabel={args.yAxisLabel}
         id={args.id}
         groupMode={args.groupMode}
+        colorMode={args.colorMode}
       />
     </Container>
   ),
@@ -209,6 +221,7 @@ export const Revenue: Story = {
         yAxisLabel={args.yAxisLabel}
         id={args.id}
         groupMode={args.groupMode}
+        colorMode={args.colorMode}
       />
     </Container>
   ),
@@ -273,6 +286,7 @@ export const Grouped: Story = {
         xAxisLabel={args.xAxisLabel}
         yAxisLabel={args.yAxisLabel}
         id={args.id}
+        colorMode={args.colorMode}
       />
     </Container>
   ),
@@ -310,6 +324,7 @@ export const Horizontal: Story = {
         yAxisLabel={args.yAxisLabel}
         suffix={args.suffix}
         id={args.id}
+        colorMode={args.colorMode}
       />
     </Container>
   ),
@@ -360,6 +375,7 @@ export const WithValues: Story = {
         yAxisLabel={args.yAxisLabel}
         id={args.id}
         groupMode={args.groupMode}
+        colorMode={args.colorMode}
       />
     </Container>
   ),
@@ -431,6 +447,7 @@ export const WithCustomColors: Story = {
         yAxisLabel={args.yAxisLabel}
         id={args.id}
         groupMode={args.groupMode}
+        colorMode={args.colorMode}
       />
     </Container>
   ),
@@ -467,6 +484,7 @@ export const SingleSeries: Story = {
         xAxisLabel={args.xAxisLabel}
         yAxisLabel={args.yAxisLabel}
         id={args.id}
+        colorMode={args.colorMode}
       />
     </Container>
   ),
@@ -508,6 +526,7 @@ export const Currency: Story = {
         yAxisLabel={args.yAxisLabel}
         id={args.id}
         groupMode={args.groupMode}
+        colorMode={args.colorMode}
       />
     </Container>
   ),
@@ -548,6 +567,7 @@ export const NegativeValues: Story = {
         xAxisLabel={args.xAxisLabel}
         yAxisLabel={args.yAxisLabel}
         id={args.id}
+        colorMode={args.colorMode}
       />
     </Container>
   ),
@@ -616,6 +636,7 @@ export const MixedPositiveNegative: Story = {
         yAxisLabel={args.yAxisLabel}
         groupMode={args.groupMode}
         id={args.id}
+        colorMode={args.colorMode}
       />
     </Container>
   ),
@@ -648,6 +669,7 @@ export const AllNegative: Story = {
         xAxisLabel={args.xAxisLabel}
         yAxisLabel={args.yAxisLabel}
         id={args.id}
+        colorMode={args.colorMode}
       />
     </Container>
   ),
@@ -684,6 +706,7 @@ export const TemperatureData: Story = {
         yAxisLabel={args.yAxisLabel}
         suffix={args.suffix}
         id={args.id}
+        colorMode={args.colorMode}
       />
     </Container>
   ),
@@ -752,6 +775,7 @@ export const StackedNegative: Story = {
         xAxisLabel={args.xAxisLabel}
         yAxisLabel={args.yAxisLabel}
         id={args.id}
+        colorMode={args.colorMode}
       />
     </Container>
   ),
@@ -813,6 +837,7 @@ export const GroupedWithAllBarsTooltip: Story = {
         yAxisLabel={args.yAxisLabel}
         groupMode={args.groupMode}
         id={args.id}
+        colorMode={args.colorMode}
       />
     </Container>
   ),
@@ -868,6 +893,7 @@ export const GroupedDefaultTooltip: Story = {
         yAxisLabel={args.yAxisLabel}
         groupMode={args.groupMode}
         id={args.id}
+        colorMode={args.colorMode}
       />
     </Container>
   ),
@@ -923,6 +949,7 @@ export const Catalog: Story = {
         id={`bar-chart-catalog-${args.keys?.length ?? 0}-${
           args.groupMode ?? 'grouped'
         }`}
+        colorMode={args.colorMode}
       />
     </Container>
   ),

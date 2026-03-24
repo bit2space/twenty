@@ -13,9 +13,9 @@ import {
 import { EntityManagerFactory } from 'typeorm/entity-manager/EntityManagerFactory';
 import { EntityMetadataNotFoundError } from 'typeorm/error/EntityMetadataNotFoundError';
 
-import { type WorkspaceAuthContext } from 'src/engine/api/common/interfaces/workspace-auth-context.interface';
 import { type FeatureFlagMap } from 'src/engine/core-modules/feature-flag/interfaces/feature-flag-map.interface';
 
+import { type WorkspaceAuthContext } from 'src/engine/core-modules/auth/types/workspace-auth-context.type';
 import {
   PermissionsException,
   PermissionsExceptionCode,
@@ -32,16 +32,19 @@ type CreateQueryBuilderOptions = {
 };
 
 export class GlobalWorkspaceDataSource extends DataSource {
-  private eventEmitterService: WorkspaceEventEmitter;
+  readonly eventEmitterService: WorkspaceEventEmitter;
+  readonly coreDataSource: DataSource;
   private _isConstructing = true;
   dataSourceWithOverridenCreateQueryBuilder: GlobalWorkspaceDataSource;
 
   constructor(
     options: DataSourceOptions,
     eventEmitterService: WorkspaceEventEmitter,
+    coreDataSource: DataSource,
   ) {
     super(options);
     this.eventEmitterService = eventEmitterService;
+    this.coreDataSource = coreDataSource;
     this._isConstructing = false;
 
     Object.defineProperty(this, 'manager', {
@@ -102,21 +105,7 @@ export class GlobalWorkspaceDataSource extends DataSource {
       return super.createEntityManager(queryRunner) as WorkspaceEntityManager;
     }
 
-    const context = getWorkspaceContext();
-
-    return new WorkspaceEntityManager(
-      {
-        workspaceId: context.authContext.workspace.id,
-        flatObjectMetadataMaps: context.flatObjectMetadataMaps,
-        flatFieldMetadataMaps: context.flatFieldMetadataMaps,
-        flatIndexMaps: context.flatIndexMaps,
-        objectIdByNameSingular: context.objectIdByNameSingular,
-        featureFlagsMap: context.featureFlagsMap,
-        eventEmitterService: this.eventEmitterService,
-      },
-      this,
-      queryRunner,
-    );
+    return new WorkspaceEntityManager(this, queryRunner);
   }
 
   override createQueryRunner(
@@ -127,7 +116,7 @@ export class GlobalWorkspaceDataSource extends DataSource {
 
     Object.assign(queryRunner, { manager: manager });
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // oxlint-disable-next-line @typescripttypescript/no-explicit-any
     return queryRunner as any as WorkspaceQueryRunner;
   }
 
@@ -192,17 +181,17 @@ export class GlobalWorkspaceDataSource extends DataSource {
 
   override createQueryBuilder(
     queryRunner?: QueryRunner,
-    options?: CreateQueryBuilderOptions, // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    options?: CreateQueryBuilderOptions, // oxlint-disable-next-line @typescripttypescript/no-explicit-any
   ): SelectQueryBuilder<any>;
 
   // Only callable from workspaceEntityManager to guarantee a permission check was run
   override createQueryBuilder(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // oxlint-disable-next-line @typescripttypescript/no-explicit-any
     queryRunnerOrEntityClass?: QueryRunner | EntityTarget<any>,
     aliasOrOptions?: string | CreateQueryBuilderOptions,
     queryRunner?: QueryRunner,
     options?: CreateQueryBuilderOptions,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // oxlint-disable-next-line @typescripttypescript/no-explicit-any
   ): SelectQueryBuilder<any> {
     let calledByWorkspaceEntityManager;
 
@@ -225,7 +214,7 @@ export class GlobalWorkspaceDataSource extends DataSource {
     }
 
     if (isCalledWithEntityTarget) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // oxlint-disable-next-line @typescripttypescript/no-explicit-any
       const entityClass = queryRunnerOrEntityClass as EntityTarget<any>;
 
       return super.createQueryBuilder(
@@ -240,10 +229,10 @@ export class GlobalWorkspaceDataSource extends DataSource {
     }
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // oxlint-disable-next-line @typescripttypescript/no-explicit-any
   override query<T = any>(
     query: string,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // oxlint-disable-next-line @typescripttypescript/no-explicit-any
     parameters?: any[],
     queryRunner?: QueryRunner,
     options?: {

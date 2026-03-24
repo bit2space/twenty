@@ -1,19 +1,20 @@
 import { trimAndRemoveDuplicatedWhitespacesFromObjectStringProperties } from 'twenty-shared/utils';
 import { v4 } from 'uuid';
 
+import { type FlatApplication } from 'src/engine/core-modules/application/types/flat-application.type';
 import { type FlatRole } from 'src/engine/metadata-modules/flat-role/types/flat-role.type';
-import { type CreateRoleInput } from 'src/engine/metadata-modules/role/dtos/create-role-input.dto';
+import { type CreateRoleInput } from 'src/engine/metadata-modules/role/dtos/create-role.input';
 
 export const fromCreateRoleInputToFlatRoleToCreate = ({
   createRoleInput,
   workspaceId,
-  applicationId,
+  flatApplication,
 }: {
   createRoleInput: CreateRoleInput;
   workspaceId: string;
-  applicationId: string;
+  flatApplication: FlatApplication;
 }): FlatRole => {
-  const now = new Date();
+  const now = new Date().toISOString();
 
   const {
     label,
@@ -28,7 +29,6 @@ export const fromCreateRoleInputToFlatRoleToCreate = ({
 
   return {
     id,
-    standardId: null,
     label,
     description: description ?? null,
     icon: icon ?? null,
@@ -48,11 +48,19 @@ export const fromCreateRoleInputToFlatRoleToCreate = ({
     workspaceId,
     createdAt: now,
     updatedAt: now,
-    universalIdentifier: id,
-    applicationId,
+    universalIdentifier: createRoleInput.universalIdentifier ?? v4(),
+    applicationId: flatApplication.id,
+    applicationUniversalIdentifier: flatApplication.universalIdentifier,
     roleTargetIds: [],
+    roleTargetUniversalIdentifiers: [],
     objectPermissionIds: [],
     permissionFlagIds: [],
+    objectPermissionUniversalIdentifiers: [],
+    permissionFlagUniversalIdentifiers: [],
     fieldPermissionIds: [],
+    rowLevelPermissionPredicateIds: [],
+    rowLevelPermissionPredicateUniversalIdentifiers: [],
+    rowLevelPermissionPredicateGroupIds: [],
+    rowLevelPermissionPredicateGroupUniversalIdentifiers: [],
   };
 };

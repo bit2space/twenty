@@ -4,14 +4,14 @@ image: /images/user-guide/emails/emails_header.png
 ---
 
 <Frame>
-  <img src="/images/user-guide/emails/emails_header.png" alt="Header" />
+  <img src="/images/user-guide/emails/emails_header.png" alt="Antet" />
 </Frame>
 
 Indică progresul sau numărătoarea inversă și se mișcă de la dreapta la stânga.
 
 <Tabs>
 
-<Tab title="Usage">
+<Tab title="Utilizare">
 
 ```jsx
 import { ProgressBar } from "twenty-ui/feedback";
@@ -32,16 +32,19 @@ export const MyComponent = () => {
 
 </Tab>
 
-<Tab title="Props">
+<Tab title="Proprietăți">
+
 
 | Proprietăți     | Tip     | Descriere                                                                           | Implicit   |
 | --------------- | ------- | ----------------------------------------------------------------------------------- | ---------- |
 | durată          | număr   | Durata totală a animației barei de progres în milisecunde                           | 3          |
 | întârziere      | număr   | Întârzierea în pornirea animației barei de progres în milisecunde                   | 0          |
-| easing          | șir     | Funcția de accelerare (easing) pentru animația barei de progres  | easeInOut  |
+| easing          | șir     | Funcția de accelerare (easing) pentru animația barei de progres                     | easeInOut  |
 | înălțimeBară    | număr   | Înălțimea barei în pixeli                                                           | 24         |
-| culoareBară     | șir     | Culoarea barei                                                                      | gray80     |
+| culoareBară     | şir     | Culoarea barei                                                                      | gray80     |
 | pornireAutomată | boolean | Dacă `true`, animația barei de progres pornește automat când componenta se montează | `adevărat` |
+
+
 
 </Tab>
 </Tabs>
@@ -52,7 +55,7 @@ Indică progresul unei sarcini, utilizată adesea pe ecranele de încărcare sau
 
 <Tabs>
 
-<Tab title="Usage">
+<Tab title="Utilizare">
 
 ```jsx
 import { CircularProgressBar } from "@/ui/feedback/progress-bar/components/CircularProgressBar";
@@ -64,13 +67,16 @@ export const MyComponent = () => {
 
 </Tab>
 
-<Tab title="Props">
+<Tab title="Proprietăți">
+
 
 | Proprietăți | Tip   | Descriere                              | Implicit     |
 | ----------- | ----- | -------------------------------------- | ------------ |
 | dimensiune  | număr | Dimensiunea barei de progres circulare | 50           |
 | lățimeBară  | număr | Lățimea liniei barei de progres        | 5            |
 | culoareBară | șir   | Culoarea barei de progres              | currentColor |
+
+
 
 </Tab>
 

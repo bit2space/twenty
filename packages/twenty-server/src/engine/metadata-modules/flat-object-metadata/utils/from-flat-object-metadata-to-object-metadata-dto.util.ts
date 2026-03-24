@@ -7,12 +7,14 @@ export const fromFlatObjectMetadataToObjectMetadataDto = (
   const {
     createdAt,
     updatedAt,
+    color,
     description,
     icon,
     standardOverrides,
     shortcut,
     duplicateCriteria,
     id,
+    universalIdentifier,
     isActive,
     isCustom,
     isLabelSyncedWithName,
@@ -27,10 +29,12 @@ export const fromFlatObjectMetadataToObjectMetadataDto = (
     workspaceId,
     imageIdentifierFieldMetadataId,
     labelIdentifierFieldMetadataId,
+    applicationId,
   } = flatObjectMetadata;
 
   return {
     id,
+    universalIdentifier,
     isActive,
     isCustom,
     isLabelSyncedWithName,
@@ -47,10 +51,12 @@ export const fromFlatObjectMetadataToObjectMetadataDto = (
     labelIdentifierFieldMetadataId,
     createdAt: new Date(createdAt),
     updatedAt: new Date(updatedAt),
+    color: color ?? undefined,
     description: description ?? undefined,
     icon: icon ?? undefined,
     standardOverrides: standardOverrides ?? undefined,
     shortcut: shortcut ?? undefined,
     duplicateCriteria: duplicateCriteria ?? undefined,
+    applicationId,
   };
 };

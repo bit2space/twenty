@@ -1,23 +1,31 @@
 import { type OpenAPIV3_1 } from 'openapi-types';
-import { FieldMetadataType } from 'twenty-shared/types';
-import { capitalize } from 'twenty-shared/utils';
+import {
+  type FieldMetadataDefaultValue,
+  FieldMetadataType,
+} from 'twenty-shared/types';
+import { capitalize, isDefined } from 'twenty-shared/utils';
 
-import { type FieldMetadataDefaultValue } from 'src/engine/metadata-modules/field-metadata/interfaces/field-metadata-default-value.interface';
 import { RelationType } from 'src/engine/metadata-modules/field-metadata/interfaces/relation-type.interface';
 
 import { generateRandomFieldValue } from 'src/engine/core-modules/open-api/utils/generate-random-field-value.util';
 import {
+  computeAggregateParameters,
   computeDepthParameters,
   computeEndingBeforeParameters,
   computeFilterParameters,
+  computeGroupByParameters,
   computeIdPathParameter,
+  computeIncludeRecordsSampleParameters,
   computeLimitParameters,
+  computeOrderByForRecordsParameters,
   computeOrderByParameters,
   computeSoftDeleteParameters,
   computeStartingAfterParameters,
   computeUpsertParameters,
+  computeViewIdParameters,
 } from 'src/engine/core-modules/open-api/utils/parameters.utils';
 import { type AllFlatEntityMaps } from 'src/engine/metadata-modules/flat-entity/types/all-flat-entity-maps.type';
+import { findFlatEntityByIdInFlatEntityMaps } from 'src/engine/metadata-modules/flat-entity/utils/find-flat-entity-by-id-in-flat-entity-maps.util';
 import { findManyFlatEntityByIdInFlatEntityMapsOrThrow } from 'src/engine/metadata-modules/flat-entity/utils/find-many-flat-entity-by-id-in-flat-entity-maps-or-throw.util';
 import { type FlatFieldMetadata } from 'src/engine/metadata-modules/flat-field-metadata/types/flat-field-metadata.type';
 import { type FlatObjectMetadata } from 'src/engine/metadata-modules/flat-object-metadata/types/flat-object-metadata.type';
@@ -91,41 +99,61 @@ const getSchemaComponentsRelationProperties = (
   >['flatObjectMetadataMaps'],
 ): Properties => {
   return flatFieldMetadatas.reduce((node, field) => {
-    if (field.type !== FieldMetadataType.RELATION) {
+    const isRelationField =
+      isFieldMetadataEntityOfType(field, FieldMetadataType.RELATION) ||
+      isFieldMetadataEntityOfType(field, FieldMetadataType.MORPH_RELATION);
+
+    if (!isRelationField) {
       return node;
+    }
+
+    if (!isDefined(field.relationTargetObjectMetadataId)) {
+      throw new Error(
+        `Relation field "${field.name}" has no relationTargetObjectMetadataId`,
+      );
+    }
+
+    const relationType = field.settings?.relationType;
+
+    if (!isDefined(relationType)) {
+      throw new Error(
+        `Relation field "${field.name}" has no relationType in settings`,
+      );
+    }
+
+    const targetObjectMetadata = findFlatEntityByIdInFlatEntityMaps({
+      flatEntityId: field.relationTargetObjectMetadataId,
+      flatEntityMaps: flatObjectMetadataMaps,
+    });
+
+    if (!targetObjectMetadata) {
+      throw new Error(
+        `Relation field "${field.name}" target object metadata not found for id ${field.relationTargetObjectMetadataId}`,
+      );
     }
 
     let itemProperty = {} as Property;
 
-    if (isFieldMetadataEntityOfType(field, FieldMetadataType.RELATION)) {
-      const targetObjectMetadata =
-        flatObjectMetadataMaps.byId[field.relationTargetObjectMetadataId];
-
-      if (!targetObjectMetadata) {
-        return node;
-      }
-
-      if (field.settings?.relationType === RelationType.MANY_TO_ONE) {
-        itemProperty = {
-          type: 'object',
-          oneOf: [
-            {
-              $ref: `#/components/schemas/${capitalize(
-                targetObjectMetadata.nameSingular,
-              )}ForResponse`,
-            },
-          ],
-        };
-      } else if (field.settings?.relationType === RelationType.ONE_TO_MANY) {
-        itemProperty = {
-          type: 'array',
-          items: {
+    if (relationType === RelationType.MANY_TO_ONE) {
+      itemProperty = {
+        type: 'object',
+        oneOf: [
+          {
             $ref: `#/components/schemas/${capitalize(
               targetObjectMetadata.nameSingular,
             )}ForResponse`,
           },
-        };
-      }
+        ],
+      };
+    } else if (relationType === RelationType.ONE_TO_MANY) {
+      itemProperty = {
+        type: 'array',
+        items: {
+          $ref: `#/components/schemas/${capitalize(
+            targetObjectMetadata.nameSingular,
+          )}ForResponse`,
+        },
+      };
     }
 
     if (field.description) {
@@ -231,7 +259,7 @@ export const computeSchemaComponents = (
       const flatFieldMetadatas =
         findManyFlatEntityByIdInFlatEntityMapsOrThrow<FlatFieldMetadata>({
           flatEntityMaps: flatFieldMetadataMaps,
-          flatEntityIds: item.fieldMetadataIds,
+          flatEntityIds: item.fieldIds,
         });
 
       schemas[capitalize(item.nameSingular)] = computeSchemaComponent({
@@ -277,6 +305,11 @@ export const computeParameterComponents = (
     softDelete: computeSoftDeleteParameters(),
     orderBy: computeOrderByParameters(),
     limit: computeLimitParameters(fromMetadata),
+    groupBy: computeGroupByParameters(),
+    viewId: computeViewIdParameters(),
+    aggregate: computeAggregateParameters(),
+    includeRecordsSample: computeIncludeRecordsSampleParameters(),
+    orderByForRecords: computeOrderByForRecordsParameters(),
   };
 };
 

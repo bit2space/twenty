@@ -1,22 +1,45 @@
-import { CurrentWorkspaceMemberFavoritesFolders } from '@/favorites/components/CurrentWorkspaceMemberFavoritesFolders';
-import { WorkspaceFavorites } from '@/favorites/components/WorkspaceFavorites';
-import { NavigationDrawerOpenedSection } from '@/object-metadata/components/NavigationDrawerOpenedSection';
+import { NavigationDrawerOpenedSection } from '@/navigation-menu-item/display/sections/components/NavigationDrawerOpenedSection';
+import { NavigationDrawerWorkspaceSectionSkeletonLoader } from '@/object-metadata/components/NavigationDrawerWorkspaceSectionSkeletonLoader';
 import { RemoteNavigationDrawerSection } from '@/object-metadata/components/RemoteNavigationDrawerSection';
-import styled from '@emotion/styled';
+
+import { NavigationDrawerOtherSection } from '@/navigation/components/NavigationDrawerOtherSection';
+import { styled } from '@linaria/react';
+import { lazy, Suspense } from 'react';
+
+import { themeCssVariables } from 'twenty-ui/theme-constants';
+
+const FavoritesSectionDispatcher = lazy(() =>
+  import(
+    '@/navigation-menu-item/display/sections/favorites/components/FavoritesSectionDispatcher'
+  ).then((module) => ({
+    default: module.FavoritesSectionDispatcher,
+  })),
+);
+
+const WorkspaceSectionDispatcher = lazy(() =>
+  import(
+    '@/navigation-menu-item/display/sections/workspace/components/WorkspaceSectionDispatcher'
+  ).then((module) => ({
+    default: module.WorkspaceSectionDispatcher,
+  })),
+);
 
 const StyledScrollableItemsContainer = styled.div`
   display: flex;
   flex-direction: column;
-  gap: ${({ theme }) => theme.spacing(3)};
+  gap: ${themeCssVariables.spacing[3]};
 `;
 
 export const MainNavigationDrawerScrollableItems = () => {
   return (
     <StyledScrollableItemsContainer>
       <NavigationDrawerOpenedSection />
-      <CurrentWorkspaceMemberFavoritesFolders />
-      <WorkspaceFavorites />
+      <Suspense fallback={<NavigationDrawerWorkspaceSectionSkeletonLoader />}>
+        <FavoritesSectionDispatcher />
+        <WorkspaceSectionDispatcher />
+      </Suspense>
       <RemoteNavigationDrawerSection />
+      <NavigationDrawerOtherSection />
     </StyledScrollableItemsContainer>
   );
 };

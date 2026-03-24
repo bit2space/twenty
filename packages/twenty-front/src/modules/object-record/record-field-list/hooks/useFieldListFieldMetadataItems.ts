@@ -1,13 +1,13 @@
 import { useLabelIdentifierFieldMetadataItem } from '@/object-metadata/hooks/useLabelIdentifierFieldMetadataItem';
 import { useObjectMetadataItem } from '@/object-metadata/hooks/useObjectMetadataItem';
 import { useObjectMetadataItems } from '@/object-metadata/hooks/useObjectMetadataItems';
-import { CoreObjectNameSingular } from '@/object-metadata/types/CoreObjectNameSingular';
-import { getObjectPermissionsForObject } from '@/object-metadata/utils/getObjectPermissionsForObject';
 import { useObjectPermissions } from '@/object-record/hooks/useObjectPermissions';
+import { categorizeRelationFields } from '@/object-record/record-field-list/utils/categorizeRelationFields';
 import { isFieldCellSupported } from '@/object-record/utils/isFieldCellSupported';
+import { useIsFeatureEnabled } from '@/workspace/hooks/useIsFeatureEnabled';
 import groupBy from 'lodash.groupby';
-import { FieldMetadataType } from 'twenty-shared/types';
-import { isDefined } from 'twenty-shared/utils';
+import { CoreObjectNameSingular, FieldMetadataType } from 'twenty-shared/types';
+import { FeatureFlagKey } from '~/generated-metadata/graphql';
 
 type UseFieldListFieldMetadataItemsProps = {
   objectNameSingular: string;
@@ -35,6 +35,10 @@ export const useFieldListFieldMetadataItems = ({
 
   const { objectMetadataItems } = useObjectMetadataItems();
 
+  const isJunctionRelationsEnabled = useIsFeatureEnabled(
+    FeatureFlagKey.IS_JUNCTION_RELATIONS_ENABLED,
+  );
+
   const availableFieldMetadataItems = objectMetadataItem.readableFields
     .filter(
       (fieldMetadataItem) =>
@@ -61,7 +65,12 @@ export const useFieldListFieldMetadataItems = ({
       )
       .filter(
         (fieldMetadataItem) =>
-          fieldMetadataItem.type !== FieldMetadataType.RICH_TEXT_V2,
+          !(
+            fieldMetadataItem.type === FieldMetadataType.RICH_TEXT &&
+            fieldMetadataItem.name === 'bodyV2' &&
+            (objectNameSingular === CoreObjectNameSingular.Note ||
+              objectNameSingular === CoreObjectNameSingular.Task)
+          ),
       ),
     (fieldMetadataItem) =>
       fieldMetadataItem.type === FieldMetadataType.RELATION ||
@@ -70,49 +79,22 @@ export const useFieldListFieldMetadataItems = ({
         : 'inlineFieldMetadataItems',
   );
 
-  const inlineRelationFieldMetadataItems = (
-    relationFieldMetadataItems ?? []
-  ).filter(
-    (fieldMetadataItem) =>
-      (objectNameSingular === CoreObjectNameSingular.Note &&
-        fieldMetadataItem.name === 'noteTargets') ||
-      (objectNameSingular === CoreObjectNameSingular.Task &&
-        fieldMetadataItem.name === 'taskTargets'),
-  );
-
-  const boxedRelationFieldMetadataItems = (relationFieldMetadataItems ?? [])
-    .filter(
-      (fieldMetadataItem) =>
-        !(
-          (objectNameSingular === CoreObjectNameSingular.Note &&
-            fieldMetadataItem.name === 'noteTargets') ||
-          (objectNameSingular === CoreObjectNameSingular.Task &&
-            fieldMetadataItem.name === 'taskTargets')
-        ),
-    )
-    .filter((fieldMetadataItem) => {
-      const canReadRelation =
-        isDefined(fieldMetadataItem.relation?.targetObjectMetadata.id) &&
-        getObjectPermissionsForObject(
-          objectPermissionsByObjectMetadataId,
-          fieldMetadataItem.relation?.targetObjectMetadata.id,
-        ).canReadObjectRecords;
-
-      const canReadMorphRelation = fieldMetadataItem?.morphRelations?.every(
-        (morphRelation) =>
-          isDefined(morphRelation.targetObjectMetadata.id) &&
-          getObjectPermissionsForObject(
-            objectPermissionsByObjectMetadataId,
-            morphRelation.targetObjectMetadata.id,
-          ).canReadObjectRecords,
-      );
-
-      return canReadRelation || canReadMorphRelation;
+  const { activityTargetFields, inlineRelationFields, boxedRelationFields } =
+    categorizeRelationFields({
+      relationFields: relationFieldMetadataItems ?? [],
+      objectNameSingular,
+      objectPermissionsByObjectMetadataId,
+      isJunctionRelationsEnabled,
     });
 
+  const allInlineFieldMetadataItems = [
+    ...(inlineFieldMetadataItems ?? []),
+    ...inlineRelationFields,
+  ].sort((a, b) => a.name.localeCompare(b.name));
+
   return {
-    inlineFieldMetadataItems,
-    inlineRelationFieldMetadataItems,
-    boxedRelationFieldMetadataItems,
+    inlineFieldMetadataItems: allInlineFieldMetadataItems,
+    legacyActivityTargetFieldMetadataItems: activityTargetFields,
+    boxedRelationFieldMetadataItems: boxedRelationFields,
   };
 };

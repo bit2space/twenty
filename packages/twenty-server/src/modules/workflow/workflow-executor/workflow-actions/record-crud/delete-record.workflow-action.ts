@@ -4,12 +4,7 @@ import { isDefined, isValidUuid, resolveInput } from 'twenty-shared/utils';
 
 import { type WorkflowAction } from 'src/modules/workflow/workflow-executor/interfaces/workflow-action.interface';
 
-import {
-  RecordCrudException,
-  RecordCrudExceptionCode,
-} from 'src/engine/core-modules/record-crud/exceptions/record-crud.exception';
 import { DeleteRecordService } from 'src/engine/core-modules/record-crud/services/delete-record.service';
-import { ScopedWorkspaceContextFactory } from 'src/engine/twenty-orm/factories/scoped-workspace-context.factory';
 import {
   WorkflowStepExecutorException,
   WorkflowStepExecutorExceptionCode,
@@ -25,7 +20,6 @@ import { type WorkflowDeleteRecordActionInput } from 'src/modules/workflow/workf
 export class DeleteRecordWorkflowAction implements WorkflowAction {
   constructor(
     private readonly deleteRecordService: DeleteRecordService,
-    private readonly scopedWorkspaceContextFactory: ScopedWorkspaceContextFactory,
     private readonly workflowExecutionContextService: WorkflowExecutionContextService,
   ) {}
 
@@ -57,18 +51,9 @@ export class DeleteRecordWorkflowAction implements WorkflowAction {
       !isValidUuid(workflowActionInput.objectRecordId) ||
       !isDefined(workflowActionInput.objectName)
     ) {
-      throw new RecordCrudException(
+      throw new WorkflowStepExecutorException(
         'Failed to delete: Object record ID and name are required',
-        RecordCrudExceptionCode.INVALID_REQUEST,
-      );
-    }
-
-    const { workspaceId } = this.scopedWorkspaceContextFactory.create();
-
-    if (!workspaceId) {
-      throw new RecordCrudException(
-        'Failed to delete: Workspace ID is required',
-        RecordCrudExceptionCode.INVALID_REQUEST,
+        WorkflowStepExecutorExceptionCode.INVALID_STEP_INPUT,
       );
     }
 
@@ -78,16 +63,13 @@ export class DeleteRecordWorkflowAction implements WorkflowAction {
     const toolOutput = await this.deleteRecordService.execute({
       objectName: workflowActionInput.objectName,
       objectRecordId: workflowActionInput.objectRecordId,
-      workspaceId,
+      authContext: executionContext.authContext,
       rolePermissionConfig: executionContext.rolePermissionConfig,
       soft: true,
     });
 
     if (!toolOutput.success) {
-      throw new RecordCrudException(
-        toolOutput.error || toolOutput.message,
-        RecordCrudExceptionCode.RECORD_DELETION_FAILED,
-      );
+      return { error: toolOutput.error || toolOutput.message };
     }
 
     return {

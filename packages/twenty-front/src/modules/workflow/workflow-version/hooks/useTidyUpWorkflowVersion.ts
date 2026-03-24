@@ -1,16 +1,16 @@
 import { type WorkflowVersion } from '@/workflow/types/Workflow';
 import { type WorkflowDiagram } from '@/workflow/workflow-diagram/types/WorkflowDiagram';
-import { useMutation } from '@apollo/client';
+import { useMutation } from '@apollo/client/react';
 import { isDefined } from 'twenty-shared/utils';
 import {
   type UpdateWorkflowVersionPositionsMutation,
   type UpdateWorkflowVersionPositionsMutationVariables,
-} from '~/generated-metadata/graphql';
+} from '~/generated/graphql';
 
 import { useApolloCoreClient } from '@/object-metadata/hooks/useApolloCoreClient';
 import { useObjectMetadataItem } from '@/object-metadata/hooks/useObjectMetadataItem';
 import { useObjectMetadataItems } from '@/object-metadata/hooks/useObjectMetadataItems';
-import { CoreObjectNameSingular } from '@/object-metadata/types/CoreObjectNameSingular';
+import { CoreObjectNameSingular } from 'twenty-shared/types';
 import { useGetRecordFromCache } from '@/object-record/cache/hooks/useGetRecordFromCache';
 import { updateRecordFromCache } from '@/object-record/cache/utils/updateRecordFromCache';
 import { useObjectPermissions } from '@/object-record/hooks/useObjectPermissions';
@@ -109,5 +109,5 @@ export const useTidyUpWorkflowVersion = () => {
     return tidiedUpDiagram;
   };
 
-  return { tidyUpWorkflowVersion };
+  return { tidyUpWorkflowVersion, updateWorkflowVersionPosition };
 };

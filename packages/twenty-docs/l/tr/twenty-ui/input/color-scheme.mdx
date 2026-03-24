@@ -4,15 +4,15 @@ image: /images/user-guide/fields/field.png
 ---
 
 <Frame>
-  <img src="/images/user-guide/fields/field.png" alt="Header" />
+  <img src="/images/user-guide/fields/field.png" alt="Başlık" />
 </Frame>
 
-## Color Scheme Card
+## Renk Şeması Kartı
 
 Farklı renk şemalarını temsil eder ve açık ve koyu temalar için özel olarak tasarlanmıştır.
 
 <Tabs>
-<Tab title="Usage">
+<Tab title="Kullanım">
 
 ```jsx
 import { ColorSchemeCard } from "twenty-ui/display";
@@ -29,24 +29,27 @@ export const MyComponent = () => {
 
 </Tab>
 
-<Tab title="Props">
+<Tab title="Özellikler">
 
-| Özellikler       | Tür                                     | Açıklama                                                                                                                | Varsayılan |
-| ---------------- | --------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- | ---------- |
-| variant          | metin                                   | The color scheme variant. Seçenekler arasında `Koyu`, `Açık` ve `Sistem` bulunmaktadır. | aydınlık   |
-| seçili           | boolean                                 | Eğer `true` ise, seçilen renk şemasını belirtmek için bir onay işareti görüntüler.                      |            |
-| additional props | `React.ComponentPropsWithoutRef<'div'>` | Standart HTML `div` öğe özellikleri                                                                                     |            |
+
+| Özellikler    | Tür                                     | Açıklama                                                                            | Varsayılan |
+| ------------- | --------------------------------------- | ----------------------------------------------------------------------------------- | ---------- |
+| variant       | string                                  | Renk şeması varyantı. Seçenekler arasında `Koyu`, `Açık` ve `Sistem` bulunmaktadır. | aydınlık   |
+| seçili        | boolean                                 | Eğer `true` ise, seçilen renk şemasını belirtmek için bir onay işareti görüntüler.  |            |
+| ek özellikler | `React.ComponentPropsWithoutRef<'div'>` | Standart HTML `div` öğe özellikleri                                                 |            |
+
+
 
 </Tab>
 
 </Tabs>
 
-## Color Scheme Picker
+## Renk Şeması Seçici
 
 Kullanıcıların farklı renk şemaları arasında seçim yapmasına olanak tanır.
 
 <Tabs>
-<Tab title="Usage">
+<Tab title="Kullanım">
 
 ```jsx
 import { ColorSchemePicker } from "twenty-ui/display";
@@ -61,12 +64,15 @@ export const MyComponent = () => {
 
 </Tab>
 
-<Tab title="Props">
+<Tab title="Özellikler">
 
-| Özellikler | Tür           | Açıklama                                                                     |
-| ---------- | ------------- | ---------------------------------------------------------------------------- |
-| değer      | `Renk Şeması` | Şu anda seçili olan renk şeması                                              |
-| onChange   | fonksiyon     | The callback function you want to trigger when a user selects a color scheme |
+
+| Özellikler | Tür           | Açıklama                                                                            |
+| ---------- | ------------- | ----------------------------------------------------------------------------------- |
+| değer      | `Renk Şeması` | Şu anda seçili olan renk şeması                                                     |
+| onChange   | fonksiyon     | Bir kullanıcı bir renk şeması seçtiğinde tetiklemek istediğiniz geri çağırma işlevi |
+
+
 
 </Tab>
 

@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 
 import { type EmailAddress } from 'addressparser';
+import { MessageParticipantRole } from 'twenty-shared/types';
 import { isDefined } from 'twenty-shared/utils';
 
 import { type ConnectedAccountWorkspaceEntity } from 'src/modules/connected-account/standard-objects/connected-account.workspace-entity';
@@ -109,16 +110,28 @@ export class MicrosoftGetMessagesService {
 
       const participants = [
         ...(safeParseFrom
-          ? formatAddressObjectAsParticipants(safeParseFrom, 'from')
+          ? formatAddressObjectAsParticipants(
+              safeParseFrom,
+              MessageParticipantRole.FROM,
+            )
           : []),
         ...(safeParseTo
-          ? formatAddressObjectAsParticipants(safeParseTo, 'to')
+          ? formatAddressObjectAsParticipants(
+              safeParseTo,
+              MessageParticipantRole.TO,
+            )
           : []),
         ...(safeParseCc
-          ? formatAddressObjectAsParticipants(safeParseCc, 'cc')
+          ? formatAddressObjectAsParticipants(
+              safeParseCc,
+              MessageParticipantRole.CC,
+            )
           : []),
         ...(safeParseBcc
-          ? formatAddressObjectAsParticipants(safeParseBcc, 'bcc')
+          ? formatAddressObjectAsParticipants(
+              safeParseBcc,
+              MessageParticipantRole.BCC,
+            )
           : []),
       ];
 
@@ -138,6 +151,9 @@ export class MicrosoftGetMessagesService {
           : MessageDirection.INCOMING,
         participants,
         attachments: [],
+        messageFolderExternalIds: response.parentFolderId
+          ? [response.parentFolderId]
+          : [],
       };
     });
 
@@ -149,7 +165,7 @@ export class MicrosoftGetMessagesService {
       return [];
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // oxlint-disable-next-line @typescripttypescript/no-explicit-any
     return batchResponse.responses.map((response: any) => {
       if (response.status === 200) {
         return response.body;

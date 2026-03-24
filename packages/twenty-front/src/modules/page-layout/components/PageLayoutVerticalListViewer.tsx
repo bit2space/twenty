@@ -1,12 +1,28 @@
-import { WidgetRenderer } from '@/page-layout/widgets/components/WidgetRenderer';
-import styled from '@emotion/styled';
-import { type PageLayoutWidget } from '~/generated/graphql';
+import { styled } from '@linaria/react';
+import { useIsMobile } from 'twenty-ui/utilities';
 
-const StyledVerticalListContainer = styled.div`
+import { getPageLayoutVerticalListViewerVariant } from '@/page-layout/components/utils/getPageLayoutVerticalListViewerVariant';
+import { type PageLayoutVerticalListViewerVariant } from '@/page-layout/types/PageLayoutVerticalListViewerVariant';
+import { type PageLayoutWidget } from '@/page-layout/types/PageLayoutWidget';
+import { WidgetRenderer } from '@/page-layout/widgets/components/WidgetRenderer';
+import { useIsInPinnedTab } from '@/page-layout/widgets/hooks/useIsInPinnedTab';
+import { useLayoutRenderingContext } from '@/ui/layout/contexts/LayoutRenderingContext';
+import { themeCssVariables } from 'twenty-ui/theme-constants';
+
+const StyledVerticalListContainer = styled.div<{
+  variant: PageLayoutVerticalListViewerVariant;
+  shouldUseWhiteBackground: boolean;
+}>`
+  background: ${({ shouldUseWhiteBackground }) =>
+    shouldUseWhiteBackground
+      ? themeCssVariables.background.primary
+      : themeCssVariables.background.secondary};
   display: flex;
   flex-direction: column;
-  gap: ${({ theme }) => theme.spacing(2)};
-  padding: ${({ theme }) => theme.spacing(2)};
+  gap: ${({ variant }) =>
+    variant === 'side-column' ? 0 : themeCssVariables.spacing[2]};
+  padding: ${({ variant }) =>
+    variant === 'side-column' ? 0 : themeCssVariables.spacing[2]};
 `;
 
 type PageLayoutVerticalListViewerProps = {
@@ -16,8 +32,21 @@ type PageLayoutVerticalListViewerProps = {
 export const PageLayoutVerticalListViewer = ({
   widgets,
 }: PageLayoutVerticalListViewerProps) => {
+  const { isInSidePanel } = useLayoutRenderingContext();
+  const isMobile = useIsMobile();
+  const { isInPinnedTab } = useIsInPinnedTab();
+
+  const variant = getPageLayoutVerticalListViewerVariant({
+    isInPinnedTab,
+    isMobile,
+    isInSidePanel,
+  });
+
   return (
-    <StyledVerticalListContainer>
+    <StyledVerticalListContainer
+      variant={variant}
+      shouldUseWhiteBackground={isMobile || isInSidePanel}
+    >
       {widgets.map((widget) => (
         <div key={widget.id}>
           <WidgetRenderer widget={widget} />

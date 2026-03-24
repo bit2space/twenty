@@ -2,32 +2,39 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 
 import {
-  generateObject,
   generateText,
   jsonSchema,
+  Output,
   stepCountIs,
-  ToolSet,
+  type ToolSet,
 } from 'ai';
 import { type ActorMetadata } from 'twenty-shared/types';
-import { Repository } from 'typeorm';
+import { isDefined } from 'twenty-shared/utils';
+import { type Repository } from 'typeorm';
 
+import { type ToolProviderContext } from 'src/engine/core-modules/tool-provider/interfaces/tool-provider.interface';
+
+import { isUserAuthContext } from 'src/engine/core-modules/auth/guards/is-user-auth-context.guard';
+import { type WorkspaceAuthContext } from 'src/engine/core-modules/auth/types/workspace-auth-context.type';
+import { ToolCategory } from 'src/engine/core-modules/tool-provider/enums/tool-category.enum';
+import { ToolRegistryService } from 'src/engine/core-modules/tool-provider/services/tool-registry.service';
 import { type AgentExecutionResult } from 'src/engine/metadata-modules/ai/ai-agent-execution/types/agent-execution-result.type';
+import { extractCacheCreationTokensFromSteps } from 'src/engine/metadata-modules/ai/ai-billing/utils/extract-cache-creation-tokens.util';
+import { mergeLanguageModelUsage } from 'src/engine/metadata-modules/ai/ai-billing/utils/merge-language-model-usage.util';
 import {
   AgentException,
   AgentExceptionCode,
 } from 'src/engine/metadata-modules/ai/ai-agent/agent.exception';
 import { AGENT_CONFIG } from 'src/engine/metadata-modules/ai/ai-agent/constants/agent-config.const';
-import { AGENT_SYSTEM_PROMPTS } from 'src/engine/metadata-modules/ai/ai-agent/constants/agent-system-prompts.const';
-import { AgentEntity } from 'src/engine/metadata-modules/ai/ai-agent/entities/agent.entity';
+import { WORKFLOW_SYSTEM_PROMPTS } from 'src/engine/metadata-modules/ai/ai-agent/constants/agent-system-prompts.const';
+import { type AgentEntity } from 'src/engine/metadata-modules/ai/ai-agent/entities/agent.entity';
 import { repairToolCall } from 'src/engine/metadata-modules/ai/ai-agent/utils/repair-tool-call.util';
 import { AI_TELEMETRY_CONFIG } from 'src/engine/metadata-modules/ai/ai-models/constants/ai-telemetry.const';
+import { AgentModelConfigService } from 'src/engine/metadata-modules/ai/ai-models/services/agent-model-config.service';
+import { WorkspaceEntity } from 'src/engine/core-modules/workspace/workspace.entity';
 import { AiModelRegistryService } from 'src/engine/metadata-modules/ai/ai-models/services/ai-model-registry.service';
-import { ToolAdapterService } from 'src/engine/metadata-modules/ai/ai-tools/services/tool-adapter.service';
-import { ToolService } from 'src/engine/metadata-modules/ai/ai-tools/services/tool.service';
 import { RoleTargetEntity } from 'src/engine/metadata-modules/role-target/role-target.entity';
 import { type RolePermissionConfig } from 'src/engine/twenty-orm/types/role-permission-config';
-
-import { AgentModelConfigService } from './agent-model-config.service';
 
 // Agent execution within workflows uses database and action tools only.
 // Workflow tools are intentionally excluded to avoid circular dependencies
@@ -39,10 +46,11 @@ export class AgentAsyncExecutorService {
   constructor(
     private readonly aiModelRegistryService: AiModelRegistryService,
     private readonly agentModelConfigService: AgentModelConfigService,
-    private readonly toolAdapterService: ToolAdapterService,
-    private readonly toolService: ToolService,
+    private readonly toolRegistry: ToolRegistryService,
     @InjectRepository(RoleTargetEntity)
     private readonly roleTargetRepository: Repository<RoleTargetEntity>,
+    @InjectRepository(WorkspaceEntity)
+    private readonly workspaceRepository: Repository<WorkspaceEntity>,
   ) {}
 
   private extractRoleIds(
@@ -63,12 +71,11 @@ export class AgentAsyncExecutorService {
     return [];
   }
 
-  private async getToolsForWorkflowExecution(
+  private async getEffectiveRolePermissionConfig(
     agentId: string,
     workspaceId: string,
-    actorContext?: ActorMetadata,
     rolePermissionConfig?: RolePermissionConfig,
-  ): Promise<ToolSet> {
+  ): Promise<RolePermissionConfig | undefined> {
     const roleTarget = await this.roleTargetRepository.findOne({
       where: {
         agentId,
@@ -80,37 +87,15 @@ export class AgentAsyncExecutorService {
     const agentRoleId = roleTarget?.roleId;
     const configRoleIds = this.extractRoleIds(rolePermissionConfig);
 
-    // Combine role IDs from config and agent
     const allRoleIds = agentRoleId
       ? [...new Set([...configRoleIds, agentRoleId])]
       : configRoleIds;
 
     if (allRoleIds.length === 0) {
-      // No role context - return basic action tools only
-      return this.toolAdapterService.getTools();
+      return undefined;
     }
 
-    const effectiveRoleContext: RolePermissionConfig = {
-      intersectionOf: allRoleIds,
-    };
-
-    // Get database CRUD tools
-    const databaseTools = await this.toolService.listTools(
-      effectiveRoleContext,
-      workspaceId,
-      actorContext,
-    );
-
-    // Get action tools (send email, http request, etc.)
-    const actionTools = await this.toolAdapterService.getTools(
-      effectiveRoleContext,
-      workspaceId,
-    );
-
-    return {
-      ...databaseTools,
-      ...actionTools,
-    };
+    return { intersectionOf: allRoleIds };
   }
 
   async executeAgent({
@@ -118,13 +103,28 @@ export class AgentAsyncExecutorService {
     userPrompt,
     actorContext,
     rolePermissionConfig,
+    authContext,
   }: {
     agent: AgentEntity | null;
     userPrompt: string;
     actorContext?: ActorMetadata;
     rolePermissionConfig?: RolePermissionConfig;
+    authContext?: WorkspaceAuthContext;
   }): Promise<AgentExecutionResult> {
     try {
+      if (agent) {
+        const workspace = await this.workspaceRepository.findOneBy({
+          id: agent.workspaceId,
+        });
+
+        if (workspace) {
+          this.aiModelRegistryService.validateModelAvailability(
+            agent.modelId,
+            workspace,
+          );
+        }
+      }
+
       const registeredModel =
         await this.aiModelRegistryService.resolveModelForAgent(agent);
 
@@ -132,23 +132,42 @@ export class AgentAsyncExecutorService {
       let providerOptions = {};
 
       if (agent) {
-        tools = await this.getToolsForWorkflowExecution(
+        const effectiveRoleConfig = await this.getEffectiveRolePermissionConfig(
           agent.id,
           agent.workspaceId,
-          actorContext,
           rolePermissionConfig,
         );
 
-        // Add native model tools (web search, etc.) if configured
-        const nativeModelTools =
-          this.agentModelConfigService.getNativeModelTools(
-            registeredModel,
-            agent as unknown as Parameters<
-              typeof this.agentModelConfigService.getNativeModelTools
-            >[1],
-          );
+        // Workflow context: DATABASE_CRUD, ACTION, and NATIVE_MODEL tools only
+        // Workflow tools are excluded to prevent circular dependencies
+        const roleId = this.extractRoleIds(effectiveRoleConfig)[0] ?? '';
 
-        tools = { ...tools, ...nativeModelTools };
+        tools = await this.toolRegistry.getToolsByCategories(
+          {
+            workspaceId: agent.workspaceId,
+            roleId,
+            rolePermissionConfig: effectiveRoleConfig ?? { unionOf: [] },
+            authContext,
+            actorContext,
+            agent: agent as unknown as ToolProviderContext['agent'],
+            userId:
+              isDefined(authContext) && isUserAuthContext(authContext)
+                ? authContext.user.id
+                : undefined,
+            userWorkspaceId:
+              isDefined(authContext) && isUserAuthContext(authContext)
+                ? authContext.userWorkspaceId
+                : undefined,
+          },
+          {
+            categories: [
+              ToolCategory.DATABASE_CRUD,
+              ToolCategory.ACTION,
+              ToolCategory.NATIVE_MODEL,
+            ],
+            wrapWithErrorContext: false,
+          },
+        );
 
         providerOptions = this.agentModelConfigService.getProviderOptions(
           registeredModel,
@@ -161,7 +180,7 @@ export class AgentAsyncExecutorService {
       this.logger.log(`Generated ${Object.keys(tools).length} tools for agent`);
 
       const textResponse = await generateText({
-        system: `${AGENT_SYSTEM_PROMPTS.BASE}\n${AGENT_SYSTEM_PROMPTS.WORKFLOW_ADDITIONS}\n\n${agent ? agent.prompt : ''}`,
+        system: `${WORKFLOW_SYSTEM_PROMPTS.BASE}\n\n${agent ? agent.prompt : ''}`,
         tools,
         model: registeredModel.model,
         prompt: userPrompt,
@@ -184,6 +203,10 @@ export class AgentAsyncExecutorService {
         },
       });
 
+      const cacheCreationTokens = extractCacheCreationTokensFromSteps(
+        textResponse.steps,
+      );
+
       const agentSchema =
         agent?.responseFormat?.type === 'json'
           ? agent.responseFormat.schema
@@ -193,34 +216,36 @@ export class AgentAsyncExecutorService {
         return {
           result: { response: textResponse.text },
           usage: textResponse.usage,
+          cacheCreationTokens,
         };
       }
 
-      const output = await generateObject({
-        system: AGENT_SYSTEM_PROMPTS.OUTPUT_GENERATOR,
+      const structuredResult = await generateText({
+        system: WORKFLOW_SYSTEM_PROMPTS.OUTPUT_GENERATOR,
         model: registeredModel.model,
         prompt: `Based on the following execution results, generate the structured output according to the schema:
 
                  Execution Results: ${textResponse.text}
 
                  Please generate the structured output based on the execution results and context above.`,
-        schema: jsonSchema(agentSchema),
+        output: Output.object({ schema: jsonSchema(agentSchema) }),
         experimental_telemetry: AI_TELEMETRY_CONFIG,
       });
 
+      if (structuredResult.output == null) {
+        throw new AgentException(
+          'Failed to generate structured output from execution results',
+          AgentExceptionCode.AGENT_EXECUTION_FAILED,
+        );
+      }
+
       return {
-        result: output.object as object,
-        usage: {
-          inputTokens:
-            (textResponse.usage?.inputTokens ?? 0) +
-            (output.usage?.inputTokens ?? 0),
-          outputTokens:
-            (textResponse.usage?.outputTokens ?? 0) +
-            (output.usage?.outputTokens ?? 0),
-          totalTokens:
-            (textResponse.usage?.totalTokens ?? 0) +
-            (output.usage?.totalTokens ?? 0),
-        },
+        result: structuredResult.output as object,
+        usage: mergeLanguageModelUsage(
+          textResponse.usage,
+          structuredResult.usage,
+        ),
+        cacheCreationTokens,
       };
     } catch (error) {
       if (error instanceof AgentException) {

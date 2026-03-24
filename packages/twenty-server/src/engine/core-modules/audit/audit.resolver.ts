@@ -1,6 +1,7 @@
 import { UseFilters, UseGuards, UsePipes } from '@nestjs/common';
-import { Args, Mutation, Resolver } from '@nestjs/graphql';
+import { Args, Mutation } from '@nestjs/graphql';
 
+import { MetadataResolver } from 'src/engine/api/graphql/graphql-config/decorators/metadata-resolver.decorator';
 import { AuditExceptionFilter } from 'src/engine/core-modules/audit/audit-exception-filter';
 import {
   AuditException,
@@ -25,7 +26,7 @@ import {
 } from './dtos/create-analytics.input';
 import { AuditService } from './services/audit.service';
 
-@Resolver(() => Analytics)
+@MetadataResolver(() => Analytics)
 @UsePipes(ResolverValidationPipe)
 @UseFilters(AuditExceptionFilter, PreventNestToAutoLogGraphqlErrorsFilter)
 export class AuditResolver {

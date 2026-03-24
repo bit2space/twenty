@@ -18,7 +18,8 @@ describe(`Filter input validation - ${FIELD_METADATA_TYPE}`, () => {
   let objectMetadataId: string;
   let objectMetadataSingularName: string;
   let objectMetadataPluralName: string;
-  let targetObjectMetadataId: string;
+  let targetObjectMetadata1Id: string;
+  let targetObjectMetadata2Id: string;
 
   beforeAll(async () => {
     const setupTest = await setupTestObjectsWithAllFieldTypes();
@@ -26,13 +27,15 @@ describe(`Filter input validation - ${FIELD_METADATA_TYPE}`, () => {
     objectMetadataId = setupTest.objectMetadataId;
     objectMetadataSingularName = setupTest.objectMetadataSingularName;
     objectMetadataPluralName = setupTest.objectMetadataPluralName;
-    targetObjectMetadataId = setupTest.targetObjectMetadataId;
+    targetObjectMetadata1Id = setupTest.targetObjectMetadata1Id;
+    targetObjectMetadata2Id = setupTest.targetObjectMetadata2Id;
   });
 
   afterAll(async () => {
     await destroyManyObjectsMetadata([
       objectMetadataId,
-      targetObjectMetadataId,
+      targetObjectMetadata1Id,
+      targetObjectMetadata2Id,
     ]);
   });
 
@@ -44,12 +47,11 @@ describe(`Filter input validation - ${FIELD_METADATA_TYPE}`, () => {
       })),
     )(
       `${FIELD_METADATA_TYPE} field type - should fail with filter : $stringifiedFilter`,
-      async ({ gqlFilterInput: filter, gqlErrorMessage: errorMessage }) => {
+      async ({ gqlFilterInput: filter }) => {
         await testGqlFailingScenario(
           objectMetadataSingularName,
           objectMetadataPluralName,
           filter,
-          errorMessage,
         );
       },
     );
@@ -57,18 +59,16 @@ describe(`Filter input validation - ${FIELD_METADATA_TYPE}`, () => {
 
   describe('Rest filter input - failure', () => {
     it.each(
-      failingTestCases.map((testCase) => ({
-        ...testCase,
-        stringifiedFilter: JSON.stringify(testCase.restFilterInput),
-      })),
+      failingTestCases
+        .filter((testCase) => testCase.restFilterInput)
+        .map((testCase) => ({
+          ...testCase,
+          stringifiedFilter: JSON.stringify(testCase.restFilterInput),
+        })),
     )(
       `${FIELD_METADATA_TYPE} field type - should fail with filter : $stringifiedFilter`,
-      async ({ restFilterInput: filter, restErrorMessage: errorMessage }) => {
-        await testRestFailingScenario(
-          objectMetadataPluralName,
-          filter,
-          errorMessage,
-        );
+      async ({ restFilterInput: filter }) => {
+        await testRestFailingScenario(objectMetadataPluralName, filter);
       },
     );
   });

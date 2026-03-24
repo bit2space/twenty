@@ -1,10 +1,12 @@
-import { type ObjectMetadataItem } from '@/object-metadata/types/ObjectMetadataItem';
+import { type EnrichedObjectMetadataItem } from '@/object-metadata/types/EnrichedObjectMetadataItem';
 import { mapObjectMetadataToGraphQLQuery } from '@/object-metadata/utils/mapObjectMetadataToGraphQLQuery';
 import { generateDepthRecordGqlFieldsFromObject } from '@/object-record/graphql/record-gql-fields/utils/generateDepthRecordGqlFieldsFromObject';
-import { type RecordGqlOperationGqlRecordFields } from '@/object-record/graphql/types/RecordGqlOperationGqlRecordFields';
 import { getUpdateOneRecordMutationResponseField } from '@/object-record/utils/getUpdateOneRecordMutationResponseField';
 import { gql } from '@apollo/client';
-import { type ObjectPermissions } from 'twenty-shared/types';
+import {
+  type ObjectPermissions,
+  type RecordGqlOperationGqlRecordFields,
+} from 'twenty-shared/types';
 import { capitalize } from 'twenty-shared/utils';
 
 export const generateUpdateOneRecordMutation = ({
@@ -14,8 +16,8 @@ export const generateUpdateOneRecordMutation = ({
   computeReferences,
   objectPermissionsByObjectMetadataId,
 }: {
-  objectMetadataItem: ObjectMetadataItem;
-  objectMetadataItems: ObjectMetadataItem[];
+  objectMetadataItem: EnrichedObjectMetadataItem;
+  objectMetadataItems: EnrichedObjectMetadataItem[];
   recordGqlFields?: RecordGqlOperationGqlRecordFields;
   computeReferences: boolean;
   objectPermissionsByObjectMetadataId: Record<

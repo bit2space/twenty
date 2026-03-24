@@ -2,35 +2,48 @@ import { SettingsPath } from 'twenty-shared/types';
 
 import { useAuth } from '@/auth/hooks/useAuth';
 import { currentUserState } from '@/auth/states/currentUserState';
+import { currentWorkspaceMemberState } from '@/auth/states/currentWorkspaceMemberState';
 import { billingState } from '@/client-config/states/billingState';
+import { supportChatState } from '@/client-config/states/supportChatState';
 import { usePermissionFlagMap } from '@/settings/roles/hooks/usePermissionFlagMap';
-import { type NavigationDrawerItemIndentationLevel } from '@/ui/navigation/navigation-drawer/components/NavigationDrawerItem';
+import { getDocumentationUrl } from '@/support/utils/getDocumentationUrl';
+import {
+  type NavigationDrawerItemIndentationLevel,
+  type NavigationDrawerItemModifier,
+} from '@/ui/navigation/navigation-drawer/components/NavigationDrawerItem';
+import { useAtomStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomStateValue';
 import { useIsFeatureEnabled } from '@/workspace/hooks/useIsFeatureEnabled';
 import { t } from '@lingui/core/macro';
-import { useRecoilValue } from 'recoil';
+import { isNonEmptyString } from '@sniptt/guards';
 import {
   IconApi,
-  IconApps,
+  // IconApps, // TODO: Re-enable when integrations page is ready
   IconAt,
   IconCalendarEvent,
   IconColorSwatch,
   type IconComponent,
+  IconChartBar,
   IconCurrencyDollar,
   IconDoorEnter,
+  IconHelpCircle,
   IconHierarchy2,
   IconKey,
   IconLock,
   IconMail,
+  IconMessage,
+  IconPlug,
   IconRocket,
   IconServer,
   IconSettings,
   IconSparkles,
-  IconPuzzle2,
   IconUserCircle,
   IconUsers,
   IconWorld,
 } from 'twenty-ui/display';
-import { FeatureFlagKey, PermissionFlagType } from '~/generated/graphql';
+import {
+  FeatureFlagKey,
+  PermissionFlagType,
+} from '~/generated-metadata/graphql';
 
 export type SettingsNavigationSection = {
   label: string;
@@ -48,16 +61,17 @@ export type SettingsNavigationItem = {
   isHidden?: boolean;
   subItems?: SettingsNavigationItem[];
   isAdvanced?: boolean;
-  soon?: boolean;
-  isNew?: boolean;
+  modifier?: NavigationDrawerItemModifier;
 };
 
 const useSettingsNavigationItems = (): SettingsNavigationSection[] => {
-  const billing = useRecoilValue(billingState);
+  const billing = useAtomStateValue(billingState);
   const { signOut } = useAuth();
+  const supportChat = useAtomStateValue(supportChatState);
+  const currentWorkspaceMember = useAtomStateValue(currentWorkspaceMemberState);
 
   const isBillingEnabled = billing?.isBillingEnabled ?? false;
-  const currentUser = useRecoilValue(currentUserState);
+  const currentUser = useAtomStateValue(currentUserState);
   const isAdminEnabled =
     (currentUser?.canImpersonate || currentUser?.canAccessFullAdminPanel) ??
     false;
@@ -65,6 +79,12 @@ const useSettingsNavigationItems = (): SettingsNavigationSection[] => {
   const isApplicationEnabled = useIsFeatureEnabled(
     FeatureFlagKey.IS_APPLICATION_ENABLED,
   );
+  const isUsageAnalyticsEnabled = useIsFeatureEnabled(
+    FeatureFlagKey.IS_USAGE_ANALYTICS_ENABLED,
+  );
+  const isSupportChatConfigured =
+    supportChat?.supportDriver === 'FRONT' &&
+    isNonEmptyString(supportChat.supportFrontChatId);
 
   const permissionMap = usePermissionFlagMap();
   return [
@@ -85,17 +105,20 @@ const useSettingsNavigationItems = (): SettingsNavigationSection[] => {
           label: t`Accounts`,
           path: SettingsPath.Accounts,
           Icon: IconAt,
+          isHidden: !permissionMap[PermissionFlagType.CONNECTED_ACCOUNTS],
           subItems: [
             {
               label: t`Emails`,
               path: SettingsPath.AccountsEmails,
               Icon: IconMail,
+              isHidden: !permissionMap[PermissionFlagType.CONNECTED_ACCOUNTS],
               indentationLevel: 2,
             },
             {
               label: t`Calendars`,
               path: SettingsPath.AccountsCalendars,
               Icon: IconCalendarEvent,
+              isHidden: !permissionMap[PermissionFlagType.CONNECTED_ACCOUNTS],
               indentationLevel: 2,
             },
           ],
@@ -143,25 +166,35 @@ const useSettingsNavigationItems = (): SettingsNavigationSection[] => {
             !isBillingEnabled || !permissionMap[PermissionFlagType.WORKSPACE],
         },
         {
+          label: t`Usage`,
+          path: SettingsPath.Usage,
+          Icon: IconChartBar,
+          isHidden:
+            !isUsageAnalyticsEnabled ||
+            isBillingEnabled ||
+            !permissionMap[PermissionFlagType.WORKSPACE],
+        },
+        {
           label: t`APIs & Webhooks`,
           path: SettingsPath.ApiWebhooks,
           Icon: IconApi,
           isHidden: !permissionMap[PermissionFlagType.API_KEYS_AND_WEBHOOKS],
         },
+        // TODO: Re-enable when integrations page is ready
+        // {
+        //   label: t`Integrations`,
+        //   path: SettingsPath.Integrations,
+        //   Icon: IconApps,
+        //   isHidden: !permissionMap[PermissionFlagType.API_KEYS_AND_WEBHOOKS],
+        // },
         {
-          label: t`Integrations`,
-          path: SettingsPath.Integrations,
-          Icon: IconApps,
-          isHidden: !permissionMap[PermissionFlagType.API_KEYS_AND_WEBHOOKS],
-        },
-        {
-          label: t`Applications`,
+          label: t`Apps`,
           path: SettingsPath.Applications,
-          Icon: IconPuzzle2,
+          Icon: IconPlug,
           isHidden:
             !isApplicationEnabled ||
             !permissionMap[PermissionFlagType.WORKSPACE],
-          isNew: true,
+          modifier: 'new',
         },
         {
           label: t`AI`,
@@ -169,7 +202,7 @@ const useSettingsNavigationItems = (): SettingsNavigationSection[] => {
           Icon: IconSparkles,
           isHidden:
             !isAIEnabled || !permissionMap[PermissionFlagType.WORKSPACE],
-          isNew: true,
+          modifier: 'new',
         },
         {
           label: t`Security`,
@@ -190,10 +223,25 @@ const useSettingsNavigationItems = (): SettingsNavigationSection[] => {
           isHidden: !isAdminEnabled,
         },
         {
-          label: t`Releases`,
-          path: SettingsPath.Releases,
+          label: t`Updates`,
+          path: SettingsPath.Updates,
           Icon: IconRocket,
           isHidden: !permissionMap[PermissionFlagType.WORKSPACE],
+        },
+        {
+          label: t`Support`,
+          onClick: () => window.FrontChat?.('show'),
+          Icon: IconMessage,
+          isHidden: !isSupportChatConfigured,
+        },
+        {
+          label: t`Documentation`,
+          onClick: () =>
+            window.open(
+              getDocumentationUrl({ locale: currentWorkspaceMember?.locale }),
+              '_blank',
+            ),
+          Icon: IconHelpCircle,
         },
         {
           label: t`Logout`,

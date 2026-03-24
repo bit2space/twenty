@@ -4,16 +4,12 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { type FindOptionsWhere, IsNull, Repository } from 'typeorm';
 
 import {
-  decryptText,
-  encryptText,
-} from 'src/engine/core-modules/auth/auth.util';
-import {
-  KeyValuePairType,
   KeyValuePairEntity,
+  KeyValuePairType,
 } from 'src/engine/core-modules/key-value-pair/key-value-pair.entity';
+import { SecretEncryptionService } from 'src/engine/core-modules/secret-encryption/secret-encryption.service';
 import { ConfigVariables } from 'src/engine/core-modules/twenty-config/config-variables';
 import { ConfigValueConverterService } from 'src/engine/core-modules/twenty-config/conversion/config-value-converter.service';
-import { EnvironmentConfigDriver } from 'src/engine/core-modules/twenty-config/drivers/environment-config.driver';
 import { ConfigVariableType } from 'src/engine/core-modules/twenty-config/enums/config-variable-type.enum';
 import {
   ConfigVariableException,
@@ -31,7 +27,7 @@ export class ConfigStorageService implements ConfigStorageInterface {
     @InjectRepository(KeyValuePairEntity)
     private readonly keyValuePairRepository: Repository<KeyValuePairEntity>,
     private readonly configValueConverter: ConfigValueConverterService,
-    private readonly environmentConfigDriver: EnvironmentConfigDriver,
+    private readonly secretEncryptionService: SecretEncryptionService,
   ) {}
 
   private getConfigVariableWhereClause(
@@ -45,10 +41,6 @@ export class ConfigStorageService implements ConfigStorageInterface {
     };
   }
 
-  private getAppSecret(): string {
-    return this.environmentConfigDriver.get('APP_SECRET');
-  }
-
   private getConfigMetadata<T extends keyof ConfigVariables>(key: T) {
     return TypedReflect.getMetadata('config-variables', ConfigVariables)?.[
       key as string
@@ -56,11 +48,11 @@ export class ConfigStorageService implements ConfigStorageInterface {
   }
 
   private async convertAndSecureValue<T extends keyof ConfigVariables>(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // oxlint-disable-next-line @typescripttypescript/no-explicit-any
     value: any,
     key: T,
     isDecrypt = false,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // oxlint-disable-next-line @typescripttypescript/no-explicit-any
   ): Promise<any> {
     try {
       const convertedValue = isDecrypt
@@ -77,21 +69,9 @@ export class ConfigStorageService implements ConfigStorageInterface {
         return convertedValue;
       }
 
-      const appSecret = this.getAppSecret();
-
-      try {
-        return isDecrypt
-          ? decryptText(convertedValue, appSecret)
-          : encryptText(convertedValue, appSecret);
-      } catch (error) {
-        this.logger.debug(
-          `${isDecrypt ? 'Decryption' : 'Encryption'} failed for key ${
-            key as string
-          }: ${error.message}. Using original value.`,
-        );
-
-        return convertedValue;
-      }
+      return isDecrypt
+        ? this.secretEncryptionService.decrypt(convertedValue)
+        : this.secretEncryptionService.encrypt(convertedValue);
     } catch (error) {
       throw new ConfigVariableException(
         `Failed to convert value for key ${key as string}: ${error.message}`,

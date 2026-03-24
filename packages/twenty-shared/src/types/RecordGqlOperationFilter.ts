@@ -103,6 +103,7 @@ export type LinksFilter = {
 export type ActorFilter = {
   name?: StringFilter;
   source?: SelectFilter;
+  workspaceMemberId?: UUIDFilter;
 };
 
 export type EmailsFilter = {
@@ -140,13 +141,18 @@ export type RawJsonFilter = {
   is?: IsFilter;
 };
 
-export type RichTextV2LeafFilter = {
+export type FilesFilter = {
+  like?: string;
+  is?: IsFilter;
+};
+
+export type RichTextLeafFilter = {
   ilike?: string;
 };
 
-export type RichTextV2Filter = {
-  blocknote?: RichTextV2LeafFilter;
-  markdown?: RichTextV2LeafFilter;
+export type RichTextFilter = {
+  blocknote?: RichTextLeafFilter;
+  markdown?: RichTextLeafFilter;
 };
 
 export type TSVectorFilter = {
@@ -169,7 +175,8 @@ export type LeafFilter =
   | PhonesFilter
   | ArrayFilter
   | RawJsonFilter
-  | RichTextV2Filter
+  | FilesFilter
+  | RichTextFilter
   | TSVectorFilter
   | undefined;
 

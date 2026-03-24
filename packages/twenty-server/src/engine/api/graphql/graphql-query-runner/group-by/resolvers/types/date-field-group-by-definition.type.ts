@@ -1,7 +1,10 @@
-import { type ObjectRecordGroupByDateGranularity } from 'twenty-shared/types';
-import { type FirstDayOfTheWeek } from 'twenty-shared/utils';
+import {
+  type ObjectRecordGroupByDateGranularity,
+  type FirstDayOfTheWeek,
+} from 'twenty-shared/types';
 
 export type DateFieldGroupByDefinition = {
   granularity: ObjectRecordGroupByDateGranularity;
   weekStartDay?: FirstDayOfTheWeek;
+  timeZone?: string;
 };

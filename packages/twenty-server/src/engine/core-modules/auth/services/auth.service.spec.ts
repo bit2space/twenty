@@ -29,6 +29,9 @@ import { UserEntity } from 'src/engine/core-modules/user/user.entity';
 import { WorkspaceInvitationService } from 'src/engine/core-modules/workspace-invitation/services/workspace-invitation.service';
 import { AuthProviderEnum } from 'src/engine/core-modules/workspace/types/workspace.type';
 import { WorkspaceEntity } from 'src/engine/core-modules/workspace/workspace.entity';
+import { ApplicationRegistrationService } from 'src/engine/core-modules/application/application-registration/application-registration.service';
+import { CreateSSOConnectedAccountService } from 'src/engine/core-modules/auth/services/create-sso-connected-account.service';
+import { FeatureFlagService } from 'src/engine/core-modules/feature-flag/services/feature-flag.service';
 import { PermissionsService } from 'src/engine/metadata-modules/permissions/permissions.service';
 
 import { AuthService } from './auth.service';
@@ -167,6 +170,24 @@ describe('AuthService', () => {
             userHasWorkspaceSettingPermission: jest
               .fn()
               .mockResolvedValue(false),
+          },
+        },
+        {
+          provide: ApplicationRegistrationService,
+          useValue: {},
+        },
+        {
+          provide: FeatureFlagService,
+          useValue: {
+            isFeatureEnabled: jest.fn().mockResolvedValue(false),
+          },
+        },
+        {
+          provide: CreateSSOConnectedAccountService,
+          useValue: {
+            createOrUpdateSSOConnectedAccount: jest
+              .fn()
+              .mockResolvedValue(undefined),
           },
         },
       ],

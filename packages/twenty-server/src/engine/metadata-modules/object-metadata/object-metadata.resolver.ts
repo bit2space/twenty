@@ -4,10 +4,13 @@ import {
   Context,
   Mutation,
   Parent,
+  Query,
   ResolveField,
-  Resolver,
 } from '@nestjs/graphql';
 
+import { PermissionFlagType } from 'twenty-shared/constants';
+
+import { MetadataResolver } from 'src/engine/api/graphql/graphql-config/decorators/metadata-resolver.decorator';
 import { PreventNestToAutoLogGraphqlErrorsFilter } from 'src/engine/core-modules/graphql/filters/prevent-nest-to-auto-log-graphql-errors.filter';
 import { ResolverValidationPipe } from 'src/engine/core-modules/graphql/pipes/resolver-validation.pipe';
 import { I18nService } from 'src/engine/core-modules/i18n/i18n.service';
@@ -23,15 +26,16 @@ import { IndexMetadataDTO } from 'src/engine/metadata-modules/index-metadata/dto
 import { CreateOneObjectInput } from 'src/engine/metadata-modules/object-metadata/dtos/create-object.input';
 import { DeleteOneObjectInput } from 'src/engine/metadata-modules/object-metadata/dtos/delete-object.input';
 import { ObjectMetadataDTO } from 'src/engine/metadata-modules/object-metadata/dtos/object-metadata.dto';
+import { ObjectRecordCountDTO } from 'src/engine/metadata-modules/object-metadata/dtos/object-record-count.dto';
 import { UpdateOneObjectInput } from 'src/engine/metadata-modules/object-metadata/dtos/update-object.input';
 import { ObjectMetadataService } from 'src/engine/metadata-modules/object-metadata/object-metadata.service';
+import { ObjectRecordCountService } from 'src/engine/metadata-modules/object-metadata/object-record-count.service';
 import { objectMetadataGraphqlApiExceptionHandler } from 'src/engine/metadata-modules/object-metadata/utils/object-metadata-graphql-api-exception-handler.util';
 import { resolveObjectMetadataStandardOverride } from 'src/engine/metadata-modules/object-metadata/utils/resolve-object-metadata-standard-override.util';
-import { PermissionFlagType } from 'src/engine/metadata-modules/permissions/constants/permission-flag-type.constants';
 import { PermissionsGraphqlApiExceptionFilter } from 'src/engine/metadata-modules/permissions/utils/permissions-graphql-api-exception.filter';
 
 @UseGuards(WorkspaceAuthGuard)
-@Resolver(() => ObjectMetadataDTO)
+@MetadataResolver(() => ObjectMetadataDTO)
 @UsePipes(ResolverValidationPipe)
 @UseFilters(
   PreventNestToAutoLogGraphqlErrorsFilter,
@@ -40,8 +44,17 @@ import { PermissionsGraphqlApiExceptionFilter } from 'src/engine/metadata-module
 export class ObjectMetadataResolver {
   constructor(
     private readonly objectMetadataService: ObjectMetadataService,
+    private readonly objectRecordCountService: ObjectRecordCountService,
     private readonly i18nService: I18nService,
   ) {}
+
+  @UseGuards(SettingsPermissionGuard(PermissionFlagType.DATA_MODEL))
+  @Query(() => [ObjectRecordCountDTO])
+  async objectRecordCounts(
+    @AuthWorkspace() { id: workspaceId }: WorkspaceEntity,
+  ): Promise<ObjectRecordCountDTO[]> {
+    return this.objectRecordCountService.getRecordCounts(workspaceId);
+  }
 
   @ResolveField(() => String, { nullable: true })
   async labelPlural(
@@ -99,6 +112,21 @@ export class ObjectMetadataResolver {
     return resolveObjectMetadataStandardOverride(
       objectMetadata,
       'icon',
+      context.req.locale,
+      i18n,
+    );
+  }
+
+  @ResolveField(() => String, { nullable: true })
+  async color(
+    @Parent() objectMetadata: ObjectMetadataDTO,
+    @Context() context: I18nContext,
+  ): Promise<string> {
+    const i18n = this.i18nService.getI18nInstance(context.req.locale);
+
+    return resolveObjectMetadataStandardOverride(
+      objectMetadata,
+      'color',
       context.req.locale,
       i18n,
     );

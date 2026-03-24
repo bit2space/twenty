@@ -4,13 +4,13 @@ image: /images/user-guide/tasks/tasks_header.png
 ---
 
 <Frame>
-  <img src="/images/user-guide/tasks/tasks_header.png" alt="Header" />
+  <img src="/images/user-guide/tasks/tasks_header.png" alt="Intestazione" />
 </Frame>
 
 Rappresenta un'azione riuscita o completata.
 
 <Tabs>
-<Tab title="Usage">
+<Tab title="Utilizzo">
 
 ```jsx
 import { Checkmark } from 'twenty-ui/display';
@@ -19,6 +19,7 @@ export const MyComponent = () => {
   return <Checkmark />;
 };
 ```
+
 
 </Tab>
 
@@ -36,7 +37,7 @@ Rappresenta un'icona di segno di spunta con l'aggiunta della funzionalità di an
 
 <Tabs>
 
-<Tab title="Usage">
+<Tab title="Utilizzo">
 
 ```jsx
 import { AnimatedCheckmark } from 'twenty-ui/display';
@@ -55,14 +56,17 @@ export const MyComponent = () => {
 
 </Tab>
 
-<Tab title="Props">
+<Tab title="Proprietà">
 
-| Props       | Tipo     | Descrizione                                     | Predefinito |
+
+| Proprietà   | Tipo     | Descrizione                                     | Predefinito |
 | ----------- | -------- | ----------------------------------------------- | ----------- |
 | isAnimating | booleano | Controlla se il segno di spunta è in animazione | falso       |
-| colore      | string   | Colore del segno di spunta                      |             |
+| colore      | stringa  | Colore del segno di spunta                      |             |
 | durata      | numero   | La durata dell'animazione in secondi            | 0,5 secondi |
 | dimensione  | numero   | La dimensione del segno di spunta               | 28 pixel    |
+
+
 
 </Tab>
 

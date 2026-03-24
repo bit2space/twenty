@@ -1,5 +1,5 @@
-import { type ObjectMetadataItem } from '@/object-metadata/types/ObjectMetadataItem';
-import { generateGroupByAggregateQuery } from '../../record-aggregate/utils/generateGroupByAggregateQuery';
+import { type EnrichedObjectMetadataItem } from '@/object-metadata/types/EnrichedObjectMetadataItem';
+import { generateGroupByAggregateQuery } from '@/object-record/record-aggregate/utils/generateGroupByAggregateQuery';
 
 describe('generateGroupByQuery', () => {
   const testCases = [
@@ -37,7 +37,7 @@ describe('generateGroupByQuery', () => {
     'should generate valid GraphQL query for $description',
     ({ objectMetadataItem, aggregateOperations }) => {
       const result = generateGroupByAggregateQuery({
-        objectMetadataItem: objectMetadataItem as ObjectMetadataItem,
+        objectMetadataItem: objectMetadataItem as EnrichedObjectMetadataItem,
         aggregateOperationGqlFields: aggregateOperations,
       });
 

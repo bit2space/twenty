@@ -2,11 +2,21 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 
 import { msg } from '@lingui/core/macro';
+import { PermissionFlagType } from 'twenty-shared/constants';
 import { isDefined } from 'twenty-shared/utils';
 import { In, Repository } from 'typeorm';
 
 import { ApiKeyRoleService } from 'src/engine/core-modules/api-key/services/api-key-role.service';
-import { PermissionFlagType } from 'src/engine/metadata-modules/permissions/constants/permission-flag-type.constants';
+import { ApplicationEntity } from 'src/engine/core-modules/application/application.entity';
+import {
+  ApplicationException,
+  ApplicationExceptionCode,
+} from 'src/engine/core-modules/application/application.exception';
+import { isApiKeyAuthContext } from 'src/engine/core-modules/auth/guards/is-api-key-auth-context.guard';
+import { isApplicationAuthContext } from 'src/engine/core-modules/auth/guards/is-application-auth-context.guard';
+import { isSystemAuthContext } from 'src/engine/core-modules/auth/guards/is-system-auth-context.guard';
+import { isUserAuthContext } from 'src/engine/core-modules/auth/guards/is-user-auth-context.guard';
+import { type WorkspaceAuthContext } from 'src/engine/core-modules/auth/types/workspace-auth-context.type';
 import { TOOL_PERMISSION_FLAGS } from 'src/engine/metadata-modules/permissions/constants/tool-permission-flags';
 import {
   PermissionsException,
@@ -27,6 +37,8 @@ export class PermissionsService {
     private readonly apiKeyRoleService: ApiKeyRoleService,
     @InjectRepository(RoleEntity)
     private readonly roleRepository: Repository<RoleEntity>,
+    @InjectRepository(ApplicationEntity)
+    private readonly applicationRepository: Repository<ApplicationEntity>,
   ) {}
 
   private isToolPermission(feature: string) {
@@ -110,29 +122,75 @@ export class PermissionsService {
         [PermissionFlagType.DOWNLOAD_FILE]: false,
         [PermissionFlagType.SEND_EMAIL_TOOL]: false,
         [PermissionFlagType.HTTP_REQUEST_TOOL]: false,
+        [PermissionFlagType.CODE_INTERPRETER_TOOL]: false,
         [PermissionFlagType.IMPORT_CSV]: false,
         [PermissionFlagType.EXPORT_CSV]: false,
         [PermissionFlagType.CONNECTED_ACCOUNTS]: false,
         [PermissionFlagType.IMPERSONATE]: false,
         [PermissionFlagType.SSO_BYPASS]: false,
         [PermissionFlagType.PROFILE_INFORMATION]: false,
+        [PermissionFlagType.MARKETPLACE_APPS]: false,
       },
       objectsPermissions: {},
     }) as const satisfies UserWorkspacePermissions;
+
+  // TODO: this could likely be handled in the ORM layer
+  public async resolveRolePermissionConfigFromAuthContext(
+    authContext: WorkspaceAuthContext,
+  ): Promise<RolePermissionConfig | null> {
+    const workspaceId = authContext.workspace.id;
+
+    if (isSystemAuthContext(authContext)) {
+      return { shouldBypassPermissionChecks: true };
+    }
+
+    if (isApiKeyAuthContext(authContext)) {
+      const roleId = await this.apiKeyRoleService.getRoleIdForApiKeyId(
+        authContext.apiKey.id,
+        workspaceId,
+      );
+
+      return { intersectionOf: [roleId] };
+    }
+
+    if (
+      isApplicationAuthContext(authContext) &&
+      isDefined(authContext.application.defaultRoleId)
+    ) {
+      return { intersectionOf: [authContext.application.defaultRoleId] };
+    }
+
+    if (isUserAuthContext(authContext)) {
+      const roleId = await this.userRoleService.getRoleIdForUserWorkspace({
+        userWorkspaceId: authContext.userWorkspaceId,
+        workspaceId,
+      });
+
+      if (!isDefined(roleId)) {
+        return null;
+      }
+
+      return { intersectionOf: [roleId] };
+    }
+
+    return null;
+  }
 
   public async userHasWorkspaceSettingPermission({
     userWorkspaceId,
     workspaceId,
     setting,
     apiKeyId,
+    applicationId,
   }: {
     userWorkspaceId?: string;
     workspaceId: string;
     setting: PermissionFlagType;
     apiKeyId?: string;
+    applicationId?: string;
   }): Promise<boolean> {
-    if (apiKeyId) {
-      const roleId = await this.apiKeyRoleService.getRoleIdForApiKey(
+    if (isDefined(apiKeyId)) {
+      const roleId = await this.apiKeyRoleService.getRoleIdForApiKeyId(
         apiKeyId,
         workspaceId,
       );
@@ -174,6 +232,38 @@ export class PermissionsService {
       }
 
       return this.checkRolePermissions(roleOfUserWorkspace, setting);
+    }
+
+    if (applicationId) {
+      const application = await this.applicationRepository.findOne({
+        where: { id: applicationId, workspaceId },
+      });
+
+      if (!isDefined(application) || !isDefined(application.defaultRoleId)) {
+        throw new ApplicationException(
+          `Could not find application ${applicationId}`,
+          ApplicationExceptionCode.APPLICATION_NOT_FOUND,
+        );
+      }
+
+      const applicationRoleId = application.defaultRoleId;
+
+      const role = await this.roleRepository.findOne({
+        where: { id: applicationRoleId, workspaceId },
+        relations: ['permissionFlags'],
+      });
+
+      if (!isDefined(role)) {
+        throw new PermissionsException(
+          PermissionsExceptionMessage.APPLICATION_ROLE_NOT_FOUND,
+          PermissionsExceptionCode.APPLICATION_ROLE_NOT_FOUND,
+          {
+            userFriendlyMessage: msg`The application does not have a valid role assigned. Please check your application configuration.`,
+          },
+        );
+      }
+
+      return this.checkRolePermissions(role, setting);
     }
 
     throw new PermissionsException(

@@ -1,11 +1,11 @@
-import { HttpService } from '@nestjs/axios';
 import { Injectable } from '@nestjs/common';
 import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 
 import { msg } from '@lingui/core/macro';
 import { TWENTY_ICONS_BASE_URL } from 'twenty-shared/constants';
+import { isDefined } from 'twenty-shared/utils';
 import { WorkspaceActivationStatus } from 'twenty-shared/workspace';
-import { type DataSource, type QueryRunner, Repository } from 'typeorm';
+import { Repository, type DataSource, type QueryRunner } from 'typeorm';
 import { v4 } from 'uuid';
 
 import { USER_SIGNUP_EVENT_NAME } from 'src/engine/api/graphql/workspace-query-runner/constants/user-signup-event-name.constants';
@@ -20,6 +20,7 @@ import {
   compareHash,
   hashPassword,
 } from 'src/engine/core-modules/auth/auth.util';
+import { type AuthContextUser } from 'src/engine/core-modules/auth/types/auth-context.type';
 import {
   type AuthProviderWithPasswordType,
   type ExistingUserOrPartialUserWithPicture,
@@ -28,9 +29,11 @@ import {
   type SignInUpNewUserPayload,
 } from 'src/engine/core-modules/auth/types/signInUp.type';
 import { SubdomainManagerService } from 'src/engine/core-modules/domain/subdomain-manager/services/subdomain-manager.service';
+import { FileCorePictureService } from 'src/engine/core-modules/file/file-core-picture/services/file-core-picture.service';
 import { MetricsService } from 'src/engine/core-modules/metrics/metrics.service';
 import { MetricsKeys } from 'src/engine/core-modules/metrics/types/metrics-keys.type';
 import { OnboardingService } from 'src/engine/core-modules/onboarding/onboarding.service';
+import { TelemetryEventType } from 'src/engine/core-modules/telemetry/telemetry-event.type';
 import { TwentyConfigService } from 'src/engine/core-modules/twenty-config/twenty-config.service';
 import { UserWorkspaceService } from 'src/engine/core-modules/user-workspace/user-workspace.service';
 import { UserService } from 'src/engine/core-modules/user/services/user.service';
@@ -44,7 +47,7 @@ import { getDomainNameByEmail } from 'src/utils/get-domain-name-by-email';
 import { isWorkEmail } from 'src/utils/is-work-email';
 
 @Injectable()
-// eslint-disable-next-line @nx/workspace-inject-workspace-repository
+// oxlint-disable-next-line twenty/inject-workspace-repository
 export class SignInUpService {
   constructor(
     @InjectRepository(UserEntity)
@@ -55,13 +58,13 @@ export class SignInUpService {
     private readonly userWorkspaceService: UserWorkspaceService,
     private readonly onboardingService: OnboardingService,
     private readonly workspaceEventEmitter: WorkspaceEventEmitter,
-    private readonly httpService: HttpService,
     private readonly twentyConfigService: TwentyConfigService,
     private readonly subdomainManagerService: SubdomainManagerService,
     private readonly userService: UserService,
     private readonly metricsService: MetricsService,
     private readonly workspaceCacheService: WorkspaceCacheService,
     private readonly applicationService: ApplicationService,
+    private readonly fileCorePictureService: FileCorePictureService,
     @InjectDataSource()
     private readonly dataSource: DataSource,
   ) {}
@@ -204,6 +207,7 @@ export class SignInUpService {
     const updatedUser = await this.signInUpOnExistingWorkspace({
       workspace: invitationValidation.workspace,
       userData: params.userData,
+      roleId: params.invitation.context?.roleId,
     });
 
     await this.workspaceInvitationService.invalidateWorkspaceInvitation(
@@ -252,6 +256,7 @@ export class SignInUpService {
   async signInUpOnExistingWorkspace(
     params: {
       workspace: WorkspaceEntity;
+      roleId?: string | null;
     } & ExistingUserOrPartialUserWithPicture,
   ) {
     await this.throwIfWorkspaceIsNotReadyForSignInUp(params.workspace, params);
@@ -272,11 +277,13 @@ export class SignInUpService {
       await this.activateOnboardingForUser({
         user,
         workspace: params.workspace,
+        shouldShowConnectAccountStep: false,
       });
 
       await this.userWorkspaceService.addUserToWorkspaceIfUserNotInWorkspace(
         user,
         params.workspace,
+        params.roleId,
       );
 
       return user;
@@ -292,6 +299,7 @@ export class SignInUpService {
     await this.userWorkspaceService.addUserToWorkspaceIfUserNotInWorkspace(
       user,
       params.workspace,
+      params.roleId,
     );
 
     return user;
@@ -301,20 +309,24 @@ export class SignInUpService {
     {
       user,
       workspace,
+      shouldShowConnectAccountStep,
     }: {
-      user: UserEntity;
+      user: AuthContextUser;
       workspace: WorkspaceEntity;
+      shouldShowConnectAccountStep: boolean;
     },
     queryRunner?: QueryRunner,
   ) {
-    await this.onboardingService.setOnboardingConnectAccountPending(
-      {
-        userId: user.id,
-        workspaceId: workspace.id,
-        value: true,
-      },
-      queryRunner,
-    );
+    if (shouldShowConnectAccountStep) {
+      await this.onboardingService.setOnboardingConnectAccountPending(
+        {
+          userId: user.id,
+          workspaceId: workspace.id,
+          value: true,
+        },
+        queryRunner,
+      );
+    }
 
     if (user.firstName === '' && user.lastName === '') {
       await this.onboardingService.setOnboardingCreateProfilePending(
@@ -349,18 +361,19 @@ export class SignInUpService {
       ? await queryRunner.manager.save(UserEntity, userCreated)
       : await this.userRepository.save(userCreated);
 
-    const serverUrl = this.twentyConfigService.get('SERVER_URL');
-
-    this.workspaceEventEmitter.emitCustomBatchEvent(
+    this.workspaceEventEmitter.emitCustomBatchEvent<TelemetryEventType>(
       USER_SIGNUP_EVENT_NAME,
       [
         {
+          workspaceId: savedUser.currentWorkspace?.id,
+          userWorkspaceId: savedUser.currentUserWorkspace?.id,
           userId: savedUser.id,
           userEmail: newUserWithPicture.email,
           userFirstName: newUserWithPicture.firstName,
           userLastName: newUserWithPicture.lastName,
           locale: newUserWithPicture.locale,
-          serverUrl,
+          serverUrl: this.twentyConfigService.get('SERVER_URL'),
+          serverId: this.twentyConfigService.get('SERVER_ID'),
         },
       ],
       undefined,
@@ -374,52 +387,66 @@ export class SignInUpService {
     return savedUser;
   }
 
-  private async setDefaultImpersonateAndAccessFullAdminPanel() {
-    if (!this.twentyConfigService.get('IS_MULTIWORKSPACE_ENABLED')) {
-      const workspacesCount = await this.workspaceRepository.count();
+  private async isSignUpEnabled(): Promise<boolean> {
+    const workspaceCount = await this.workspaceRepository.count();
 
-      // let the creation of the first workspace
-      if (workspacesCount > 0) {
-        throw new AuthException(
-          'New workspace setup is disabled',
-          AuthExceptionCode.SIGNUP_DISABLED,
-        );
-      }
-
-      return { canImpersonate: true, canAccessFullAdminPanel: true };
-    }
-
-    return { canImpersonate: false, canAccessFullAdminPanel: false };
-  }
-
-  private isWorkspaceCreationLimitedToServerAdmins(): boolean {
-    return this.twentyConfigService.get(
-      'IS_WORKSPACE_CREATION_LIMITED_TO_SERVER_ADMINS',
+    return (
+      this.twentyConfigService.get('IS_MULTIWORKSPACE_ENABLED') ||
+      workspaceCount === 0
     );
   }
 
-  private async isFirstWorkspaceForUser(userId: string): Promise<boolean> {
-    const count = await this.userWorkspaceService.countUserWorkspaces(userId);
-
-    return count === 0;
-  }
-
-  async checkWorkspaceCreationIsAllowedOrThrow(
-    currentUser: UserEntity,
-  ): Promise<void> {
-    if (!this.isWorkspaceCreationLimitedToServerAdmins()) return;
-
-    if (await this.isFirstWorkspaceForUser(currentUser.id)) return;
-
-    if (!currentUser.canAccessFullAdminPanel) {
+  private async assertSignUpEnabled(): Promise<void> {
+    if (!(await this.isSignUpEnabled())) {
       throw new AuthException(
-        'Workspace creation is restricted to admins',
-        AuthExceptionCode.FORBIDDEN_EXCEPTION,
-        {
-          userFriendlyMessage: msg`Workspace creation is restricted to admins`,
-        },
+        'New workspace setup is disabled',
+        AuthExceptionCode.SIGNUP_DISABLED,
       );
     }
+  }
+
+  private async hasServerAdmin(): Promise<boolean> {
+    const adminCount = await this.userRepository.count({
+      where: { canAccessFullAdminPanel: true },
+    });
+
+    return adminCount > 0;
+  }
+
+  private async assertWorkspaceCreationAllowed(
+    userData: ExistingUserOrPartialUserWithPicture['userData'],
+  ): Promise<void> {
+    await this.assertSignUpEnabled();
+
+    const workspaceCount = await this.workspaceRepository.count();
+
+    if (workspaceCount === 0) {
+      return;
+    }
+
+    if (
+      !this.twentyConfigService.get(
+        'IS_WORKSPACE_CREATION_LIMITED_TO_SERVER_ADMINS',
+      )
+    ) {
+      return;
+    }
+
+    const isExistingAdmin =
+      userData.type === 'existingUser' &&
+      userData.existingUser.canAccessFullAdminPanel;
+
+    if (isExistingAdmin) {
+      return;
+    }
+
+    throw new AuthException(
+      'Workspace creation is restricted to admins',
+      AuthExceptionCode.FORBIDDEN_EXCEPTION,
+      {
+        userFriendlyMessage: msg`Workspace creation is restricted to admins`,
+      },
+    );
   }
 
   async signUpOnNewWorkspace(
@@ -440,50 +467,29 @@ export class SignInUpService {
       );
     }
 
-    const { canImpersonate, canAccessFullAdminPanel } =
-      await this.setDefaultImpersonateAndAccessFullAdminPanel();
+    await this.assertWorkspaceCreationAllowed(userData);
 
-    const logoUrl = `${TWENTY_ICONS_BASE_URL}/${getDomainNameByEmail(email)}`;
-    const isLogoUrlValid = async () => {
-      try {
-        return (
-          (await this.httpService.axiosRef.get(logoUrl, { timeout: 600 }))
-            .status === 200
-        );
-      } catch {
-        return false;
-      }
-    };
+    const shouldGrantServerAdmin = !(await this.hasServerAdmin());
 
     const isWorkEmailFound = isWorkEmail(email);
-    const logo =
-      isWorkEmailFound && (await isLogoUrlValid()) ? logoUrl : undefined;
 
     const workspaceId = v4();
+    const workspaceCustomApplicationId = v4();
     const queryRunner = this.dataSource.createQueryRunner();
 
     await queryRunner.connect();
     await queryRunner.startTransaction();
 
     try {
-      const workspaceCustomApplication =
-        await this.applicationService.createWorkspaceCustomApplication(
-          {
-            workspaceId,
-          },
-          queryRunner,
-        );
-
       const workspaceToCreate = this.workspaceRepository.create({
         id: workspaceId,
         subdomain: await this.subdomainManagerService.generateSubdomain(
           isWorkEmailFound ? { userEmail: email } : {},
         ),
-        workspaceCustomApplicationId: workspaceCustomApplication.id,
+        workspaceCustomApplicationId,
         displayName: '',
         inviteHash: v4(),
         activationStatus: WorkspaceActivationStatus.PENDING_CREATION,
-        logo,
       });
 
       const workspace = await queryRunner.manager.save(
@@ -491,14 +497,43 @@ export class SignInUpService {
         workspaceToCreate,
       );
 
+      const customApplication =
+        await this.applicationService.createWorkspaceCustomApplication(
+          {
+            workspaceId,
+            applicationId: workspaceCustomApplicationId,
+          },
+          queryRunner,
+        );
+
+      if (isWorkEmailFound) {
+        const logoUrl = `${TWENTY_ICONS_BASE_URL}/${getDomainNameByEmail(email)}`;
+        const logoFile =
+          await this.fileCorePictureService.uploadWorkspaceLogoFromUrl({
+            imageUrl: logoUrl,
+            workspaceId,
+            applicationUniversalIdentifier:
+              customApplication.universalIdentifier,
+            queryRunner,
+          });
+
+        if (isDefined(logoFile)) {
+          await queryRunner.manager.update(
+            WorkspaceEntity,
+            { id: workspaceId },
+            { logoFileId: logoFile.id },
+          );
+        }
+      }
+
       const isExistingUser = userData.type === 'existingUser';
       const user = isExistingUser
         ? userData.existingUser
         : await this.saveNewUser(
             userData.newUserWithPicture,
             {
-              canImpersonate,
-              canAccessFullAdminPanel,
+              canImpersonate: shouldGrantServerAdmin,
+              canAccessFullAdminPanel: shouldGrantServerAdmin,
             },
             queryRunner,
           );
@@ -511,11 +546,15 @@ export class SignInUpService {
           pictureUrl: isExistingUser
             ? undefined
             : userData.newUserWithPicture.picture,
+          applicationUniversalIdentifier: customApplication.universalIdentifier,
         },
         queryRunner,
       );
 
-      await this.activateOnboardingForUser({ user, workspace }, queryRunner);
+      await this.activateOnboardingForUser(
+        { user, workspace, shouldShowConnectAccountStep: true },
+        queryRunner,
+      );
 
       await this.onboardingService.setOnboardingInviteTeamPending(
         {
@@ -555,9 +594,16 @@ export class SignInUpService {
       );
     }
 
+    await this.assertSignUpEnabled();
+
+    const shouldGrantServerAdmin = !(await this.hasServerAdmin());
+
     return this.saveNewUser(
       await this.computePartialUserFromUserPayload(newUserParams, authParams),
-      await this.setDefaultImpersonateAndAccessFullAdminPanel(),
+      {
+        canImpersonate: shouldGrantServerAdmin,
+        canAccessFullAdminPanel: shouldGrantServerAdmin,
+      },
     );
   }
 }

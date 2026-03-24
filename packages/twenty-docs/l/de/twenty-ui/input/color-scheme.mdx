@@ -4,7 +4,7 @@ image: /images/user-guide/fields/field.png
 ---
 
 <Frame>
-  <img src="/images/user-guide/fields/field.png" alt="Header" />
+  <img src="/images/user-guide/fields/field.png" alt="Kopfzeile" />
 </Frame>
 
 ## Farbschema Karte
@@ -12,7 +12,7 @@ image: /images/user-guide/fields/field.png
 Repräsentiert verschiedene Farbschemata und ist speziell für helle und dunkle Themen abgestimmt.
 
 <Tabs>
-<Tab title="Usage">
+<Tab title="Verwendung">
 
 ```jsx
 import { ColorSchemeCard } from "twenty-ui/display";
@@ -29,13 +29,16 @@ export const MyComponent = () => {
 
 </Tab>
 
-<Tab title="Props">
+<Tab title="Eigenschaften">
 
-| Props            | Typ                                     | Beschreibung                                                                                  | Standard |
-| ---------------- | --------------------------------------- | --------------------------------------------------------------------------------------------- | -------- |
-| Variante         | Zeichenkette                            | Die Variante des Farbschemas. Optionen umfassen `Dunkel`, `Hell` und `System` | hell     |
-| ausgewählt       | boolesch                                | Wenn `true`, wird ein Häkchen angezeigt, um das ausgewählte Farbschema anzuzeigen             |          |
-| additional props | `React.ComponentPropsWithoutRef<'div'>` | Standard HTML `div` Elementeigenschaften                                                      |          |
+
+| Eigenschaften     | Typ                                     | Beschreibung                                                                      | Standard |
+| ----------------- | --------------------------------------- | --------------------------------------------------------------------------------- | -------- |
+| Variante          | Zeichenkette                            | Die Variante des Farbschemas. Optionen umfassen `Dunkel`, `Hell` und `System`     | hell     |
+| ausgewählt        | boolesch                                | Wenn `true`, wird ein Häkchen angezeigt, um das ausgewählte Farbschema anzuzeigen |          |
+| zusätzliche Props | `React.ComponentPropsWithoutRef<'div'>` | Standard HTML `div` Elementeigenschaften                                          |          |
+
+
 
 </Tab>
 
@@ -46,7 +49,7 @@ export const MyComponent = () => {
 Ermöglicht es den Benutzern, zwischen verschiedenen Farbschemata zu wählen.
 
 <Tabs>
-<Tab title="Usage">
+<Tab title="Verwendung">
 
 ```jsx
 import { ColorSchemePicker } from "twenty-ui/display";
@@ -61,12 +64,15 @@ export const MyComponent = () => {
 
 </Tab>
 
-<Tab title="Props">
+<Tab title="Eigenschaften">
 
-| Props    | Typ          | Beschreibung                                                                   |
-| -------- | ------------ | ------------------------------------------------------------------------------ |
-| wert     | `Farbschema` | Das aktuell ausgewählte Farbschema                                             |
-| onChange | Funktion     | Die Rückruffunktion, die Sie beim Auswählen eines Farbschemas auslösen möchten |
+
+| Eigenschaften | Typ          | Beschreibung                                                                   |
+| ------------- | ------------ | ------------------------------------------------------------------------------ |
+| wert          | `Farbschema` | Das aktuell ausgewählte Farbschema                                             |
+| onChange      | Funktion     | Die Rückruffunktion, die Sie beim Auswählen eines Farbschemas auslösen möchten |
+
+
 
 </Tab>
 

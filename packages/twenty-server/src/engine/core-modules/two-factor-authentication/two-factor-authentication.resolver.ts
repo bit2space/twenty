@@ -1,10 +1,11 @@
 import { UseFilters, UseGuards } from '@nestjs/common';
-import { Args, Mutation, Resolver } from '@nestjs/graphql';
+import { Args, Mutation } from '@nestjs/graphql';
 import { InjectRepository } from '@nestjs/typeorm';
 
 import { assertIsDefinedOrThrow, isDefined } from 'twenty-shared/utils';
 import { Repository } from 'typeorm';
 
+import { MetadataResolver } from 'src/engine/api/graphql/graphql-config/decorators/metadata-resolver.decorator';
 import {
   AuthException,
   AuthExceptionCode,
@@ -13,7 +14,7 @@ import { AuthGraphqlApiExceptionFilter } from 'src/engine/core-modules/auth/filt
 import { LoginTokenService } from 'src/engine/core-modules/auth/token/services/login-token.service';
 import { WorkspaceDomainsService } from 'src/engine/core-modules/domain/workspace-domains/services/workspace-domains.service';
 import { UserService } from 'src/engine/core-modules/user/services/user.service';
-import { UserEntity } from 'src/engine/core-modules/user/user.entity';
+import { type AuthContextUser } from 'src/engine/core-modules/auth/types/auth-context.type';
 import { WorkspaceEntity } from 'src/engine/core-modules/workspace/workspace.entity';
 import { AuthUser } from 'src/engine/decorators/auth/auth-user.decorator';
 import { AuthWorkspace } from 'src/engine/decorators/auth/auth-workspace.decorator';
@@ -27,14 +28,14 @@ import { PermissionsGraphqlApiExceptionFilter } from 'src/engine/metadata-module
 import { TwoFactorAuthenticationService } from './two-factor-authentication.service';
 
 import { DeleteTwoFactorAuthenticationMethodInput } from './dto/delete-two-factor-authentication-method.input';
-import { DeleteTwoFactorAuthenticationMethodOutput } from './dto/delete-two-factor-authentication-method.output';
+import { DeleteTwoFactorAuthenticationMethodDTO } from './dto/delete-two-factor-authentication-method.dto';
 import { InitiateTwoFactorAuthenticationProvisioningInput } from './dto/initiate-two-factor-authentication-provisioning.input';
-import { InitiateTwoFactorAuthenticationProvisioningOutput } from './dto/initiate-two-factor-authentication-provisioning.output';
+import { InitiateTwoFactorAuthenticationProvisioningDTO } from './dto/initiate-two-factor-authentication-provisioning.dto';
 import { VerifyTwoFactorAuthenticationMethodInput } from './dto/verify-two-factor-authentication-method.input';
-import { VerifyTwoFactorAuthenticationMethodOutput } from './dto/verify-two-factor-authentication-method.output';
+import { VerifyTwoFactorAuthenticationMethodDTO } from './dto/verify-two-factor-authentication-method.dto';
 import { TwoFactorAuthenticationMethodEntity } from './entities/two-factor-authentication-method.entity';
 
-@Resolver()
+@MetadataResolver()
 @UseFilters(AuthGraphqlApiExceptionFilter, PermissionsGraphqlApiExceptionFilter)
 export class TwoFactorAuthenticationResolver {
   constructor(
@@ -46,13 +47,13 @@ export class TwoFactorAuthenticationResolver {
     private readonly twoFactorAuthenticationMethodRepository: Repository<TwoFactorAuthenticationMethodEntity>,
   ) {}
 
-  @Mutation(() => InitiateTwoFactorAuthenticationProvisioningOutput)
+  @Mutation(() => InitiateTwoFactorAuthenticationProvisioningDTO)
   @UseGuards(PublicEndpointGuard, NoPermissionGuard)
   async initiateOTPProvisioning(
     @Args()
     initiateTwoFactorAuthenticationProvisioningInput: InitiateTwoFactorAuthenticationProvisioningInput,
     @Args('origin') origin: string,
-  ): Promise<InitiateTwoFactorAuthenticationProvisioningOutput> {
+  ): Promise<InitiateTwoFactorAuthenticationProvisioningDTO> {
     const { sub: userEmail, workspaceId: tokenWorkspaceId } =
       await this.loginTokenService.verifyLoginToken(
         initiateTwoFactorAuthenticationProvisioningInput.loginToken,
@@ -98,12 +99,12 @@ export class TwoFactorAuthenticationResolver {
     return { uri };
   }
 
-  @Mutation(() => InitiateTwoFactorAuthenticationProvisioningOutput)
+  @Mutation(() => InitiateTwoFactorAuthenticationProvisioningDTO)
   @UseGuards(UserAuthGuard, NoPermissionGuard)
   async initiateOTPProvisioningForAuthenticatedUser(
-    @AuthUser() user: UserEntity,
+    @AuthUser() user: AuthContextUser,
     @AuthWorkspace() workspace: WorkspaceEntity,
-  ): Promise<InitiateTwoFactorAuthenticationProvisioningOutput> {
+  ): Promise<InitiateTwoFactorAuthenticationProvisioningDTO> {
     const uri =
       await this.twoFactorAuthenticationService.initiateStrategyConfiguration(
         user.id,
@@ -122,14 +123,14 @@ export class TwoFactorAuthenticationResolver {
     return { uri };
   }
 
-  @Mutation(() => DeleteTwoFactorAuthenticationMethodOutput)
+  @Mutation(() => DeleteTwoFactorAuthenticationMethodDTO)
   @UseGuards(WorkspaceAuthGuard, UserAuthGuard, CustomPermissionGuard)
   async deleteTwoFactorAuthenticationMethod(
     @Args()
     deleteTwoFactorAuthenticationMethodInput: DeleteTwoFactorAuthenticationMethodInput,
     @AuthWorkspace() workspace: WorkspaceEntity,
-    @AuthUser() user: UserEntity,
-  ): Promise<DeleteTwoFactorAuthenticationMethodOutput> {
+    @AuthUser() user: AuthContextUser,
+  ): Promise<DeleteTwoFactorAuthenticationMethodDTO> {
     const twoFactorMethod =
       await this.twoFactorAuthenticationMethodRepository.findOne({
         where: {
@@ -162,14 +163,14 @@ export class TwoFactorAuthenticationResolver {
     return { success: true };
   }
 
-  @Mutation(() => VerifyTwoFactorAuthenticationMethodOutput)
+  @Mutation(() => VerifyTwoFactorAuthenticationMethodDTO)
   @UseGuards(WorkspaceAuthGuard, UserAuthGuard, NoPermissionGuard)
   async verifyTwoFactorAuthenticationMethodForAuthenticatedUser(
     @Args()
     verifyTwoFactorAuthenticationMethodInput: VerifyTwoFactorAuthenticationMethodInput,
     @AuthWorkspace() workspace: WorkspaceEntity,
-    @AuthUser() user: UserEntity,
-  ): Promise<VerifyTwoFactorAuthenticationMethodOutput> {
+    @AuthUser() user: AuthContextUser,
+  ): Promise<VerifyTwoFactorAuthenticationMethodDTO> {
     return await this.twoFactorAuthenticationService.verifyTwoFactorAuthenticationMethodForAuthenticatedUser(
       user.id,
       verifyTwoFactorAuthenticationMethodInput.otp,

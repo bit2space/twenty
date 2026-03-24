@@ -4,15 +4,15 @@ image: /images/user-guide/fields/field.png
 ---
 
 <Frame>
-  <img src="/images/user-guide/fields/field.png" alt="Header" />
+  <img src="/images/user-guide/fields/field.png" alt="Intestazione" />
 </Frame>
 
-## Color Scheme Card
+## Scheda schema di colori
 
 Rappresenta diversi schemi di colore ed è appositamente progettato per temi chiari e scuri.
 
 <Tabs>
-<Tab title="Usage">
+<Tab title="Utilizzo">
 
 ```jsx
 import { ColorSchemeCard } from "twenty-ui/display";
@@ -29,24 +29,27 @@ export const MyComponent = () => {
 
 </Tab>
 
-<Tab title="Props">
+<Tab title="Proprietà">
 
-| Props            | Tipo                                    | Descrizione                                                                                                             | Predefinito |
-| ---------------- | --------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- | ----------- |
-| variante         | string                                  | La variante dello schema di colore. Le opzioni includono `Scuro`, `Chiaro` e `Sistema`. | chiaro      |
-| selezionato      | booleano                                | Se `vero`, visualizza un segno di spunta per indicare lo schema di colore selezionato.                  |             |
-| additional props | `React.ComponentPropsWithoutRef<'div'>` | Proprietà standard dell'elemento HTML `div`                                                                             |             |
+
+| Proprietà        | Tipo                                    | Descrizione                                                                             | Predefinito |
+| ---------------- | --------------------------------------- | --------------------------------------------------------------------------------------- | ----------- |
+| variante         | stringa                                 | La variante dello schema di colore. Le opzioni includono `Scuro`, `Chiaro` e `Sistema`. | chiaro      |
+| selezionato      | booleano                                | Se `vero`, visualizza un segno di spunta per indicare lo schema di colore selezionato.  |             |
+| props aggiuntive | `React.ComponentPropsWithoutRef<'div'>` | Proprietà standard dell'elemento HTML `div`                                             |             |
+
+
 
 </Tab>
 
 </Tabs>
 
-## Color Scheme Picker
+## Selettore schema di colori
 
 Consente agli utenti di scegliere tra diversi schemi di colore.
 
 <Tabs>
-<Tab title="Usage">
+<Tab title="Utilizzo">
 
 ```jsx
 import { ColorSchemePicker } from "twenty-ui/display";
@@ -61,12 +64,15 @@ export const MyComponent = () => {
 
 </Tab>
 
-<Tab title="Props">
+<Tab title="Proprietà">
 
-| Props    | Tipo               | Descrizione                                                                                        |
-| -------- | ------------------ | -------------------------------------------------------------------------------------------------- |
-| valore   | `Schema di colori` | Lo schema di colore attualmente selezionato                                                        |
-| onChange | funzione           | La funzione di callback si attiva quando un utente seleziona uno schema di colore. |
+
+| Proprietà | Tipo               | Descrizione                                                                        |
+| --------- | ------------------ | ---------------------------------------------------------------------------------- |
+| valore    | `Schema di colori` | Lo schema di colore attualmente selezionato                                        |
+| onChange  | funzione           | La funzione di callback si attiva quando un utente seleziona uno schema di colore. |
+
+
 
 </Tab>
 

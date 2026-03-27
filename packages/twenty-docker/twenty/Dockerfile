@@ -17,6 +17,7 @@ COPY ./packages/twenty-ui/package.json /app/packages/twenty-ui/
 COPY ./packages/twenty-shared/package.json /app/packages/twenty-shared/
 COPY ./packages/twenty-front/package.json /app/packages/twenty-front/
 COPY ./packages/twenty-sdk/package.json /app/packages/twenty-sdk/
+COPY ./packages/twenty-client-sdk/package.json /app/packages/twenty-client-sdk/
 
 RUN yarn && yarn cache clean && npx nx reset
 
@@ -27,6 +28,7 @@ COPY ./packages/twenty-emails /app/packages/twenty-emails
 COPY ./packages/twenty-shared /app/packages/twenty-shared
 COPY ./packages/twenty-ui /app/packages/twenty-ui
 COPY ./packages/twenty-sdk /app/packages/twenty-sdk
+COPY ./packages/twenty-client-sdk /app/packages/twenty-client-sdk
 COPY ./packages/twenty-server /app/packages/twenty-server
 
 RUN npx nx run twenty-server:lingui:extract && \
@@ -36,18 +38,12 @@ RUN npx nx run twenty-server:lingui:extract && \
 
 RUN npx nx run twenty-server:build
 
-# Bundle setup-db script into a standalone JS file so the final image
-# doesn't need tsx or the TypeScript source tree at runtime.
-RUN npx esbuild packages/twenty-server/scripts/setup-db.ts \
-      --bundle --platform=node --outfile=packages/twenty-server/dist/scripts/setup-db.js \
-      --external:typeorm --external:dotenv --external:pg
-
 # Clean server build output (type declarations and compiled tests are not needed at runtime;
 # source maps are kept because twenty-infra extracts them from the image for Sentry uploads)
 RUN find /app/packages/twenty-server/dist -name '*.d.ts' -delete \
  && rm -rf /app/packages/twenty-server/dist/packages/twenty-server/test
 
-RUN yarn workspaces focus --production twenty-emails twenty-shared twenty-sdk twenty-server
+RUN yarn workspaces focus --production twenty-emails twenty-shared twenty-sdk twenty-client-sdk twenty-server
 
 
 FROM common-deps AS twenty-front-build
@@ -58,6 +54,7 @@ COPY ./packages/twenty-front /app/packages/twenty-front
 COPY ./packages/twenty-ui /app/packages/twenty-ui
 COPY ./packages/twenty-shared /app/packages/twenty-shared
 COPY ./packages/twenty-sdk /app/packages/twenty-sdk
+COPY ./packages/twenty-client-sdk /app/packages/twenty-client-sdk
 RUN npx nx run twenty-front:lingui:extract && \
     npx nx run twenty-front:lingui:compile
 # To skip the memory-intensive frontend build, pre-build on the host:
@@ -106,6 +103,8 @@ COPY --chown=1000 --from=twenty-server-build /app/packages/twenty-shared/dist /a
 COPY --chown=1000 --from=twenty-server-build /app/packages/twenty-emails/package.json /app/packages/twenty-emails/
 COPY --chown=1000 --from=twenty-server-build /app/packages/twenty-emails/dist /app/packages/twenty-emails/dist
 COPY --chown=1000 --from=twenty-server-build /app/packages/twenty-sdk/package.json /app/packages/twenty-sdk/
+COPY --chown=1000 --from=twenty-server-build /app/packages/twenty-client-sdk/package.json /app/packages/twenty-client-sdk/
+COPY --chown=1000 --from=twenty-server-build /app/packages/twenty-client-sdk/dist /app/packages/twenty-client-sdk/dist
 COPY --chown=1000 --from=twenty-server-build /app/packages/twenty-ui/package.json /app/packages/twenty-ui/
 COPY --chown=1000 --from=twenty-server-build /app/packages/twenty-front/package.json /app/packages/twenty-front/
 
@@ -180,6 +179,8 @@ COPY --from=twenty-server-build /app/packages/twenty-shared/dist /app/packages/t
 COPY --from=twenty-server-build /app/packages/twenty-emails/package.json /app/packages/twenty-emails/
 COPY --from=twenty-server-build /app/packages/twenty-emails/dist /app/packages/twenty-emails/dist
 COPY --from=twenty-server-build /app/packages/twenty-sdk/package.json /app/packages/twenty-sdk/
+COPY --from=twenty-server-build /app/packages/twenty-client-sdk/package.json /app/packages/twenty-client-sdk/
+COPY --from=twenty-server-build /app/packages/twenty-client-sdk/dist /app/packages/twenty-client-sdk/dist
 COPY --from=twenty-server-build /app/packages/twenty-ui/package.json /app/packages/twenty-ui/
 COPY --from=twenty-server-build /app/packages/twenty-front/package.json /app/packages/twenty-front/
 

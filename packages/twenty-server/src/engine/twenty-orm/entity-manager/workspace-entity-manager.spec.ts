@@ -111,6 +111,7 @@ describe('WorkspaceEntityManager', () => {
       fieldIds: ['field-id'],
       indexMetadataIds: [],
       objectPermissionIds: [],
+      fieldPermissionIds: [],
       viewIds: [],
       universalIdentifier: 'test-entity-id',
       description: null,
@@ -127,6 +128,7 @@ describe('WorkspaceEntityManager', () => {
       applicationUniversalIdentifier: 'test-application-id',
       fieldUniversalIdentifiers: ['field-id'],
       objectPermissionUniversalIdentifiers: [],
+      fieldPermissionUniversalIdentifiers: [],
       viewUniversalIdentifiers: [],
       indexMetadataUniversalIdentifiers: [],
       labelIdentifierFieldMetadataUniversalIdentifier: null,
@@ -162,6 +164,7 @@ describe('WorkspaceEntityManager', () => {
       workspaceId: 'test-workspace-id',
       viewFieldIds: [],
       viewFilterIds: [],
+      fieldPermissionIds: [],
       kanbanAggregateOperationViewIds: [],
       calendarViewIds: [],
       mainGroupByFieldMetadataViewIds: [],
@@ -178,6 +181,7 @@ describe('WorkspaceEntityManager', () => {
       kanbanAggregateOperationViewUniversalIdentifiers: [],
       calendarViewUniversalIdentifiers: [],
       mainGroupByFieldMetadataViewUniversalIdentifiers: [],
+      fieldPermissionUniversalIdentifiers: [],
       viewSortIds: [],
       viewSortUniversalIdentifiers: [],
       universalSettings: null,
@@ -251,6 +255,7 @@ describe('WorkspaceEntityManager', () => {
         IS_RECORD_PAGE_LAYOUT_GLOBAL_EDITION_ENABLED: false,
         IS_CONNECTED_ACCOUNT_MIGRATED: false,
         IS_GRAPHQL_QUERY_TIMING_ENABLED: false,
+        IS_RECORD_TABLE_WIDGET_ENABLED: false,
       },
       userWorkspaceRoleMap: {},
       eventEmitterService: {
@@ -321,6 +326,7 @@ describe('WorkspaceEntityManager', () => {
       userWorkspaceRoleMap: {
         'user-workspace-id': 'role-id',
       },
+      apiKeyRoleMap: {},
     };
 
     setWorkspaceContext(mockWorkspaceContext);

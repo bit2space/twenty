@@ -1,4 +1,3 @@
-import type { DropResult, ResponderProvided } from '@hello-pangea/dnd';
 import { t } from '@lingui/core/macro';
 import { useCallback } from 'react';
 import { isDefined } from 'twenty-shared/utils';
@@ -10,8 +9,8 @@ import { addToNavPayloadRegistryState } from '@/navigation-menu-item/common/stat
 import { navigationMenuItemsDraftState } from '@/navigation-menu-item/common/states/navigationMenuItemsDraftState';
 import { openNavigationMenuItemFolderIdsState } from '@/navigation-menu-item/common/states/openNavigationMenuItemFolderIdsState';
 import { canNavigationMenuItemBeDroppedIn } from '@/navigation-menu-item/common/utils/canNavigationMenuItemBeDroppedIn';
+import { getObjectColorWithFallback } from '@/object-metadata/utils/getObjectColorWithFallback';
 import { getObjectMetadataIdsInDraft } from '@/navigation-menu-item/common/utils/getObjectMetadataIdsInDraft';
-import { getStandardObjectIconColor } from '@/navigation-menu-item/common/utils/getStandardObjectIconColor';
 import { validateAndExtractWorkspaceFolderId } from '@/navigation-menu-item/common/utils/validateAndExtractWorkspaceFolderId';
 import { useAddFolderToNavigationMenuDraft } from '@/navigation-menu-item/edit/folder/hooks/useAddFolderToNavigationMenuDraft';
 import { useNavigationMenuItemsDraftState } from '@/navigation-menu-item/edit/hooks/useNavigationMenuItemsDraftState';
@@ -27,6 +26,8 @@ import { viewsSelector } from '@/views/states/selectors/viewsSelector';
 
 import { useStore } from 'jotai';
 import { NavigationMenuItemType } from 'twenty-shared/types';
+
+import type { NavigationMenuItemDropResult } from '@/navigation-menu-item/common/types/navigationMenuItemDropResult';
 
 export const useHandleAddToNavigationDrop = () => {
   const store = useStore();
@@ -50,7 +51,7 @@ export const useHandleAddToNavigationDrop = () => {
   );
 
   const handleAddToNavigationDrop = useCallback(
-    (result: DropResult, _provided: ResponderProvided) => {
+    (result: NavigationMenuItemDropResult) => {
       const { source, destination, draggableId } = result;
       if (
         source.droppableId !== ADD_TO_NAV_SOURCE_DROPPABLE_ID ||
@@ -139,16 +140,17 @@ export const useHandleAddToNavigationDrop = () => {
           const objectMetadataItem = objectMetadataItems.find(
             (item) => item.id === payload.objectMetadataId,
           );
-          const newItemId = addObjectToDraft(
-            payload.objectMetadataId,
+          const newItemId = addObjectToDraft({
+            objectMetadataId: payload.objectMetadataId,
             currentDraft,
-            folderId,
-            index,
-            payload.iconColor ??
+            targetFolderId: folderId,
+            targetIndex: index,
+            color:
+              payload.iconColor ??
               (objectMetadataItem
-                ? getStandardObjectIconColor(objectMetadataItem.nameSingular)
+                ? getObjectColorWithFallback(objectMetadataItem)
                 : undefined),
-          );
+          });
           openEditForNewNavItem(newItemId, {
             pageTitle: objectMetadataItem?.labelPlural ?? payload.label,
             pageIcon: objectMetadataItem
@@ -170,7 +172,7 @@ export const useHandleAddToNavigationDrop = () => {
             folderId,
             index,
             viewObjectMetadataItem
-              ? getStandardObjectIconColor(viewObjectMetadataItem.nameSingular)
+              ? getObjectColorWithFallback(viewObjectMetadataItem)
               : undefined,
           );
           openEditForNewNavItem(newItemId, {

@@ -38,9 +38,6 @@ type ApplicationRegistration {
   id: UUID!
   universalIdentifier: String!
   name: String!
-  description: String
-  logoUrl: String
-  author: String
   oAuthClientId: String!
   oAuthRedirectUris: [String!]!
   oAuthScopes: [String!]!
@@ -48,12 +45,13 @@ type ApplicationRegistration {
   sourceType: ApplicationRegistrationSourceType!
   sourcePackage: String
   latestAvailableVersion: String
-  websiteUrl: String
-  termsUrl: String
   isListed: Boolean!
   isFeatured: Boolean!
+  isPreInstalled: Boolean!
+  logoUrl: String
   createdAt: DateTime!
   updatedAt: DateTime!
+  isConfigured: Boolean!
 }
 
 enum ApplicationRegistrationSourceType {
@@ -246,7 +244,7 @@ type FieldPermission {
   canUpdateFieldValue: Boolean
 }
 
-type PermissionFlag {
+type RolePermissionFlag {
   id: UUID!
   roleId: UUID!
   flag: PermissionFlagType!
@@ -278,7 +276,7 @@ type Role {
   canUpdateAllObjectRecords: Boolean!
   canSoftDeleteAllObjectRecords: Boolean!
   canDestroyAllObjectRecords: Boolean!
-  permissionFlags: [PermissionFlag!]
+  permissionFlags: [RolePermissionFlag!]
   objectPermissions: [ObjectPermission!]
   fieldPermissions: [FieldPermission!]
   rowLevelPermissionPredicates: [RowLevelPermissionPredicate!]
@@ -289,6 +287,7 @@ type ApplicationRegistrationSummary {
   id: UUID!
   latestAvailableVersion: String
   sourceType: ApplicationRegistrationSourceType!
+  logoUrl: String
 }
 
 type ApplicationVariable {
@@ -299,6 +298,143 @@ type ApplicationVariable {
   isSecret: Boolean!
 }
 
+type AuthToken {
+  token: String!
+  expiresAt: DateTime!
+}
+
+type ApplicationTokenPair {
+  applicationAccessToken: AuthToken!
+  applicationRefreshToken: AuthToken!
+}
+
+type FrontComponent {
+  id: UUID!
+  name: String!
+  description: String
+  sourceComponentPath: String!
+  builtComponentPath: String!
+  componentName: String!
+  builtComponentChecksum: String!
+  universalIdentifier: UUID
+  applicationId: UUID!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  isHeadless: Boolean!
+  usesSdkClient: Boolean!
+  applicationTokenPair: ApplicationTokenPair
+  applicationVariables: JSON
+}
+
+type CommandMenuItem {
+  id: UUID!
+  workflowVersionId: UUID
+  frontComponentId: UUID
+  frontComponent: FrontComponent
+  engineComponentKey: EngineComponentKey!
+  label: String!
+  icon: String
+  shortLabel: String
+  position: Float!
+  isPinned: Boolean!
+  availabilityType: CommandMenuItemAvailabilityType!
+  payload: CommandMenuItemPayload
+  hotKeys: [String!]
+  conditionalAvailabilityExpression: String
+  availabilityObjectMetadataId: UUID
+  pageLayoutId: UUID
+  universalIdentifier: UUID
+  applicationId: UUID
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+enum EngineComponentKey {
+  NAVIGATE_TO_NEXT_RECORD
+  NAVIGATE_TO_PREVIOUS_RECORD
+  CREATE_NEW_RECORD
+  DELETE_RECORDS
+  RESTORE_RECORDS
+  DESTROY_RECORDS
+  ADD_TO_FAVORITES
+  REMOVE_FROM_FAVORITES
+  EXPORT_NOTE_TO_PDF
+  EXPORT_RECORDS
+  UPDATE_MULTIPLE_RECORDS
+  MERGE_MULTIPLE_RECORDS
+  IMPORT_RECORDS
+  EXPORT_VIEW
+  SEE_DELETED_RECORDS
+  CREATE_NEW_VIEW
+  HIDE_DELETED_RECORDS
+  EDIT_RECORD_PAGE_LAYOUT
+  EDIT_DASHBOARD_LAYOUT
+  SAVE_DASHBOARD_LAYOUT
+  CANCEL_DASHBOARD_LAYOUT
+  DUPLICATE_DASHBOARD
+  ACTIVATE_WORKFLOW
+  DEACTIVATE_WORKFLOW
+  DISCARD_DRAFT_WORKFLOW
+  TEST_WORKFLOW
+  SEE_ACTIVE_VERSION_WORKFLOW
+  SEE_RUNS_WORKFLOW
+  SEE_VERSIONS_WORKFLOW
+  ADD_NODE_WORKFLOW
+  TIDY_UP_WORKFLOW
+  DUPLICATE_WORKFLOW
+  SEE_VERSION_WORKFLOW_RUN
+  SEE_WORKFLOW_WORKFLOW_RUN
+  STOP_WORKFLOW_RUN
+  SEE_RUNS_WORKFLOW_VERSION
+  SEE_WORKFLOW_WORKFLOW_VERSION
+  USE_AS_DRAFT_WORKFLOW_VERSION
+  SEE_VERSIONS_WORKFLOW_VERSION
+  SEARCH_RECORDS
+  SEARCH_RECORDS_FALLBACK
+  ASK_AI
+  VIEW_PREVIOUS_AI_CHATS
+  NAVIGATION
+  TRIGGER_WORKFLOW_VERSION
+  FRONT_COMPONENT_RENDERER
+  REPLY_TO_EMAIL_THREAD
+  COMPOSE_EMAIL
+  GO_TO_PEOPLE
+  GO_TO_COMPANIES
+  GO_TO_DASHBOARDS
+  GO_TO_OPPORTUNITIES
+  GO_TO_SETTINGS
+  GO_TO_TASKS
+  GO_TO_NOTES
+  GO_TO_WORKFLOWS
+  GO_TO_RUNS
+  DELETE_SINGLE_RECORD
+  DELETE_MULTIPLE_RECORDS
+  RESTORE_SINGLE_RECORD
+  RESTORE_MULTIPLE_RECORDS
+  DESTROY_SINGLE_RECORD
+  DESTROY_MULTIPLE_RECORDS
+  EXPORT_FROM_RECORD_INDEX
+  EXPORT_FROM_RECORD_SHOW
+  EXPORT_MULTIPLE_RECORDS
+}
+
+enum CommandMenuItemAvailabilityType {
+  GLOBAL
+  GLOBAL_OBJECT_CONTEXT
+  RECORD_SELECTION
+  FALLBACK
+}
+
+union CommandMenuItemPayload = PathCommandMenuItemPayload | ObjectMetadataCommandMenuItemPayload
+
+type PathCommandMenuItemPayload {
+  path: String!
+}
+
+type ObjectMetadataCommandMenuItemPayload {
+  objectMetadataItemId: UUID!
+}
+
 type LogicFunction {
   id: UUID!
   name: String!
@@ -307,11 +443,11 @@ type LogicFunction {
   timeoutSeconds: Float!
   sourceHandlerPath: String!
   handlerName: String!
-  toolInputSchema: JSON
-  isTool: Boolean!
   cronTriggerSettings: JSON
   databaseEventTriggerSettings: JSON
   httpRouteTriggerSettings: JSON
+  toolTriggerSettings: JSON
+  workflowActionTriggerSettings: JSON
   applicationId: UUID
   universalIdentifier: UUID
   createdAt: DateTime!
@@ -555,6 +691,7 @@ type Application {
   id: UUID!
   name: String!
   description: String
+  logo: String
   version: String
   universalIdentifier: String!
   packageJsonChecksum: String
@@ -568,6 +705,8 @@ type Application {
   settingsCustomTabFrontComponentId: UUID
   defaultLogicFunctionRole: Role
   agents: [Agent!]!
+  frontComponents: [FrontComponent!]!
+  commandMenuItems: [CommandMenuItem!]!
   logicFunctions: [LogicFunction!]!
   objects: [Object!]!
   applicationVariables: [ApplicationVariable!]!
@@ -586,8 +725,9 @@ type ViewField {
   workspaceId: UUID!
   createdAt: DateTime!
   updatedAt: DateTime!
+  isActive: Boolean!
   deletedAt: DateTime
-  isOverridden: Boolean!
+  isOverridden: Boolean @deprecated(reason: "isOverridden is deprecated")
 }
 
 enum AggregateOperations {
@@ -631,6 +771,7 @@ type ViewFilter {
   viewFilterGroupId: UUID
   positionInViewFilterGroup: Float
   subFieldName: String
+  relationTargetFieldMetadataId: UUID
   viewId: UUID!
   workspaceId: UUID!
   createdAt: DateTime!
@@ -673,6 +814,7 @@ type ViewSort {
   id: UUID!
   fieldMetadataId: UUID!
   direction: ViewSortDirection!
+  subFieldName: String
   viewId: UUID!
   workspaceId: UUID!
   createdAt: DateTime!
@@ -694,9 +836,10 @@ type ViewFieldGroup {
   workspaceId: UUID!
   createdAt: DateTime!
   updatedAt: DateTime!
+  isActive: Boolean!
   deletedAt: DateTime
   viewFields: [ViewField!]!
-  isOverridden: Boolean!
+  isOverridden: Boolean! @deprecated(reason: "isOverridden is deprecated")
 }
 
 type View {
@@ -736,6 +879,7 @@ enum ViewType {
   KANBAN
   CALENDAR
   FIELDS_WIDGET
+  TABLE_WIDGET
 }
 
 enum ViewKey {
@@ -780,8 +924,7 @@ type Workspace {
   viewGroups: [ViewGroup!]
   viewSorts: [ViewSort!]
   metadataVersion: Float!
-  databaseUrl: String!
-  databaseSchema: String!
+  databaseSchema: String
   subdomain: String!
   customDomain: String
   isGoogleAuthEnabled: Boolean!
@@ -792,9 +935,9 @@ type Workspace {
   isMicrosoftAuthEnabled: Boolean!
   isMicrosoftAuthBypassEnabled: Boolean!
   isCustomDomainEnabled: Boolean!
+  isInternalMessagesImportEnabled: Boolean!
   editableProfileFields: [String!]
   defaultRole: Role
-  version: String
   fastModel: String!
   smartModel: String!
   aiAdditionalInstructions: String
@@ -804,6 +947,7 @@ type Workspace {
   workspaceCustomApplication: Application
   featureFlags: [FeatureFlag!]
   billingSubscriptions: [BillingSubscription!]!
+  installedApplications: [Application!]!
   currentBillingSubscription: BillingSubscription
   billingEntitlements: [BillingEntitlement!]!
   hasValidEnterpriseKey: Boolean!
@@ -834,7 +978,6 @@ type User {
   firstName: String!
   lastName: String!
   email: String!
-  defaultAvatarUrl: String
   isEmailVerified: Boolean!
   disabled: Boolean
   canImpersonate: Boolean!
@@ -892,18 +1035,21 @@ type GridPosition {
 
 type PageLayoutWidget {
   id: UUID!
+  applicationId: UUID!
   pageLayoutTabId: UUID!
   title: String!
   type: WidgetType!
   objectMetadataId: UUID
-  gridPosition: GridPosition!
+  gridPosition: GridPosition! @deprecated(reason: "Use `position` instead. Will be removed in a future release.")
   position: PageLayoutWidgetPosition
   configuration: WidgetConfiguration!
   conditionalDisplay: JSON
+  conditionalAvailabilityExpression: String
   createdAt: DateTime!
   updatedAt: DateTime!
+  isActive: Boolean!
   deletedAt: DateTime
-  isOverridden: Boolean!
+  isOverridden: Boolean @deprecated(reason: "isOverridden is deprecated")
 }
 
 enum WidgetType {
@@ -925,6 +1071,7 @@ enum WidgetType {
   WORKFLOW_RUN
   FRONT_COMPONENT
   RECORD_TABLE
+  EMAIL_THREAD
 }
 
 union PageLayoutWidgetPosition = PageLayoutWidgetGridPosition | PageLayoutWidgetVerticalListPosition | PageLayoutWidgetCanvasPosition
@@ -952,7 +1099,7 @@ type PageLayoutWidgetCanvasPosition {
   layoutMode: PageLayoutTabLayoutMode!
 }
 
-union WidgetConfiguration = AggregateChartConfiguration | StandaloneRichTextConfiguration | PieChartConfiguration | LineChartConfiguration | IframeConfiguration | GaugeChartConfiguration | BarChartConfiguration | CalendarConfiguration | FrontComponentConfiguration | EmailsConfiguration | FieldConfiguration | FieldRichTextConfiguration | FieldsConfiguration | FilesConfiguration | NotesConfiguration | TasksConfiguration | TimelineConfiguration | ViewConfiguration | RecordTableConfiguration | WorkflowConfiguration | WorkflowRunConfiguration | WorkflowVersionConfiguration
+union WidgetConfiguration = AggregateChartConfiguration | StandaloneRichTextConfiguration | PieChartConfiguration | LineChartConfiguration | IframeConfiguration | GaugeChartConfiguration | BarChartConfiguration | CalendarConfiguration | FrontComponentConfiguration | EmailsConfiguration | EmailThreadConfiguration | FieldConfiguration | FieldRichTextConfiguration | FieldsConfiguration | FilesConfiguration | NotesConfiguration | TasksConfiguration | TimelineConfiguration | ViewConfiguration | RecordTableConfiguration | WorkflowConfiguration | WorkflowRunConfiguration | WorkflowVersionConfiguration
 
 type AggregateChartConfiguration {
   configurationType: WidgetConfigurationType!
@@ -993,6 +1140,7 @@ enum WidgetConfigurationType {
   WORKFLOW_RUN
   FRONT_COMPONENT
   RECORD_TABLE
+  EMAIL_THREAD
 }
 
 type StandaloneRichTextConfiguration {
@@ -1158,6 +1306,10 @@ type EmailsConfiguration {
   configurationType: WidgetConfigurationType!
 }
 
+type EmailThreadConfiguration {
+  configurationType: WidgetConfigurationType!
+}
+
 type FieldConfiguration {
   configurationType: WidgetConfigurationType!
   fieldMetadataId: String!
@@ -1167,6 +1319,7 @@ type FieldConfiguration {
 """Display mode for field configuration widgets"""
 enum FieldDisplayMode {
   CARD
+  EDITOR
   FIELD
   VIEW
 }
@@ -1230,8 +1383,9 @@ type PageLayoutTab {
   layoutMode: PageLayoutTabLayoutMode
   createdAt: DateTime!
   updatedAt: DateTime!
+  isActive: Boolean!
   deletedAt: DateTime
-  isOverridden: Boolean!
+  isOverridden: Boolean @deprecated(reason: "isOverridden is deprecated")
 }
 
 type PageLayout {
@@ -1241,6 +1395,7 @@ type PageLayout {
   objectMetadataId: UUID
   tabs: [PageLayoutTab!]
   defaultTabToFocusOnMobileAndSidePanelId: UUID
+  universalIdentifier: UUID!
   createdAt: DateTime!
   updatedAt: DateTime!
   deletedAt: DateTime
@@ -1250,11 +1405,57 @@ enum PageLayoutType {
   RECORD_INDEX
   RECORD_PAGE
   DASHBOARD
+  STANDALONE_PAGE
+}
+
+type ApplicationConnectionProviderOAuthConfig {
+  scopes: [String!]!
+  isClientCredentialsConfigured: Boolean!
+}
+
+type ApplicationConnectionProvider {
+  id: UUID!
+  applicationId: String!
+  type: String!
+  name: String!
+  displayName: String!
+  oauth: ApplicationConnectionProviderOAuthConfig
+}
+
+type EnterpriseLicenseInfoDTO {
+  isValid: Boolean!
+  licensee: String
+  expiresAt: DateTime
+  subscriptionId: String
+}
+
+type EnterpriseSubscriptionStatusDTO {
+  status: String!
+  licensee: String
+  expiresAt: DateTime
+  cancelAt: DateTime
+  currentPeriodEnd: DateTime
+  isCancellationScheduled: Boolean!
 }
 
 type Analytics {
   """Boolean that confirms query was dispatched"""
   success: Boolean!
+}
+
+type ApprovedAccessDomain {
+  id: UUID!
+  domain: String!
+  isValidated: Boolean!
+  createdAt: DateTime!
+}
+
+type FileWithSignedUrl {
+  id: UUID!
+  path: String!
+  size: Float!
+  createdAt: DateTime!
+  url: String!
 }
 
 type BillingSubscriptionSchedulePhaseItem {
@@ -1288,7 +1489,7 @@ enum BillingUsageType {
 """The different billing products available"""
 enum BillingProductKey {
   BASE_PRODUCT
-  WORKFLOW_NODE_EXECUTION
+  RESOURCE_CREDIT
 }
 
 type BillingPriceLicensed {
@@ -1296,6 +1497,7 @@ type BillingPriceLicensed {
   unitAmount: Float!
   stripePriceId: String!
   priceUsageType: BillingUsageType!
+  creditAmount: Float
 }
 
 enum SubscriptionInterval {
@@ -1381,7 +1583,7 @@ type BillingEndTrialPeriod {
   billingPortalUrl: String
 }
 
-type BillingMeteredProductUsage {
+type BillingResourceCreditUsage {
   productKey: BillingProductKey!
   periodStart: DateTime!
   periodEnd: DateTime!
@@ -1394,7 +1596,8 @@ type BillingMeteredProductUsage {
 
 type BillingPlan {
   planKey: BillingPlanKey!
-  licensedProducts: [BillingLicensedProduct!]!
+  baseProducts: [BillingLicensedProduct!]!
+  resourceCreditProducts: [BillingLicensedProduct!]!
   meteredProducts: [BillingMeteredProduct!]!
 }
 
@@ -1410,40 +1613,9 @@ type BillingUpdate {
   billingSubscriptions: [BillingSubscription!]!
 }
 
-type EnterpriseLicenseInfoDTO {
-  isValid: Boolean!
-  licensee: String
-  expiresAt: DateTime
-  subscriptionId: String
-}
-
-type EnterpriseSubscriptionStatusDTO {
-  status: String!
-  licensee: String
-  expiresAt: DateTime
-  cancelAt: DateTime
-  currentPeriodEnd: DateTime
-  isCancellationScheduled: Boolean!
-}
-
 type OnboardingStepSuccess {
   """Boolean that confirms query was dispatched"""
   success: Boolean!
-}
-
-type ApprovedAccessDomain {
-  id: UUID!
-  domain: String!
-  isValidated: Boolean!
-  createdAt: DateTime!
-}
-
-type FileWithSignedUrl {
-  id: UUID!
-  path: String!
-  size: Float!
-  createdAt: DateTime!
-  url: String!
 }
 
 type WorkspaceInvitation {
@@ -1478,6 +1650,7 @@ type NavigationMenuItem {
   icon: String
   color: String
   folderId: UUID
+  pageLayoutId: UUID
   position: Float!
   applicationId: UUID
   createdAt: DateTime!
@@ -1491,6 +1664,7 @@ enum NavigationMenuItemType {
   LINK
   OBJECT
   RECORD
+  PAGE_LAYOUT
 }
 
 type ObjectRecordEventProperties {
@@ -1569,14 +1743,30 @@ enum LogicFunctionExecutionStatus {
   ERROR
 }
 
-type BillingTrialPeriod {
-  duration: Float!
-  isCreditCardRequired: Boolean!
+type FeatureFlag {
+  key: FeatureFlagKey!
+  value: Boolean!
+}
+
+enum FeatureFlagKey {
+  IS_UNIQUE_INDEXES_ENABLED
+  IS_JSON_FILTER_ENABLED
+  IS_MARKETPLACE_SETTING_TAB_VISIBLE
+  IS_PUBLIC_DOMAIN_ENABLED
+  IS_EMAILING_DOMAIN_ENABLED
+  IS_EMAIL_GROUP_ENABLED
+  IS_JUNCTION_RELATIONS_ENABLED
+  IS_REST_METADATA_API_NEW_FORMAT_DIRECT
 }
 
 type WorkspaceUrls {
   customUrl: String
   subdomainUrl: String!
+}
+
+type BillingTrialPeriod {
+  duration: Float!
+  isCreditCardRequired: Boolean!
 }
 
 type SSOIdentityProvider {
@@ -1621,23 +1811,32 @@ type PublicWorkspaceData {
   workspaceUrls: WorkspaceUrls!
 }
 
+type PublicWorkspaceDataSummary {
+  id: UUID!
+  logo: String
+  displayName: String
+}
+
 type NativeModelCapabilities {
   webSearch: Boolean
   twitterSearch: Boolean
 }
 
-type ClientAIModelConfig {
+type ClientAiModelConfig {
   modelId: String!
   label: String!
   modelFamily: ModelFamily
   modelFamilyLabel: String
   sdkPackage: String
-  inputCostPerMillionTokensInCredits: Float!
-  outputCostPerMillionTokensInCredits: Float!
+  inputCostPerMillionTokens: Float
+  outputCostPerMillionTokens: Float
   nativeCapabilities: NativeModelCapabilities
   isDeprecated: Boolean
   isRecommended: Boolean
   providerName: String
+  providerLabel: String
+  contextWindowTokens: Float
+  maxOutputTokens: Float
   dataResidency: String
 }
 
@@ -1647,32 +1846,6 @@ enum ModelFamily {
   GEMINI
   MISTRAL
   GROK
-}
-
-type AdminAIModelConfig {
-  modelId: String!
-  label: String!
-  modelFamily: ModelFamily
-  modelFamilyLabel: String
-  sdkPackage: String
-  isAvailable: Boolean!
-  isAdminEnabled: Boolean!
-  isDeprecated: Boolean
-  isRecommended: Boolean
-  contextWindowTokens: Float
-  maxOutputTokens: Float
-  inputCostPerMillionTokens: Float
-  outputCostPerMillionTokens: Float
-  providerName: String
-  providerLabel: String
-  name: String
-  dataResidency: String
-}
-
-type AdminAIModels {
-  models: [AdminAIModelConfig!]!
-  defaultSmartModelId: String
-  defaultFastModelId: String
 }
 
 type Billing {
@@ -1722,40 +1895,17 @@ type PublicFeatureFlag {
   metadata: PublicFeatureFlagMetadata!
 }
 
-enum FeatureFlagKey {
-  IS_UNIQUE_INDEXES_ENABLED
-  IS_JSON_FILTER_ENABLED
-  IS_AI_ENABLED
-  IS_APPLICATION_ENABLED
-  IS_MARKETPLACE_ENABLED
-  IS_RECORD_PAGE_LAYOUT_EDITING_ENABLED
-  IS_PUBLIC_DOMAIN_ENABLED
-  IS_EMAILING_DOMAIN_ENABLED
-  IS_DASHBOARD_V2_ENABLED
-  IS_ATTACHMENT_MIGRATED
-  IS_NOTE_TARGET_MIGRATED
-  IS_TASK_TARGET_MIGRATED
-  IS_ROW_LEVEL_PERMISSION_PREDICATES_ENABLED
-  IS_JUNCTION_RELATIONS_ENABLED
-  IS_COMMAND_MENU_ITEM_ENABLED
-  IS_NAVIGATION_MENU_ITEM_ENABLED
-  IS_DATE_TIME_WHOLE_DAY_FILTER_ENABLED
-  IS_NAVIGATION_MENU_ITEM_EDITING_ENABLED
-  IS_DRAFT_EMAIL_ENABLED
-  IS_USAGE_ANALYTICS_ENABLED
-  IS_RICH_TEXT_V1_MIGRATED
-  IS_DIRECT_GRAPHQL_EXECUTION_ENABLED
-  IS_RECORD_PAGE_LAYOUT_GLOBAL_EDITION_ENABLED
-  IS_CONNECTED_ACCOUNT_MIGRATED
-  IS_GRAPHQL_QUERY_TIMING_ENABLED
-  IS_RECORD_TABLE_WIDGET_ENABLED
+type ClientConfigMaintenanceMode {
+  startAt: DateTime!
+  endAt: DateTime!
+  link: String
 }
 
 type ClientConfig {
   appVersion: String
   authProviders: AuthProviders!
   billing: Billing!
-  aiModels: [ClientAIModelConfig!]!
+  aiModels: [ClientAiModelConfig!]!
   signInPrefilled: Boolean!
   isMultiWorkspaceEnabled: Boolean!
   isEmailVerificationRequired: Boolean!
@@ -1775,254 +1925,19 @@ type ClientConfig {
   isGoogleCalendarEnabled: Boolean!
   isConfigVariablesInDbEnabled: Boolean!
   isImapSmtpCaldavEnabled: Boolean!
+  isEmailGroupEnabled: Boolean!
   allowRequestsToTwentyIcons: Boolean!
   calendarBookingPageId: String
   isCloudflareIntegrationEnabled: Boolean!
   isClickHouseConfigured: Boolean!
+  isWorkspaceSchemaDDLLocked: Boolean!
+  maintenance: ClientConfigMaintenanceMode
 }
 
-type ConfigVariable {
-  name: String!
-  description: String!
-  value: JSON
-  isSensitive: Boolean!
-  source: ConfigSource!
-  isEnvOnly: Boolean!
-  type: ConfigVariableType!
-  options: JSON
-}
-
-enum ConfigSource {
-  ENVIRONMENT
-  DATABASE
-  DEFAULT
-}
-
-enum ConfigVariableType {
-  BOOLEAN
-  NUMBER
-  ARRAY
-  STRING
-  ENUM
-  JSON
-}
-
-type ConfigVariablesGroupData {
-  variables: [ConfigVariable!]!
-  name: ConfigVariablesGroup!
-  description: String!
-  isHiddenOnLoad: Boolean!
-}
-
-enum ConfigVariablesGroup {
-  SERVER_CONFIG
-  RATE_LIMITING
-  STORAGE_CONFIG
-  GOOGLE_AUTH
-  MICROSOFT_AUTH
-  EMAIL_SETTINGS
-  LOGGING
-  ADVANCED_SETTINGS
-  BILLING_CONFIG
-  CAPTCHA_CONFIG
-  CLOUDFLARE_CONFIG
-  LLM
-  LOGIC_FUNCTION_CONFIG
-  CODE_INTERPRETER_CONFIG
-  SSL
-  SUPPORT_CHAT_CONFIG
-  ANALYTICS_CONFIG
-  TOKENS_DURATION
-  AWS_SES_SETTINGS
-}
-
-type ConfigVariables {
-  groups: [ConfigVariablesGroupData!]!
-}
-
-type JobOperationResult {
-  jobId: String!
-  success: Boolean!
-  error: String
-}
-
-type DeleteJobsResponse {
-  deletedCount: Int!
-  results: [JobOperationResult!]!
-}
-
-type QueueJob {
-  id: String!
-  name: String!
-  data: JSON
-  state: JobState!
-  timestamp: Float
-  failedReason: String
-  processedOn: Float
-  finishedOn: Float
-  attemptsMade: Float!
-  returnValue: JSON
-  logs: [String!]
-  stackTrace: [String!]
-}
-
-"""Job state in the queue"""
-enum JobState {
-  COMPLETED
-  FAILED
-  ACTIVE
-  WAITING
-  DELAYED
-  PRIORITIZED
-  WAITING_CHILDREN
-}
-
-type QueueRetentionConfig {
-  completedMaxAge: Float!
-  completedMaxCount: Float!
-  failedMaxAge: Float!
-  failedMaxCount: Float!
-}
-
-type QueueJobsResponse {
-  jobs: [QueueJob!]!
-  count: Float!
-  totalCount: Float!
-  hasMore: Boolean!
-  retentionConfig: QueueRetentionConfig!
-}
-
-type RetryJobsResponse {
-  retriedCount: Int!
-  results: [JobOperationResult!]!
-}
-
-type SystemHealthService {
-  id: HealthIndicatorId!
-  label: String!
-  status: AdminPanelHealthServiceStatus!
-}
-
-enum HealthIndicatorId {
-  database
-  redis
-  worker
-  connectedAccount
-  app
-}
-
-enum AdminPanelHealthServiceStatus {
-  OPERATIONAL
-  OUTAGE
-}
-
-type SystemHealth {
-  services: [SystemHealthService!]!
-}
-
-type FeatureFlag {
-  key: FeatureFlagKey!
-  value: Boolean!
-}
-
-type UserInfo {
-  id: UUID!
-  email: String!
-  firstName: String
-  lastName: String
-}
-
-type WorkspaceInfo {
-  id: UUID!
-  name: String!
-  allowImpersonation: Boolean!
-  logo: String
-  totalUsers: Float!
-  workspaceUrls: WorkspaceUrls!
-  users: [UserInfo!]!
-  featureFlags: [FeatureFlag!]!
-}
-
-type UserLookup {
-  user: UserInfo!
-  workspaces: [WorkspaceInfo!]!
-}
-
-type VersionInfo {
-  currentVersion: String
-  latestVersion: String!
-}
-
-type AdminPanelWorkerQueueHealth {
-  id: String!
-  queueName: String!
-  status: AdminPanelHealthServiceStatus!
-}
-
-type AdminPanelHealthServiceData {
-  id: HealthIndicatorId!
-  label: String!
-  description: String!
-  status: AdminPanelHealthServiceStatus!
-  errorMessage: String
-  details: String
-  queues: [AdminPanelWorkerQueueHealth!]
-}
-
-type ModelsDevModelSuggestion {
-  modelId: String!
-  name: String!
-  inputCostPerMillionTokens: Float!
-  outputCostPerMillionTokens: Float!
-  cachedInputCostPerMillionTokens: Float
-  cacheCreationCostPerMillionTokens: Float
-  contextWindowTokens: Float!
-  maxOutputTokens: Float!
-  modalities: [String!]!
-  supportsReasoning: Boolean!
-}
-
-type ModelsDevProviderSuggestion {
-  id: String!
-  modelCount: Float!
-  npm: String!
-}
-
-type QueueMetricsDataPoint {
-  x: Float!
-  y: Float!
-}
-
-type QueueMetricsSeries {
-  id: String!
-  data: [QueueMetricsDataPoint!]!
-}
-
-type WorkerQueueMetrics {
-  failed: Float!
-  completed: Float!
-  waiting: Float!
-  active: Float!
-  delayed: Float!
-  failureRate: Float!
-  failedData: [Float!]
-  completedData: [Float!]
-}
-
-type QueueMetricsData {
-  queueName: String!
-  workers: Float!
-  timeRange: QueueMetricsTimeRange!
-  details: WorkerQueueMetrics
-  data: [QueueMetricsSeries!]!
-}
-
-enum QueueMetricsTimeRange {
-  SevenDays
-  OneDay
-  TwelveHours
-  FourHours
-  OneHour
+type UsageBreakdownItem {
+  key: String!
+  label: String
+  creditsUsed: Float!
 }
 
 type VersionDistributionEntry {
@@ -2053,100 +1968,30 @@ type RotateClientSecret {
   clientSecret: String!
 }
 
-type ResendEmailVerificationToken {
-  success: Boolean!
-}
-
-type DeleteSso {
-  identityProviderId: UUID!
-}
-
-type EditSso {
+type ApplicationRegistrationVariableDTO {
   id: UUID!
-  type: IdentityProviderType!
-  issuer: String!
-  name: String!
-  status: SSOIdentityProviderStatus!
-}
-
-type WorkspaceNameAndId {
-  displayName: String
-  id: UUID!
-}
-
-type FindAvailableSSOIDP {
-  type: IdentityProviderType!
-  id: UUID!
-  issuer: String!
-  name: String!
-  status: SSOIdentityProviderStatus!
-  workspace: WorkspaceNameAndId!
-}
-
-type SetupSso {
-  id: UUID!
-  type: IdentityProviderType!
-  issuer: String!
-  name: String!
-  status: SSOIdentityProviderStatus!
-}
-
-type SSOConnection {
-  type: IdentityProviderType!
-  id: UUID!
-  issuer: String!
-  name: String!
-  status: SSOIdentityProviderStatus!
-}
-
-type AvailableWorkspace {
-  id: UUID!
-  displayName: String
-  loginToken: String
-  personalInviteToken: String
-  inviteHash: String
-  workspaceUrls: WorkspaceUrls!
-  logo: String
-  sso: [SSOConnection!]!
-}
-
-type AvailableWorkspaces {
-  availableWorkspacesForSignIn: [AvailableWorkspace!]!
-  availableWorkspacesForSignUp: [AvailableWorkspace!]!
-}
-
-type DeletedWorkspaceMember {
-  id: UUID!
-  name: FullName!
-  userEmail: String!
-  avatarUrl: String
-  userWorkspaceId: UUID
-}
-
-type BillingEntitlement {
-  key: BillingEntitlementKey!
-  value: Boolean!
-}
-
-enum BillingEntitlementKey {
-  SSO
-  CUSTOM_DOMAIN
-  RLS
-  AUDIT_LOGS
-}
-
-type DomainRecord {
-  validationType: String!
-  type: String!
-  status: String!
   key: String!
-  value: String!
+  value: String
+  description: String!
+  isSecret: Boolean!
+  isRequired: Boolean!
+  isFilled: Boolean!
+  createdAt: DateTime!
+  updatedAt: DateTime!
 }
 
-type DomainValidRecords {
-  id: UUID!
-  domain: String!
-  records: [DomainRecord!]!
+type Relation {
+  type: RelationType!
+  sourceObjectMetadata: Object!
+  targetObjectMetadata: Object!
+  sourceFieldMetadata: Field!
+  targetFieldMetadata: Field!
+}
+
+"""Relation type"""
+enum RelationType {
+  ONE_TO_MANY
+  MANY_TO_ONE
 }
 
 type IndexEdge {
@@ -2248,31 +2093,113 @@ type ObjectFieldsConnection {
   edges: [FieldEdge!]!
 }
 
-type UpsertRowLevelPermissionPredicatesResult {
-  predicates: [RowLevelPermissionPredicate!]!
-  predicateGroups: [RowLevelPermissionPredicateGroup!]!
-}
-
-type Relation {
-  type: RelationType!
-  sourceObjectMetadata: Object!
-  targetObjectMetadata: Object!
-  sourceFieldMetadata: Field!
-  targetFieldMetadata: Field!
-}
-
-"""Relation type"""
-enum RelationType {
-  ONE_TO_MANY
-  MANY_TO_ONE
-}
-
 type FieldConnection {
   """Paging information"""
   pageInfo: PageInfo!
 
   """Array of edges."""
   edges: [FieldEdge!]!
+}
+
+type ResendEmailVerificationToken {
+  success: Boolean!
+}
+
+type DeleteSso {
+  identityProviderId: UUID!
+}
+
+type EditSso {
+  id: UUID!
+  type: IdentityProviderType!
+  issuer: String!
+  name: String!
+  status: SSOIdentityProviderStatus!
+}
+
+type WorkspaceNameAndId {
+  displayName: String
+  id: UUID!
+}
+
+type FindAvailableSSOIDP {
+  type: IdentityProviderType!
+  id: UUID!
+  issuer: String!
+  name: String!
+  status: SSOIdentityProviderStatus!
+  workspace: WorkspaceNameAndId!
+}
+
+type SetupSso {
+  id: UUID!
+  type: IdentityProviderType!
+  issuer: String!
+  name: String!
+  status: SSOIdentityProviderStatus!
+}
+
+type SSOConnection {
+  type: IdentityProviderType!
+  id: UUID!
+  issuer: String!
+  name: String!
+  status: SSOIdentityProviderStatus!
+}
+
+type AvailableWorkspace {
+  id: UUID!
+  displayName: String
+  loginToken: String
+  personalInviteToken: String
+  inviteHash: String
+  workspaceUrls: WorkspaceUrls!
+  logo: String
+  sso: [SSOConnection!]!
+}
+
+type AvailableWorkspaces {
+  availableWorkspacesForSignIn: [AvailableWorkspace!]!
+  availableWorkspacesForSignUp: [AvailableWorkspace!]!
+}
+
+type DeletedWorkspaceMember {
+  id: UUID!
+  name: FullName!
+  userEmail: String!
+  avatarUrl: String
+  userWorkspaceId: UUID
+}
+
+type BillingEntitlement {
+  key: BillingEntitlementKey!
+  value: Boolean!
+}
+
+enum BillingEntitlementKey {
+  SSO
+  CUSTOM_DOMAIN
+  RLS
+  AUDIT_LOGS
+}
+
+type DomainRecord {
+  validationType: String!
+  type: String!
+  status: String!
+  key: String!
+  value: String!
+}
+
+type DomainValidRecords {
+  id: UUID!
+  domain: String!
+  records: [DomainRecord!]!
+}
+
+type UpsertRowLevelPermissionPredicatesResult {
+  predicates: [RowLevelPermissionPredicate!]!
+  predicateGroups: [RowLevelPermissionPredicateGroup!]!
 }
 
 type LogicFunctionLogs {
@@ -2295,11 +2222,6 @@ type VerifyTwoFactorAuthenticationMethod {
 
 type AuthorizeApp {
   redirectUrl: String!
-}
-
-type AuthToken {
-  token: String!
-  expiresAt: DateTime!
 }
 
 type AuthTokenPair {
@@ -2380,6 +2302,26 @@ type Impersonate {
   workspace: WorkspaceUrlsAndId!
 }
 
+type UsageTimeSeries {
+  date: String!
+  creditsUsed: Float!
+}
+
+type UsageUserDaily {
+  userWorkspaceId: String!
+  dailyUsage: [UsageTimeSeries!]!
+}
+
+type UsageAnalytics {
+  usageByUser: [UsageBreakdownItem!]!
+  usageByOperationType: [UsageBreakdownItem!]!
+  usageByModel: [UsageBreakdownItem!]!
+  timeSeries: [UsageTimeSeries!]!
+  periodStart: DateTime!
+  periodEnd: DateTime!
+  userDailyUsage: UsageUserDaily
+}
+
 type DevelopmentApplication {
   id: String!
   universalIdentifier: String!
@@ -2390,11 +2332,6 @@ type WorkspaceMigration {
   actions: JSON!
 }
 
-type ApplicationTokenPair {
-  applicationAccessToken: AuthToken!
-  applicationRefreshToken: AuthToken!
-}
-
 type File {
   id: UUID!
   path: String!
@@ -2402,95 +2339,34 @@ type File {
   createdAt: DateTime!
 }
 
-type MarketplaceAppField {
-  name: String!
-  type: String!
-  label: String!
-  description: String
-  icon: String
-  objectUniversalIdentifier: String
-  universalIdentifier: String
-}
-
-type MarketplaceAppObject {
-  universalIdentifier: String!
-  nameSingular: String!
-  namePlural: String!
-  labelSingular: String!
-  labelPlural: String!
-  description: String
-  icon: String
-  fields: [MarketplaceAppField!]!
-}
-
-type MarketplaceAppLogicFunction {
-  name: String!
-  description: String
-  timeoutSeconds: Int
-}
-
-type MarketplaceAppFrontComponent {
-  name: String!
-  description: String
-}
-
-type MarketplaceAppRoleObjectPermission {
-  objectUniversalIdentifier: String!
-  canReadObjectRecords: Boolean
-  canUpdateObjectRecords: Boolean
-  canSoftDeleteObjectRecords: Boolean
-  canDestroyObjectRecords: Boolean
-}
-
-type MarketplaceAppRoleFieldPermission {
-  objectUniversalIdentifier: String!
-  fieldUniversalIdentifier: String!
-  canReadFieldValue: Boolean
-  canUpdateFieldValue: Boolean
-}
-
-type MarketplaceAppDefaultRole {
-  id: String!
-  label: String!
-  description: String
-  canReadAllObjectRecords: Boolean!
-  canUpdateAllObjectRecords: Boolean!
-  canSoftDeleteAllObjectRecords: Boolean!
-  canDestroyAllObjectRecords: Boolean!
-  canUpdateAllSettings: Boolean!
-  canAccessAllTools: Boolean!
-  objectPermissions: [MarketplaceAppRoleObjectPermission!]!
-  fieldPermissions: [MarketplaceAppRoleFieldPermission!]!
-  permissionFlags: [String!]!
-}
-
 type MarketplaceApp {
   id: String!
   name: String!
   description: String!
-  icon: String!
-  version: String!
   author: String!
   category: String!
   logo: String
-  screenshots: [String!]!
-  aboutDescription: String!
-  providers: [String!]!
-  websiteUrl: String
-  termsUrl: String
-  objects: [MarketplaceAppObject!]!
-  fields: [MarketplaceAppField!]!
-  logicFunctions: [MarketplaceAppLogicFunction!]!
-  frontComponents: [MarketplaceAppFrontComponent!]!
-  defaultRole: MarketplaceAppDefaultRole
   sourcePackage: String
   isFeatured: Boolean!
+}
+
+type MarketplaceAppDetail {
+  universalIdentifier: String!
+  id: String!
+  name: String!
+  sourceType: ApplicationRegistrationSourceType!
+  sourcePackage: String
+  latestAvailableVersion: String
+  isListed: Boolean!
+  isFeatured: Boolean!
+  manifest: JSON
 }
 
 type PublicDomain {
   id: UUID!
   domain: String!
   isValidated: Boolean!
+  applicationId: UUID
   createdAt: DateTime!
 }
 
@@ -2534,6 +2410,7 @@ type Location {
 }
 
 type PlaceDetailsResult {
+  street: String
   state: String
   postcode: String
   city: String
@@ -2541,26 +2418,57 @@ type PlaceDetailsResult {
   location: Location
 }
 
-type ConnectionParametersOutput {
+type PublicConnectionParametersOutput {
   host: String!
   port: Float!
   username: String
-  password: String!
   secure: Boolean
 }
 
-type ImapSmtpCaldavConnectionParameters {
-  IMAP: ConnectionParametersOutput
-  SMTP: ConnectionParametersOutput
-  CALDAV: ConnectionParametersOutput
+type PublicImapSmtpCaldavConnectionParameters {
+  IMAP: PublicConnectionParametersOutput
+  SMTP: PublicConnectionParametersOutput
+  CALDAV: PublicConnectionParametersOutput
+}
+
+type ConnectedAccountPublicDTO {
+  id: UUID!
+  handle: String!
+  provider: String!
+  lastCredentialsRefreshedAt: DateTime
+  authFailedAt: DateTime
+  handleAliases: [String!]
+  scopes: [String!]
+  lastSignedInAt: DateTime
+  userWorkspaceId: UUID!
+  connectionProviderId: UUID
+  applicationId: UUID
+  name: String
+  visibility: String!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  connectionParameters: PublicImapSmtpCaldavConnectionParameters
+}
+
+type ImapSmtpCaldavPublicConnectionParams {
+  host: String!
+  port: Float!
+  username: String
+  secure: Boolean
+}
+
+type ImapSmtpCaldavPublicConnectionParameters {
+  IMAP: ImapSmtpCaldavPublicConnectionParams
+  SMTP: ImapSmtpCaldavPublicConnectionParams
+  CALDAV: ImapSmtpCaldavPublicConnectionParams
 }
 
 type ConnectedImapSmtpCaldavAccount {
   id: UUID!
   handle: String!
   provider: String!
-  accountOwnerId: UUID!
-  connectionParameters: ImapSmtpCaldavConnectionParameters
+  userWorkspaceId: UUID!
+  connectionParameters: ImapSmtpCaldavPublicConnectionParameters
 }
 
 type ImapSmtpCaldavConnectionSuccess {
@@ -2568,148 +2476,12 @@ type ImapSmtpCaldavConnectionSuccess {
   connectedAccountId: String!
 }
 
-type PostgresCredentials {
-  id: UUID!
-  user: String!
-  password: String!
-  workspaceId: UUID!
-}
-
-type UsageBreakdownItem {
-  key: String!
-  label: String
-  creditsUsed: Float!
-}
-
-type UsageTimeSeries {
-  date: String!
-  creditsUsed: Float!
-}
-
-type UsageUserDaily {
-  userWorkspaceId: String!
-  dailyUsage: [UsageTimeSeries!]!
-}
-
-type UsageAnalytics {
-  usageByUser: [UsageBreakdownItem!]!
-  usageByOperationType: [UsageBreakdownItem!]!
-  timeSeries: [UsageTimeSeries!]!
-  periodStart: DateTime!
-  periodEnd: DateTime!
-  userDailyUsage: UsageUserDaily
-}
-
-type FrontComponent {
-  id: UUID!
-  name: String!
-  description: String
-  sourceComponentPath: String!
-  builtComponentPath: String!
-  componentName: String!
-  builtComponentChecksum: String!
-  universalIdentifier: UUID
-  applicationId: UUID!
-  createdAt: DateTime!
-  updatedAt: DateTime!
-  isHeadless: Boolean!
-  usesSdkClient: Boolean!
-  applicationTokenPair: ApplicationTokenPair
-}
-
-type CommandMenuItem {
-  id: UUID!
-  workflowVersionId: UUID
-  frontComponentId: UUID
-  frontComponent: FrontComponent
-  engineComponentKey: EngineComponentKey!
-  label: String!
-  icon: String
-  shortLabel: String
-  position: Float!
-  isPinned: Boolean!
-  availabilityType: CommandMenuItemAvailabilityType!
-  hotKeys: [String!]
-  conditionalAvailabilityExpression: String
-  availabilityObjectMetadataId: UUID
-  applicationId: UUID
-  createdAt: DateTime!
-  updatedAt: DateTime!
-}
-
-enum EngineComponentKey {
-  NAVIGATE_TO_NEXT_RECORD
-  NAVIGATE_TO_PREVIOUS_RECORD
-  CREATE_NEW_RECORD
-  DELETE_SINGLE_RECORD
-  DELETE_MULTIPLE_RECORDS
-  RESTORE_SINGLE_RECORD
-  RESTORE_MULTIPLE_RECORDS
-  DESTROY_SINGLE_RECORD
-  DESTROY_MULTIPLE_RECORDS
-  ADD_TO_FAVORITES
-  REMOVE_FROM_FAVORITES
-  EXPORT_NOTE_TO_PDF
-  EXPORT_FROM_RECORD_INDEX
-  EXPORT_FROM_RECORD_SHOW
-  UPDATE_MULTIPLE_RECORDS
-  MERGE_MULTIPLE_RECORDS
-  EXPORT_MULTIPLE_RECORDS
-  IMPORT_RECORDS
-  EXPORT_VIEW
-  SEE_DELETED_RECORDS
-  CREATE_NEW_VIEW
-  HIDE_DELETED_RECORDS
-  GO_TO_PEOPLE
-  GO_TO_COMPANIES
-  GO_TO_DASHBOARDS
-  GO_TO_OPPORTUNITIES
-  GO_TO_SETTINGS
-  GO_TO_TASKS
-  GO_TO_NOTES
-  EDIT_RECORD_PAGE_LAYOUT
-  EDIT_DASHBOARD_LAYOUT
-  SAVE_DASHBOARD_LAYOUT
-  CANCEL_DASHBOARD_LAYOUT
-  DUPLICATE_DASHBOARD
-  GO_TO_WORKFLOWS
-  ACTIVATE_WORKFLOW
-  DEACTIVATE_WORKFLOW
-  DISCARD_DRAFT_WORKFLOW
-  TEST_WORKFLOW
-  SEE_ACTIVE_VERSION_WORKFLOW
-  SEE_RUNS_WORKFLOW
-  SEE_VERSIONS_WORKFLOW
-  ADD_NODE_WORKFLOW
-  TIDY_UP_WORKFLOW
-  DUPLICATE_WORKFLOW
-  GO_TO_RUNS
-  SEE_VERSION_WORKFLOW_RUN
-  SEE_WORKFLOW_WORKFLOW_RUN
-  STOP_WORKFLOW_RUN
-  SEE_RUNS_WORKFLOW_VERSION
-  SEE_WORKFLOW_WORKFLOW_VERSION
-  USE_AS_DRAFT_WORKFLOW_VERSION
-  SEE_VERSIONS_WORKFLOW_VERSION
-  SEARCH_RECORDS
-  SEARCH_RECORDS_FALLBACK
-  ASK_AI
-  VIEW_PREVIOUS_AI_CHATS
-  TRIGGER_WORKFLOW_VERSION
-  FRONT_COMPONENT_RENDERER
-}
-
-enum CommandMenuItemAvailabilityType {
-  GLOBAL
-  RECORD_SELECTION
-  FALLBACK
-}
-
 type ToolIndexEntry {
   name: String!
   description: String!
   category: String!
   objectName: String
+  icon: String
   inputSchema: JSON
 }
 
@@ -2725,6 +2497,7 @@ type AgentMessagePart {
   toolInput: JSON
   toolOutput: JSON
   state: String
+  providerExecuted: Boolean
   errorMessage: String
   errorDetails: JSON
   sourceUrlSourceId: String
@@ -2810,6 +2583,11 @@ type DuplicatedDashboard {
   updatedAt: String!
 }
 
+type SendEmailOutput {
+  success: Boolean!
+  error: String
+}
+
 type EventLogRecord {
   event: String!
   timestamp: DateTime!
@@ -2845,8 +2623,20 @@ type Skill {
   updatedAt: DateTime!
 }
 
-type AgentChatThread {
+type AgentMessage {
   id: UUID!
+  threadId: UUID!
+  turnId: UUID
+  agentId: UUID
+  role: String!
+  status: String!
+  parts: [AgentMessagePart!]!
+  processedAt: DateTime
+  createdAt: DateTime!
+}
+
+type AgentChatThread {
+  id: ID!
   title: String
   totalInputTokens: Int!
   totalOutputTokens: Int!
@@ -2856,43 +2646,35 @@ type AgentChatThread {
   totalOutputCredits: Float!
   createdAt: DateTime!
   updatedAt: DateTime!
+  deletedAt: DateTime
+  lastMessageAt: DateTime
 }
 
-type AgentMessage {
-  id: UUID!
-  threadId: UUID!
-  turnId: UUID!
-  agentId: UUID
-  role: String!
-  parts: [AgentMessagePart!]!
-  createdAt: DateTime!
-}
-
-type AISystemPromptSection {
+type AiSystemPromptSection {
   title: String!
   content: String!
   estimatedTokenCount: Int!
 }
 
-type AISystemPromptPreview {
-  sections: [AISystemPromptSection!]!
+type AiSystemPromptPreview {
+  sections: [AiSystemPromptSection!]!
   estimatedTokenCount: Int!
 }
 
-type AgentChatThreadEdge {
-  """The node containing the AgentChatThread"""
-  node: AgentChatThread!
-
-  """Cursor for this node."""
-  cursor: ConnectionCursor!
+type ChatStreamCatchupChunks {
+  chunks: [JSON!]!
+  maxSeq: Int!
 }
 
-type AgentChatThreadConnection {
-  """Paging information"""
-  pageInfo: PageInfo!
+type SendChatMessageResult {
+  messageId: String!
+  queued: Boolean!
+  streamId: String
+}
 
-  """Array of edges."""
-  edges: [AgentChatThreadEdge!]!
+type AgentChatEvent {
+  threadId: String!
+  event: JSON!
 }
 
 type AgentTurnEvaluation {
@@ -2960,20 +2742,6 @@ enum CalendarChannelContactAutoCreationPolicy {
   NONE
 }
 
-type ConnectedAccountDTO {
-  id: UUID!
-  handle: String!
-  provider: String!
-  lastCredentialsRefreshedAt: DateTime
-  authFailedAt: DateTime
-  handleAliases: [String!]
-  scopes: [String!]
-  lastSignedInAt: DateTime
-  userWorkspaceId: UUID!
-  createdAt: DateTime!
-  updatedAt: DateTime!
-}
-
 type MessageChannel {
   id: UUID!
   visibility: MessageChannelVisibility!
@@ -2995,6 +2763,7 @@ type MessageChannel {
   connectedAccountId: UUID!
   createdAt: DateTime!
   updatedAt: DateTime!
+  connectedAccount: ConnectedAccountPublicDTO
 }
 
 enum MessageChannelVisibility {
@@ -3006,6 +2775,7 @@ enum MessageChannelVisibility {
 enum MessageChannelType {
   EMAIL
   SMS
+  EMAIL_GROUP
 }
 
 enum MessageChannelContactAutoCreationPolicy {
@@ -3044,12 +2814,17 @@ enum MessageChannelSyncStage {
   FAILED
 }
 
+type CreateEmailGroupChannelOutput {
+  messageChannel: MessageChannel!
+  forwardingAddress: String!
+}
+
 type MessageFolder {
   id: UUID!
   name: String
   isSentFolder: Boolean!
   isSynced: Boolean!
-  parentFolderId: UUID
+  parentFolderId: String
   externalId: String
   pendingSyncAction: MessageFolderPendingSyncAction!
   messageChannelId: UUID!
@@ -3090,11 +2865,14 @@ enum AllMetadataName {
   pageLayoutTab
   commandMenuItem
   navigationMenuItem
+  rolePermissionFlag
   permissionFlag
   objectPermission
   fieldPermission
   frontComponent
   webhook
+  applicationVariable
+  connectionProvider
 }
 
 type MinimalObjectMetadata {
@@ -3139,6 +2917,9 @@ type Webhook {
 type Query {
   navigationMenuItems: [NavigationMenuItem!]!
   navigationMenuItem(id: UUID!): NavigationMenuItem
+  enterprisePortalSession(returnUrlPath: String): String
+  enterpriseCheckoutSession(billingInterval: String): String
+  enterpriseSubscriptionStatus: EnterpriseSubscriptionStatusDTO
   getViewFilterGroups(viewId: String): [ViewFilterGroup!]!
   getViewFilterGroup(id: String!): ViewFilterGroup
   getViewFilters(viewId: String): [ViewFilter!]!
@@ -3147,22 +2928,22 @@ type Query {
   getView(id: String!): View
   getViewSorts(viewId: String): [ViewSort!]!
   getViewSort(id: String!): ViewSort
+  getViewFields(viewId: String!): [ViewField!]!
+  getViewField(id: String!): ViewField
   getViewFieldGroups(viewId: String!): [ViewFieldGroup!]!
   getViewFieldGroup(id: String!): ViewFieldGroup
   apiKeys: [ApiKey!]!
   apiKey(input: GetApiKeyInput!): ApiKey
-  enterprisePortalSession(returnUrlPath: String): String
-  enterpriseCheckoutSession(billingInterval: String): String
-  enterpriseSubscriptionStatus: EnterpriseSubscriptionStatusDTO
   billingPortalSession(returnUrlPath: String): BillingSession!
   listPlans: [BillingPlan!]!
-  getMeteredProductsUsage: [BillingMeteredProductUsage!]!
+  getResourceCreditUsage: [BillingResourceCreditUsage!]!
   findWorkspaceInvitations: [WorkspaceInvitation!]!
   getApprovedAccessDomains: [ApprovedAccessDomain!]!
   getPageLayoutTabs(pageLayoutId: String!): [PageLayoutTab!]!
   getPageLayoutTab(id: String!): PageLayoutTab!
   getPageLayouts(objectMetadataId: String, pageLayoutType: PageLayoutType): [PageLayout!]!
   getPageLayout(id: String!): PageLayout
+  applicationConnectionProviders(applicationId: UUID!): [ApplicationConnectionProvider!]!
   getPageLayoutWidgets(pageLayoutTabId: String!): [PageLayoutWidget!]!
   getPageLayoutWidget(id: String!): PageLayoutWidget!
   findOneLogicFunction(input: LogicFunctionIdInput!): LogicFunction!
@@ -3185,8 +2966,6 @@ type Query {
     """Specify to filter the records returned."""
     filter: ObjectFilter! = {}
   ): ObjectConnection!
-  getViewFields(viewId: String!): [ViewField!]!
-  getViewField(id: String!): ViewField
   index(
     """The id of the record to find."""
     id: UUID!
@@ -3218,32 +2997,19 @@ type Query {
   getViewGroup(id: String!): ViewGroup
   myMessageFolders(messageChannelId: UUID): [MessageFolder!]!
   myMessageChannels(connectedAccountId: UUID): [MessageChannel!]!
-  myConnectedAccounts: [ConnectedAccountDTO!]!
-  connectedAccounts: [ConnectedAccountDTO!]!
+  myConnectedAccounts: [ConnectedAccountPublicDTO!]!
   myCalendarChannels(connectedAccountId: UUID): [CalendarChannel!]!
   webhooks: [Webhook!]!
   webhook(id: UUID!): Webhook
   minimalMetadata: MinimalMetadata!
+  chatThreads: [AgentChatThread!]!
   chatThread(id: UUID!): AgentChatThread!
   chatMessages(threadId: UUID!): [AgentMessage!]!
-  getAISystemPromptPreview: AISystemPromptPreview!
+  chatStreamCatchupChunks(threadId: UUID!): ChatStreamCatchupChunks!
+  getAiSystemPromptPreview: AiSystemPromptPreview!
   skills: [Skill!]!
   skill(id: UUID!): Skill
-  chatThreads(
-    """Limit or page results."""
-    paging: CursorPaging! = {first: 10}
-
-    """Specify to filter the records returned."""
-    filter: AgentChatThreadFilter! = {}
-
-    """Specify to sort results."""
-    sorting: [AgentChatThreadSort!]! = [{field: updatedAt, direction: DESC}]
-  ): AgentChatThreadConnection!
   agentTurns(agentId: UUID!): [AgentTurn!]!
-  eventLogs(input: EventLogQueryInput!): EventLogQueryResult!
-  pieChartData(input: PieChartDataInput!): PieChartData!
-  lineChartData(input: LineChartDataInput!): LineChartData!
-  barChartData(input: BarChartDataInput!): BarChartData!
   checkUserExists(email: String!, captchaToken: String): CheckUserExist!
   checkWorkspaceInviteHashIsValid(inviteHash: String!): WorkspaceInviteHashValid!
   findWorkspaceFromInviteHash(inviteHash: String!): Workspace!
@@ -3253,35 +3019,27 @@ type Query {
   findManyApplicationRegistrations: [ApplicationRegistration!]!
   findOneApplicationRegistration(id: String!): ApplicationRegistration!
   findApplicationRegistrationStats(id: String!): ApplicationRegistrationStats!
-  findApplicationRegistrationVariables(applicationRegistrationId: String!): [ApplicationRegistrationVariable!]!
+  findApplicationRegistrationVariables(applicationRegistrationId: String!): [ApplicationRegistrationVariableDTO!]!
   applicationRegistrationTarballUrl(id: String!): String
   currentUser: User!
   currentWorkspace: Workspace!
   getPublicWorkspaceDataByDomain(origin: String): PublicWorkspaceData!
+  getPublicWorkspaceDataById(id: UUID!): PublicWorkspaceDataSummary!
+  findManyApplications: [Application!]!
+  findOneApplication(id: UUID, universalIdentifier: UUID): Application!
   getSSOIdentityProviders: [FindAvailableSSOIDP!]!
+  eventLogs(input: EventLogQueryInput!): EventLogQueryResult!
+  pieChartData(input: PieChartDataInput!): PieChartData!
+  lineChartData(input: LineChartDataInput!): LineChartData!
+  barChartData(input: BarChartDataInput!): BarChartData!
   getConnectedImapSmtpCaldavAccount(id: UUID!): ConnectedImapSmtpCaldavAccount!
   getAutoCompleteAddress(address: String!, token: String!, country: String, isFieldCity: Boolean): [AutocompleteResult!]!
   getAddressDetails(placeId: String!, token: String!): PlaceDetailsResult!
-  getConfigVariablesGrouped: ConfigVariables!
-  getSystemHealthStatus: SystemHealth!
-  getIndicatorHealthStatus(indicatorId: HealthIndicatorId!): AdminPanelHealthServiceData!
-  getQueueMetrics(queueName: String!, timeRange: QueueMetricsTimeRange = OneHour): QueueMetricsData!
-  versionInfo: VersionInfo!
-  getAdminAiModels: AdminAIModels!
-  getDatabaseConfigVariable(key: String!): ConfigVariable!
-  getQueueJobs(queueName: String!, state: JobState!, limit: Int = 50, offset: Int = 0): QueueJobsResponse!
-  findAllApplicationRegistrations: [ApplicationRegistration!]!
-  getAiProviders: JSON!
-  getModelsDevProviders: [ModelsDevProviderSuggestion!]!
-  getModelsDevSuggestions(providerType: String!): [ModelsDevModelSuggestion!]!
-  getPostgresCredentials: PostgresCredentials
+  getUsageAnalytics(input: UsageAnalyticsInput): UsageAnalytics!
   findManyPublicDomains: [PublicDomain!]!
   getEmailingDomains: [EmailingDomain!]!
   findManyMarketplaceApps: [MarketplaceApp!]!
-  findOneMarketplaceApp(universalIdentifier: String!): MarketplaceApp!
-  findManyApplications: [Application!]!
-  findOneApplication(id: UUID, universalIdentifier: UUID): Application!
-  getUsageAnalytics(input: UsageAnalyticsInput): UsageAnalytics!
+  findMarketplaceAppDetail(universalIdentifier: String!): MarketplaceAppDetail!
 }
 
 input GetApiKeyInput {
@@ -3298,56 +3056,6 @@ input AgentIdInput {
   id: UUID!
 }
 
-input AgentChatThreadFilter {
-  and: [AgentChatThreadFilter!]
-  or: [AgentChatThreadFilter!]
-  id: UUIDFilterComparison
-  updatedAt: DateFieldComparison
-}
-
-input DateFieldComparison {
-  is: Boolean
-  isNot: Boolean
-  eq: DateTime
-  neq: DateTime
-  gt: DateTime
-  gte: DateTime
-  lt: DateTime
-  lte: DateTime
-  in: [DateTime!]
-  notIn: [DateTime!]
-  between: DateFieldComparisonBetween
-  notBetween: DateFieldComparisonBetween
-}
-
-input DateFieldComparisonBetween {
-  lower: DateTime!
-  upper: DateTime!
-}
-
-input AgentChatThreadSort {
-  field: AgentChatThreadSortFields!
-  direction: SortDirection!
-  nulls: SortNulls
-}
-
-enum AgentChatThreadSortFields {
-  id
-  updatedAt
-}
-
-"""Sort Directions"""
-enum SortDirection {
-  ASC
-  DESC
-}
-
-"""Sort Nulls Options"""
-enum SortNulls {
-  NULLS_FIRST
-  NULLS_LAST
-}
-
 input EventLogQueryInput {
   table: EventLogTable!
   filters: EventLogFiltersInput
@@ -3360,6 +3068,7 @@ enum EventLogTable {
   PAGEVIEW
   OBJECT_EVENT
   USAGE_EVENT
+  APPLICATION_LOG
 }
 
 input EventLogFiltersInput {
@@ -3394,6 +3103,15 @@ input UsageAnalyticsInput {
   periodStart: DateTime
   periodEnd: DateTime
   userWorkspaceId: String
+  operationTypes: [UsageOperationType!]
+}
+
+enum UsageOperationType {
+  AI_CHAT_TOKEN
+  AI_WORKFLOW_TOKEN
+  WORKFLOW_EXECUTION
+  CODE_EXECUTION
+  WEB_SEARCH
 }
 
 type Mutation {
@@ -3405,7 +3123,10 @@ type Mutation {
   updateNavigationMenuItem(input: UpdateOneNavigationMenuItemInput!): NavigationMenuItem!
   deleteManyNavigationMenuItems(ids: [UUID!]!): [NavigationMenuItem!]!
   deleteNavigationMenuItem(id: UUID!): NavigationMenuItem!
-  uploadAIChatFile(file: Upload!): FileWithSignedUrl!
+  uploadEmailAttachmentFile(file: Upload!): FileWithSignedUrl!
+  refreshEnterpriseValidityToken: Boolean!
+  setEnterpriseKey(enterpriseKey: String!): EnterpriseLicenseInfoDTO!
+  uploadAiChatFile(file: Upload!): FileWithSignedUrl!
   uploadWorkflowFile(file: Upload!): FileWithSignedUrl!
   uploadWorkspaceLogo(file: Upload!): FileWithSignedUrl!
   uploadWorkspaceMemberProfilePicture(file: Upload!): FileWithSignedUrl!
@@ -3423,10 +3144,16 @@ type Mutation {
   updateView(id: String!, input: UpdateViewInput!): View!
   deleteView(id: String!): Boolean!
   destroyView(id: String!): Boolean!
+  upsertViewWidget(input: UpsertViewWidgetInput!): View!
   createViewSort(input: CreateViewSortInput!): ViewSort!
   updateViewSort(input: UpdateViewSortInput!): ViewSort!
   deleteViewSort(input: DeleteViewSortInput!): Boolean!
   destroyViewSort(input: DestroyViewSortInput!): Boolean!
+  updateViewField(input: UpdateViewFieldInput!): ViewField!
+  createViewField(input: CreateViewFieldInput!): ViewField!
+  createManyViewFields(inputs: [CreateViewFieldInput!]!): [ViewField!]!
+  deleteViewField(input: DeleteViewFieldInput!): ViewField!
+  destroyViewField(input: DestroyViewFieldInput!): ViewField!
   updateViewFieldGroup(input: UpdateViewFieldGroupInput!): ViewFieldGroup!
   createViewFieldGroup(input: CreateViewFieldGroupInput!): ViewFieldGroup!
   createManyViewFieldGroups(inputs: [CreateViewFieldGroupInput!]!): [ViewFieldGroup!]!
@@ -3439,8 +3166,6 @@ type Mutation {
   assignRoleToApiKey(apiKeyId: UUID!, roleId: UUID!): Boolean!
   createObjectEvent(event: String!, recordId: UUID!, objectMetadataId: UUID!, properties: JSON): Analytics!
   trackAnalytics(type: AnalyticsType!, name: String, event: String, properties: JSON): Analytics!
-  refreshEnterpriseValidityToken: Boolean!
-  setEnterpriseKey(enterpriseKey: String!): EnterpriseLicenseInfoDTO!
   skipSyncEmailOnboardingStep: OnboardingStepSuccess!
   skipBookOnboardingStep: OnboardingStepSuccess!
   checkoutSession(recurringInterval: SubscriptionInterval!, plan: BillingPlanKey! = PRO, requirePaymentMethod: Boolean! = true, successUrlPath: String): BillingSession!
@@ -3448,9 +3173,9 @@ type Mutation {
   switchBillingPlan: BillingUpdate!
   cancelSwitchBillingPlan: BillingUpdate!
   cancelSwitchBillingInterval: BillingUpdate!
-  setMeteredSubscriptionPrice(priceId: String!): BillingUpdate!
+  setResourceCreditSubscriptionPrice(priceId: String!): BillingUpdate!
   endSubscriptionTrialPeriod: BillingEndTrialPeriod!
-  cancelSwitchMeteredPrice: BillingUpdate!
+  cancelSwitchResourceCreditPrice: BillingUpdate!
   deleteWorkspaceInvitation(appTokenId: String!): String!
   resendWorkspaceInvitation(appTokenId: String!): SendInvitations!
   sendInvitations(emails: [String!]!, roleId: UUID): SendInvitations!
@@ -3464,6 +3189,10 @@ type Mutation {
   updatePageLayout(id: String!, input: UpdatePageLayoutInput!): PageLayout!
   destroyPageLayout(id: String!): Boolean!
   updatePageLayoutWithTabsAndWidgets(id: String!, input: UpdatePageLayoutWithTabsInput!): PageLayout!
+  resetPageLayoutToDefault(id: String!): PageLayout!
+  resetPageLayoutWidgetToDefault(id: String!): PageLayoutWidget!
+  resetPageLayoutTabToDefault(id: String!): PageLayoutTab!
+  updateOneApplicationVariable(key: String!, value: String!, applicationId: UUID!): Boolean!
   createPageLayoutWidget(input: CreatePageLayoutWidgetInput!): PageLayoutWidget!
   updatePageLayoutWidget(id: String!, input: UpdatePageLayoutWidgetInput!): PageLayoutWidget!
   destroyPageLayoutWidget(id: String!): Boolean!
@@ -3480,11 +3209,6 @@ type Mutation {
   createOneObject(input: CreateOneObjectInput!): Object!
   deleteOneObject(input: DeleteOneObjectInput!): Object!
   updateOneObject(input: UpdateOneObjectInput!): Object!
-  updateViewField(input: UpdateViewFieldInput!): ViewField!
-  createViewField(input: CreateViewFieldInput!): ViewField!
-  createManyViewFields(inputs: [CreateViewFieldInput!]!): [ViewField!]!
-  deleteViewField(input: DeleteViewFieldInput!): ViewField!
-  destroyViewField(input: DestroyViewFieldInput!): ViewField!
   createOneAgent(input: CreateAgentInput!): Agent!
   updateOneAgent(input: UpdateAgentInput!): Agent!
   deleteOneAgent(input: AgentIdInput!): Agent!
@@ -3493,7 +3217,7 @@ type Mutation {
   updateOneRole(updateRoleInput: UpdateRoleInput!): Role!
   deleteOneRole(roleId: UUID!): String!
   upsertObjectPermissions(upsertObjectPermissionsInput: UpsertObjectPermissionsInput!): [ObjectPermission!]!
-  upsertPermissionFlags(upsertPermissionFlagsInput: UpsertPermissionFlagsInput!): [PermissionFlag!]!
+  upsertPermissionFlags(upsertPermissionFlagsInput: UpsertPermissionFlagsInput!): [RolePermissionFlag!]!
   upsertFieldPermissions(upsertFieldPermissionsInput: UpsertFieldPermissionsInput!): [FieldPermission!]!
   upsertRowLevelPermissionPredicates(input: UpsertRowLevelPermissionPredicatesInput!): UpsertRowLevelPermissionPredicatesResult!
   assignRoleToAgent(agentId: UUID!, roleId: UUID!): Boolean!
@@ -3510,12 +3234,21 @@ type Mutation {
   updateMessageFolder(input: UpdateMessageFolderInput!): MessageFolder!
   updateMessageFolders(input: UpdateMessageFoldersInput!): [MessageFolder!]!
   updateMessageChannel(input: UpdateMessageChannelInput!): MessageChannel!
-  deleteConnectedAccount(id: UUID!): ConnectedAccountDTO!
+  createEmailGroupChannel(input: CreateEmailGroupChannelInput!): CreateEmailGroupChannelOutput!
+  deleteEmailGroupChannel(id: UUID!): MessageChannel!
+  deleteConnectedAccount(id: UUID!): ConnectedAccountPublicDTO!
   updateCalendarChannel(input: UpdateCalendarChannelInput!): CalendarChannel!
   createWebhook(input: CreateWebhookInput!): Webhook!
   updateWebhook(input: UpdateWebhookInput!): Webhook!
   deleteWebhook(id: UUID!): Webhook!
   createChatThread: AgentChatThread!
+  sendChatMessage(threadId: UUID!, text: String!, messageId: UUID!, browsingContext: JSON, modelId: String, fileAttachments: [FileAttachmentInput!]): SendChatMessageResult!
+  stopAgentChatStream(threadId: UUID!): Boolean!
+  renameChatThread(id: UUID!, title: String!): AgentChatThread!
+  archiveChatThread(id: UUID!): AgentChatThread!
+  unarchiveChatThread(id: UUID!): AgentChatThread!
+  deleteChatThread(id: UUID!): Boolean!
+  deleteQueuedChatMessage(messageId: UUID!): Boolean!
   createSkill(input: CreateSkillInput!): Skill!
   updateSkill(input: UpdateSkillInput!): Skill!
   deleteSkill(id: UUID!): Skill!
@@ -3523,7 +3256,6 @@ type Mutation {
   deactivateSkill(id: UUID!): Skill!
   evaluateAgentTurn(turnId: UUID!): AgentTurnEvaluation!
   runEvaluationInput(agentId: UUID!, input: String!): AgentTurn!
-  duplicateDashboard(id: UUID!): DuplicatedDashboard!
   getAuthorizationUrlForSSO(input: GetAuthorizationUrlForSSOInput!): GetAuthorizationUrlForSSO!
   getLoginTokenFromCredentials(email: String!, password: String!, captchaToken: String, locale: String, verifyEmailRedirectPath: String, origin: String!): LoginToken!
   signIn(email: String!, password: String!, captchaToken: String, locale: String, verifyEmailRedirectPath: String): AvailableWorkspacesAndAccessTokens!
@@ -3555,48 +3287,36 @@ type Mutation {
   verifyTwoFactorAuthenticationMethodForAuthenticatedUser(otp: String!): VerifyTwoFactorAuthenticationMethod!
   deleteUser: User!
   deleteUserFromWorkspace(workspaceMemberIdToDelete: String!): UserWorkspace!
+  updateWorkspaceMemberSettings(input: UpdateWorkspaceMemberSettingsInput!): Boolean!
   updateUserEmail(newEmail: String!, verifyEmailRedirectPath: String): Boolean!
   resendEmailVerificationToken(email: String!, origin: String!): ResendEmailVerificationToken!
   activateWorkspace(data: ActivateWorkspaceInput!): Workspace!
   updateWorkspace(data: UpdateWorkspaceInput!): Workspace!
   deleteCurrentWorkspace: Workspace!
   checkCustomDomainValidRecords: DomainValidRecords
+  runWorkspaceMigration(workspaceMigration: WorkspaceMigrationInput!): Boolean!
+  uninstallApplication(universalIdentifier: String!): Boolean!
   createOIDCIdentityProvider(input: SetupOIDCSsoInput!): SetupSso!
   createSAMLIdentityProvider(input: SetupSAMLSsoInput!): SetupSso!
   deleteSSOIdentityProvider(input: DeleteSsoInput!): DeleteSso!
   editSSOIdentityProvider(input: EditSsoInput!): EditSso!
+  duplicateDashboard(id: UUID!): DuplicatedDashboard!
   impersonate(userId: UUID!, workspaceId: UUID!): Impersonate!
+  sendEmail(input: SendEmailInput!): SendEmailOutput!
   startChannelSync(connectedAccountId: UUID!): ChannelSyncSuccess!
-  saveImapSmtpCaldavAccount(accountOwnerId: UUID!, handle: String!, connectionParameters: EmailAccountConnectionParameters!, id: UUID): ImapSmtpCaldavConnectionSuccess!
+  saveImapSmtpCaldavAccount(handle: String!, connectionParameters: EmailAccountConnectionParameters!, id: UUID): ImapSmtpCaldavConnectionSuccess!
   updateLabPublicFeatureFlag(input: UpdateLabPublicFeatureFlagInput!): FeatureFlag!
-  userLookupAdminPanel(userIdentifier: String!): UserLookup!
-  updateWorkspaceFeatureFlag(workspaceId: UUID!, featureFlag: String!, value: Boolean!): Boolean!
-  setAdminAiModelEnabled(modelId: String!, enabled: Boolean!): Boolean!
-  setAdminAiModelRecommended(modelId: String!, recommended: Boolean!): Boolean!
-  setAdminDefaultAiModel(role: AiModelRole!, modelId: String!): Boolean!
-  createDatabaseConfigVariable(key: String!, value: JSON!): Boolean!
-  updateDatabaseConfigVariable(key: String!, value: JSON!): Boolean!
-  deleteDatabaseConfigVariable(key: String!): Boolean!
-  retryJobs(queueName: String!, jobIds: [String!]!): RetryJobsResponse!
-  deleteJobs(queueName: String!, jobIds: [String!]!): DeleteJobsResponse!
-  addAiProvider(providerName: String!, providerConfig: JSON!): Boolean!
-  removeAiProvider(providerName: String!): Boolean!
-  addModelToProvider(providerName: String!, modelConfig: JSON!): Boolean!
-  removeModelFromProvider(providerName: String!, modelName: String!): Boolean!
-  enablePostgresProxy: PostgresCredentials!
-  disablePostgresProxy: PostgresCredentials!
-  createPublicDomain(domain: String!): PublicDomain!
+  createPublicDomain(domain: String!, applicationId: String): PublicDomain!
+  updatePublicDomain(domain: String!, applicationId: String): PublicDomain!
   deletePublicDomain(domain: String!): Boolean!
   checkPublicDomainValidRecords(domain: String!): DomainValidRecords
   createEmailingDomain(domain: String!, driver: EmailingDomainDriver!): EmailingDomain!
   deleteEmailingDomain(id: String!): Boolean!
   verifyEmailingDomain(id: String!): EmailingDomain!
   createOneAppToken(input: CreateOneAppTokenInput!): AppToken!
-  installMarketplaceApp(universalIdentifier: String!, version: String): Boolean!
-  installApplication(appRegistrationId: String!, version: String): Boolean!
-  runWorkspaceMigration(workspaceMigration: WorkspaceMigrationInput!): Boolean!
-  uninstallApplication(universalIdentifier: String!): Boolean!
-  updateOneApplicationVariable(key: String!, value: String!, applicationId: UUID!): Boolean!
+  installMarketplaceApp(universalIdentifier: String!, version: String): Boolean! @deprecated(reason: "Use installApplication instead")
+  installApplication(universalIdentifier: String!, version: String): Application!
+  syncMarketplaceCatalog: Boolean!
   createDevelopmentApplication(universalIdentifier: String!, name: String!): DevelopmentApplication!
   generateApplicationToken(applicationId: UUID!): ApplicationTokenPair!
   syncApplication(manifest: JSON!): WorkspaceMigration!
@@ -3628,6 +3348,7 @@ input CreateNavigationMenuItemInput {
   icon: String
   color: String
   folderId: UUID
+  pageLayoutId: UUID
   position: Float
 }
 
@@ -3646,6 +3367,7 @@ input UpdateNavigationMenuItemInput {
   link: String
   icon: String
   color: String
+  pageLayoutId: UUID
 }
 
 """The `Upload` scalar type represents a file upload."""
@@ -3675,6 +3397,7 @@ input CreateViewFilterInput {
   viewFilterGroupId: UUID
   positionInViewFilterGroup: Float
   subFieldName: String
+  relationTargetFieldMetadataId: UUID
   viewId: UUID!
 }
 
@@ -3693,6 +3416,7 @@ input UpdateViewFilterInputUpdates {
   viewFilterGroupId: UUID
   positionInViewFilterGroup: Float
   subFieldName: String
+  relationTargetFieldMetadataId: UUID
 }
 
 input DeleteViewFilterInput {
@@ -3743,10 +3467,65 @@ input UpdateViewInput {
   shouldHideEmptyGroups: Boolean
 }
 
+input UpsertViewWidgetInput {
+  """The id of the view widget (page layout widget)."""
+  widgetId: UUID!
+
+  """The view fields to upsert."""
+  viewFields: [UpsertViewWidgetViewFieldInput!]
+
+  """The view filters to upsert."""
+  viewFilters: [UpsertViewWidgetViewFilterInput!]
+
+  """The view filter groups to upsert."""
+  viewFilterGroups: [UpsertViewWidgetViewFilterGroupInput!]
+
+  """The view sorts to upsert."""
+  viewSorts: [UpsertViewWidgetViewSortInput!]
+}
+
+input UpsertViewWidgetViewFieldInput {
+  """The id of an existing view field to update."""
+  viewFieldId: UUID
+
+  """
+  The field metadata id. Used to create a new view field when viewFieldId is not provided.
+  """
+  fieldMetadataId: UUID
+  isVisible: Boolean!
+  position: Float!
+  size: Float
+}
+
+input UpsertViewWidgetViewFilterInput {
+  id: UUID
+  fieldMetadataId: UUID!
+  operand: ViewFilterOperand = CONTAINS
+  value: JSON!
+  viewFilterGroupId: UUID
+  positionInViewFilterGroup: Float
+  subFieldName: String
+  relationTargetFieldMetadataId: UUID
+}
+
+input UpsertViewWidgetViewFilterGroupInput {
+  id: UUID
+  parentViewFilterGroupId: UUID
+  logicalOperator: ViewFilterGroupLogicalOperator = AND
+  positionInViewFilterGroup: Float
+}
+
+input UpsertViewWidgetViewSortInput {
+  id: UUID
+  fieldMetadataId: UUID!
+  direction: ViewSortDirection = ASC
+}
+
 input CreateViewSortInput {
   id: UUID
   fieldMetadataId: UUID!
   direction: ViewSortDirection = ASC
+  subFieldName: String
   viewId: UUID!
 }
 
@@ -3760,6 +3539,7 @@ input UpdateViewSortInput {
 
 input UpdateViewSortInputUpdates {
   direction: ViewSortDirection
+  subFieldName: String
 }
 
 input DeleteViewSortInput {
@@ -3769,6 +3549,43 @@ input DeleteViewSortInput {
 
 input DestroyViewSortInput {
   """The id of the view sort to destroy."""
+  id: UUID!
+}
+
+input UpdateViewFieldInput {
+  """The id of the view field to update"""
+  id: UUID!
+
+  """The view field to update"""
+  update: UpdateViewFieldInputUpdates!
+}
+
+input UpdateViewFieldInputUpdates {
+  isVisible: Boolean
+  size: Float
+  position: Float
+  aggregateOperation: AggregateOperations
+  viewFieldGroupId: UUID
+}
+
+input CreateViewFieldInput {
+  id: UUID
+  fieldMetadataId: UUID!
+  viewId: UUID!
+  isVisible: Boolean = true
+  size: Float = 0
+  position: Float = 0
+  aggregateOperation: AggregateOperations
+  viewFieldGroupId: UUID
+}
+
+input DeleteViewFieldInput {
+  """The id of the view field to delete."""
+  id: UUID!
+}
+
+input DestroyViewFieldInput {
+  """The id of the view field to destroy."""
   id: UUID!
 }
 
@@ -3829,8 +3646,13 @@ input UpsertFieldsWidgetGroupInput {
 }
 
 input UpsertFieldsWidgetFieldInput {
-  """The id of the view field"""
-  viewFieldId: UUID!
+  """The id of the view field. Required if fieldMetadataId is not provided."""
+  viewFieldId: UUID
+
+  """
+  The id of the field metadata. Used to create a new view field when viewFieldId is not provided.
+  """
+  fieldMetadataId: UUID
   isVisible: Boolean!
   position: Float!
 }
@@ -3924,6 +3746,7 @@ input UpdatePageLayoutWidgetWithIdInput {
   position: JSON
   configuration: JSON
   conditionalDisplay: JSON
+  conditionalAvailabilityExpression: String
 }
 
 input GridPositionInput {
@@ -3944,6 +3767,7 @@ input CreatePageLayoutWidgetInput {
 }
 
 input UpdatePageLayoutWidgetInput {
+  pageLayoutTabId: UUID
   title: String
   type: WidgetType
   objectMetadataId: UUID
@@ -3951,6 +3775,7 @@ input UpdatePageLayoutWidgetInput {
   position: JSON
   configuration: JSON
   conditionalDisplay: JSON
+  conditionalAvailabilityExpression: String
 }
 
 input CreateLogicFunctionFromSourceInput {
@@ -3959,12 +3784,12 @@ input CreateLogicFunctionFromSourceInput {
   name: String!
   description: String
   timeoutSeconds: Float
-  toolInputSchema: JSON
-  isTool: Boolean
   source: JSON
   cronTriggerSettings: JSON
   databaseEventTriggerSettings: JSON
   httpRouteTriggerSettings: JSON
+  toolTriggerSettings: JSON
+  workflowActionTriggerSettings: JSON
 }
 
 input ExecuteOneLogicFunctionInput {
@@ -3988,13 +3813,13 @@ input UpdateLogicFunctionFromSourceInputUpdates {
   description: String
   timeoutSeconds: Float
   sourceHandlerCode: String
-  toolInputSchema: JSON
   handlerName: String
   sourceHandlerPath: String
-  isTool: Boolean
   cronTriggerSettings: JSON
   databaseEventTriggerSettings: JSON
   httpRouteTriggerSettings: JSON
+  toolTriggerSettings: JSON
+  workflowActionTriggerSettings: JSON
 }
 
 input CreateCommandMenuItemInput {
@@ -4010,6 +3835,8 @@ input CreateCommandMenuItemInput {
   hotKeys: [String!]
   conditionalAvailabilityExpression: String
   availabilityObjectMetadataId: UUID
+  payload: JSON
+  pageLayoutId: UUID
 }
 
 input UpdateCommandMenuItemInput {
@@ -4023,6 +3850,7 @@ input UpdateCommandMenuItemInput {
   availabilityObjectMetadataId: UUID
   engineComponentKey: EngineComponentKey
   hotKeys: [String!]
+  pageLayoutId: UUID
 }
 
 input CreateFrontComponentInput {
@@ -4095,43 +3923,6 @@ input UpdateObjectPayload {
   imageIdentifierFieldMetadataId: UUID
   isLabelSyncedWithName: Boolean
   isSearchable: Boolean
-}
-
-input UpdateViewFieldInput {
-  """The id of the view field to update"""
-  id: UUID!
-
-  """The view field to update"""
-  update: UpdateViewFieldInputUpdates!
-}
-
-input UpdateViewFieldInputUpdates {
-  isVisible: Boolean
-  size: Float
-  position: Float
-  aggregateOperation: AggregateOperations
-  viewFieldGroupId: UUID
-}
-
-input CreateViewFieldInput {
-  id: UUID
-  fieldMetadataId: UUID!
-  viewId: UUID!
-  isVisible: Boolean = true
-  size: Float = 0
-  position: Float = 0
-  aggregateOperation: AggregateOperations
-  viewFieldGroupId: UUID
-}
-
-input DeleteViewFieldInput {
-  """The id of the view field to delete."""
-  id: UUID!
-}
-
-input DestroyViewFieldInput {
-  """The id of the view field to destroy."""
-  id: UUID!
 }
 
 input CreateAgentInput {
@@ -4377,6 +4168,10 @@ input UpdateMessageChannelInputUpdates {
   excludeGroupEmails: Boolean
 }
 
+input CreateEmailGroupChannelInput {
+  handle: String!
+}
+
 input UpdateCalendarChannelInput {
   id: UUID!
   update: UpdateCalendarChannelInputUpdates!
@@ -4412,6 +4207,11 @@ input UpdateWebhookInputUpdates {
   secret: String
 }
 
+input FileAttachmentInput {
+  id: UUID!
+  filename: String!
+}
+
 input CreateSkillInput {
   id: UUID
   name: String!
@@ -4438,14 +4238,9 @@ input GetAuthorizationUrlForSSOInput {
 
 input CreateApplicationRegistrationInput {
   name: String!
-  description: String
-  logoUrl: String
-  author: String
   universalIdentifier: String
   oAuthRedirectUris: [String!]
   oAuthScopes: [String!]
-  websiteUrl: String
-  termsUrl: String
 }
 
 input UpdateApplicationRegistrationInput {
@@ -4455,13 +4250,8 @@ input UpdateApplicationRegistrationInput {
 
 input UpdateApplicationRegistrationPayload {
   name: String
-  description: String
-  logoUrl: String
-  author: String
   oAuthRedirectUris: [String!]
   oAuthScopes: [String!]
-  websiteUrl: String
-  termsUrl: String
   isListed: Boolean
 }
 
@@ -4480,7 +4270,13 @@ input UpdateApplicationRegistrationVariableInput {
 
 input UpdateApplicationRegistrationVariablePayload {
   value: String
+  resetValue: Boolean
   description: String
+}
+
+input UpdateWorkspaceMemberSettingsInput {
+  workspaceMemberId: UUID!
+  update: JSON!
 }
 
 input ActivateWorkspaceInput {
@@ -4511,6 +4307,23 @@ input UpdateWorkspaceInput {
   editableProfileFields: [String!]
   enabledAiModelIds: [String!]
   useRecommendedModels: Boolean
+  isInternalMessagesImportEnabled: Boolean
+}
+
+input WorkspaceMigrationInput {
+  actions: [WorkspaceMigrationDeleteActionInput!]!
+}
+
+input WorkspaceMigrationDeleteActionInput {
+  type: WorkspaceMigrationActionType!
+  metadataName: AllMetadataName!
+  universalIdentifier: String!
+}
+
+enum WorkspaceMigrationActionType {
+  delete
+  create
+  update
 }
 
 input SetupOIDCSsoInput {
@@ -4538,28 +4351,39 @@ input EditSsoInput {
   status: SSOIdentityProviderStatus!
 }
 
-input EmailAccountConnectionParameters {
-  IMAP: ConnectionParameters
-  SMTP: ConnectionParameters
-  CALDAV: ConnectionParameters
+input SendEmailInput {
+  connectedAccountId: String!
+  to: String!
+  cc: String
+  bcc: String
+  subject: String!
+  body: String!
+  inReplyTo: String
+  files: [SendEmailAttachmentInput!]
 }
 
-input ConnectionParameters {
+input SendEmailAttachmentInput {
+  id: String!
+  name: String!
+}
+
+input EmailAccountConnectionParameters {
+  IMAP: ConnectionParametersInput
+  SMTP: ConnectionParametersInput
+  CALDAV: ConnectionParametersInput
+}
+
+input ConnectionParametersInput {
   host: String!
   port: Float!
   username: String
-  password: String!
+  password: String
   secure: Boolean
 }
 
 input UpdateLabPublicFeatureFlagInput {
   publicFeatureFlag: String!
   value: Boolean!
-}
-
-enum AiModelRole {
-  FAST
-  SMART
 }
 
 input CreateOneAppTokenInput {
@@ -4569,22 +4393,6 @@ input CreateOneAppTokenInput {
 
 input CreateAppTokenInput {
   expiresAt: DateTime!
-}
-
-input WorkspaceMigrationInput {
-  actions: [WorkspaceMigrationDeleteActionInput!]!
-}
-
-input WorkspaceMigrationDeleteActionInput {
-  type: WorkspaceMigrationActionType!
-  metadataName: AllMetadataName!
-  universalIdentifier: String!
-}
-
-enum WorkspaceMigrationActionType {
-  delete
-  create
-  update
 }
 
 enum FileFolder {
@@ -4602,6 +4410,7 @@ enum FileFolder {
   FilesField
   Dependencies
   Workflow
+  EmailAttachment
   AppTarball
   GeneratedSdkClient
 }
@@ -4609,6 +4418,7 @@ enum FileFolder {
 type Subscription {
   onEventSubscription(eventStreamId: String!): EventSubscription
   logicFunctionLogs(input: LogicFunctionLogsInput!): LogicFunctionLogs!
+  onAgentChatEvent(threadId: UUID!): AgentChatEvent!
 }
 
 input LogicFunctionLogsInput {

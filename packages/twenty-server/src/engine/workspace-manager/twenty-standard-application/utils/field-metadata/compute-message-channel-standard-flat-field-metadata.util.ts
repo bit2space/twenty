@@ -1,11 +1,6 @@
 import { msg } from '@lingui/core/macro';
 import { i18nLabel } from 'src/engine/workspace-manager/twenty-standard-application/utils/i18n-label.util';
-import {
-  DateDisplayFormat,
-  FieldMetadataType,
-  RelationOnDeleteAction,
-  RelationType,
-} from 'twenty-shared/types';
+import { DateDisplayFormat, FieldMetadataType } from 'twenty-shared/types';
 
 import { type FlatFieldMetadata } from 'src/engine/metadata-modules/flat-field-metadata/types/flat-field-metadata.type';
 import { type AllStandardObjectFieldName } from 'src/engine/workspace-manager/twenty-standard-application/types/all-standard-object-field-name.type';
@@ -13,7 +8,6 @@ import {
   type CreateStandardFieldArgs,
   createStandardFieldFlatMetadata,
 } from 'src/engine/workspace-manager/twenty-standard-application/utils/field-metadata/create-standard-field-flat-metadata.util';
-import { createStandardRelationFieldFlatMetadata } from 'src/engine/workspace-manager/twenty-standard-application/utils/field-metadata/create-standard-relation-field-flat-metadata.util';
 import { getTsVectorColumnExpressionFromFields } from 'src/engine/workspace-manager/utils/get-ts-vector-column-expression.util';
 import {
   MessageChannelType,
@@ -285,6 +279,13 @@ export const buildMessageChannelStandardFlatFieldMetadatas = ({
           label: i18nLabel(msg`SMS`),
           position: 1,
           color: 'blue',
+        },
+        {
+          id: '20202020-7f22-4e58-aa33-9c3e2c72ab10',
+          value: MessageChannelType.EMAIL_GROUP,
+          label: i18nLabel(msg`Email group`),
+          position: 2,
+          color: 'turquoise',
         },
       ],
     },
@@ -693,77 +694,6 @@ export const buildMessageChannelStandardFlatFieldMetadatas = ({
       icon: 'IconClock',
       isNullable: true,
       isUIReadOnly: true,
-    },
-    standardObjectMetadataRelatedEntityIds,
-    dependencyFlatEntityMaps,
-    twentyStandardApplicationId,
-    now,
-  }),
-  connectedAccount: createStandardRelationFieldFlatMetadata({
-    objectName,
-    workspaceId,
-    context: {
-      type: FieldMetadataType.RELATION,
-      morphId: null,
-      fieldName: 'connectedAccount',
-      label: i18nLabel(msg`Connected Account`),
-      description: i18nLabel(msg`Connected Account`),
-      icon: 'IconUserCircle',
-      isNullable: false,
-      isUIReadOnly: true,
-      targetObjectName: 'connectedAccount',
-      targetFieldName: 'messageChannels',
-      settings: {
-        relationType: RelationType.MANY_TO_ONE,
-        onDelete: RelationOnDeleteAction.CASCADE,
-        joinColumnName: 'connectedAccountId',
-      },
-    },
-    standardObjectMetadataRelatedEntityIds,
-    dependencyFlatEntityMaps,
-    twentyStandardApplicationId,
-    now,
-  }),
-  messageChannelMessageAssociations: createStandardRelationFieldFlatMetadata({
-    objectName,
-    workspaceId,
-    context: {
-      type: FieldMetadataType.RELATION,
-      morphId: null,
-      fieldName: 'messageChannelMessageAssociations',
-      label: i18nLabel(msg`Message Channel Association`),
-      description: i18nLabel(msg`Messages from the channel.`),
-      icon: 'IconMessage',
-      isNullable: true,
-      isUIReadOnly: true,
-      targetObjectName: 'messageChannelMessageAssociation',
-      targetFieldName: 'messageChannel',
-      settings: {
-        relationType: RelationType.ONE_TO_MANY,
-      },
-    },
-    standardObjectMetadataRelatedEntityIds,
-    dependencyFlatEntityMaps,
-    twentyStandardApplicationId,
-    now,
-  }),
-  messageFolders: createStandardRelationFieldFlatMetadata({
-    objectName,
-    workspaceId,
-    context: {
-      type: FieldMetadataType.RELATION,
-      morphId: null,
-      fieldName: 'messageFolders',
-      label: i18nLabel(msg`Message Folders`),
-      description: i18nLabel(msg`Message Folders`),
-      icon: 'IconFolder',
-      isNullable: true,
-      isUIReadOnly: true,
-      targetObjectName: 'messageFolder',
-      targetFieldName: 'messageChannel',
-      settings: {
-        relationType: RelationType.ONE_TO_MANY,
-      },
     },
     standardObjectMetadataRelatedEntityIds,
     dependencyFlatEntityMaps,

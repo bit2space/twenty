@@ -1,5 +1,3 @@
-import { isDefined } from 'twenty-shared/utils';
-
 import { createEmptyFlatEntityMaps } from 'src/engine/metadata-modules/flat-entity/constant/create-empty-flat-entity-maps.constant';
 import { type FlatEntityMaps } from 'src/engine/metadata-modules/flat-entity/types/flat-entity-maps.type';
 import { addFlatEntityToFlatEntityMapsOrThrow } from 'src/engine/metadata-modules/flat-entity/utils/add-flat-entity-to-flat-entity-maps-or-throw.util';
@@ -12,10 +10,7 @@ import { computeStandardCalendarChannelViewFields } from 'src/engine/workspace-m
 import { computeStandardCalendarEventParticipantViewFields } from 'src/engine/workspace-manager/twenty-standard-application/utils/view-field/compute-standard-calendar-event-participant-view-fields.util';
 import { computeStandardCalendarEventViewFields } from 'src/engine/workspace-manager/twenty-standard-application/utils/view-field/compute-standard-calendar-event-view-fields.util';
 import { computeStandardCompanyViewFields } from 'src/engine/workspace-manager/twenty-standard-application/utils/view-field/compute-standard-company-view-fields.util';
-import { computeStandardConnectedAccountViewFields } from 'src/engine/workspace-manager/twenty-standard-application/utils/view-field/compute-standard-connected-account-view-fields.util';
 import { computeStandardDashboardViewFields } from 'src/engine/workspace-manager/twenty-standard-application/utils/view-field/compute-standard-dashboard-view-fields.util';
-import { computeStandardFavoriteFolderViewFields } from 'src/engine/workspace-manager/twenty-standard-application/utils/view-field/compute-standard-favorite-folder-view-fields.util';
-import { computeStandardFavoriteViewFields } from 'src/engine/workspace-manager/twenty-standard-application/utils/view-field/compute-standard-favorite-view-fields.util';
 import { computeStandardMessageChannelMessageAssociationMessageFolderViewFields } from 'src/engine/workspace-manager/twenty-standard-application/utils/view-field/compute-standard-message-channel-message-association-message-folder-view-fields.util';
 import { computeStandardMessageChannelMessageAssociationViewFields } from 'src/engine/workspace-manager/twenty-standard-application/utils/view-field/compute-standard-message-channel-message-association-view-fields.util';
 import { computeStandardMessageChannelViewFields } from 'src/engine/workspace-manager/twenty-standard-application/utils/view-field/compute-standard-message-channel-view-fields.util';
@@ -50,10 +45,7 @@ const STANDARD_FLAT_VIEW_FIELD_METADATA_BUILDERS_BY_OBJECT_NAME = {
   calendarEvent: computeStandardCalendarEventViewFields,
   calendarEventParticipant: computeStandardCalendarEventParticipantViewFields,
   company: computeStandardCompanyViewFields,
-  connectedAccount: computeStandardConnectedAccountViewFields,
   dashboard: computeStandardDashboardViewFields,
-  favorite: computeStandardFavoriteViewFields,
-  favoriteFolder: computeStandardFavoriteFolderViewFields,
   message: computeStandardMessageViewFields,
   messageChannel: computeStandardMessageChannelViewFields,
   messageChannelMessageAssociation:
@@ -82,14 +74,11 @@ const STANDARD_FLAT_VIEW_FIELD_METADATA_BUILDERS_BY_OBJECT_NAME = {
 export type BuildStandardFlatViewFieldMetadataMapsArgs = Omit<
   CreateStandardViewFieldArgs,
   'context' | 'objectName'
-> & {
-  shouldIncludeRecordPageLayouts?: boolean;
-};
+>;
 
-export const buildStandardFlatViewFieldMetadataMaps = ({
-  shouldIncludeRecordPageLayouts,
-  ...args
-}: BuildStandardFlatViewFieldMetadataMapsArgs): FlatEntityMaps<FlatViewField> => {
+export const buildStandardFlatViewFieldMetadataMaps = (
+  args: BuildStandardFlatViewFieldMetadataMapsArgs,
+): FlatEntityMaps<FlatViewField> => {
   const allViewFieldMetadatas: FlatViewField[] = (
     Object.keys(
       STANDARD_FLAT_VIEW_FIELD_METADATA_BUILDERS_BY_OBJECT_NAME,
@@ -103,15 +92,7 @@ export const buildStandardFlatViewFieldMetadataMaps = ({
       objectName,
     });
 
-    return Object.values(result).filter(
-      (viewField) =>
-        shouldIncludeRecordPageLayouts ||
-        isDefined(
-          args.dependencyFlatEntityMaps.flatViewMaps.byUniversalIdentifier[
-            viewField.viewUniversalIdentifier
-          ],
-        ),
-    );
+    return Object.values(result);
   });
 
   let flatViewFieldMaps = createEmptyFlatEntityMaps();

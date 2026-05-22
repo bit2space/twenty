@@ -1,5 +1,3 @@
-import { ViewType } from 'twenty-shared/types';
-
 import { createEmptyFlatEntityMaps } from 'src/engine/metadata-modules/flat-entity/constant/create-empty-flat-entity-maps.constant';
 import { type FlatEntityMaps } from 'src/engine/metadata-modules/flat-entity/types/flat-entity-maps.type';
 import { addFlatEntityToFlatEntityMapsOrThrow } from 'src/engine/metadata-modules/flat-entity/utils/add-flat-entity-to-flat-entity-maps-or-throw.util';
@@ -12,10 +10,7 @@ import { computeStandardCalendarChannelEventAssociationViews } from 'src/engine/
 import { computeStandardCalendarEventParticipantViews } from 'src/engine/workspace-manager/twenty-standard-application/utils/view/compute-standard-calendar-event-participant-views.util';
 import { computeStandardCalendarEventViews } from 'src/engine/workspace-manager/twenty-standard-application/utils/view/compute-standard-calendar-event-views.util';
 import { computeStandardCompanyViews } from 'src/engine/workspace-manager/twenty-standard-application/utils/view/compute-standard-company-views.util';
-import { computeStandardConnectedAccountViews } from 'src/engine/workspace-manager/twenty-standard-application/utils/view/compute-standard-connected-account-views.util';
 import { computeStandardDashboardViews } from 'src/engine/workspace-manager/twenty-standard-application/utils/view/compute-standard-dashboard-views.util';
-import { computeStandardFavoriteFolderViews } from 'src/engine/workspace-manager/twenty-standard-application/utils/view/compute-standard-favorite-folder-views.util';
-import { computeStandardFavoriteViews } from 'src/engine/workspace-manager/twenty-standard-application/utils/view/compute-standard-favorite-views.util';
 import { computeStandardMessageChannelMessageAssociationMessageFolderViews } from 'src/engine/workspace-manager/twenty-standard-application/utils/view/compute-standard-message-channel-message-association-message-folder-views.util';
 import { computeStandardMessageChannelMessageAssociationViews } from 'src/engine/workspace-manager/twenty-standard-application/utils/view/compute-standard-message-channel-message-association-views.util';
 import { computeStandardMessageChannelViews } from 'src/engine/workspace-manager/twenty-standard-application/utils/view/compute-standard-message-channel-views.util';
@@ -50,10 +45,7 @@ const STANDARD_FLAT_VIEW_METADATA_BUILDERS_BY_OBJECT_NAME = {
   calendarEvent: computeStandardCalendarEventViews,
   calendarEventParticipant: computeStandardCalendarEventParticipantViews,
   company: computeStandardCompanyViews,
-  connectedAccount: computeStandardConnectedAccountViews,
   dashboard: computeStandardDashboardViews,
-  favorite: computeStandardFavoriteViews,
-  favoriteFolder: computeStandardFavoriteFolderViews,
   message: computeStandardMessageViews,
   messageChannel: computeStandardMessageChannelViews,
   messageChannelMessageAssociation:
@@ -82,14 +74,11 @@ const STANDARD_FLAT_VIEW_METADATA_BUILDERS_BY_OBJECT_NAME = {
 export type BuildStandardFlatViewMetadataMapsArgs = Omit<
   CreateStandardViewArgs,
   'context' | 'objectName'
-> & {
-  shouldIncludeRecordPageLayouts?: boolean;
-};
+>;
 
-export const buildStandardFlatViewMetadataMaps = ({
-  shouldIncludeRecordPageLayouts,
-  ...args
-}: BuildStandardFlatViewMetadataMapsArgs): FlatEntityMaps<FlatView> => {
+export const buildStandardFlatViewMetadataMaps = (
+  args: BuildStandardFlatViewMetadataMapsArgs,
+): FlatEntityMaps<FlatView> => {
   const allViewMetadatas: FlatView[] = (
     Object.keys(
       STANDARD_FLAT_VIEW_METADATA_BUILDERS_BY_OBJECT_NAME,
@@ -103,10 +92,7 @@ export const buildStandardFlatViewMetadataMaps = ({
       objectName,
     });
 
-    return Object.values(result).filter(
-      (view) =>
-        shouldIncludeRecordPageLayouts || view.type !== ViewType.FIELDS_WIDGET,
-    );
+    return Object.values(result);
   });
 
   let flatViewMaps = createEmptyFlatEntityMaps();

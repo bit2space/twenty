@@ -2,6 +2,9 @@
   "$schema": "./node_modules/oxlint/configuration_schema.json",
   "plugins": ["typescript", "import", "unicorn"],
   "jsPlugins": ["../twenty-oxlint-rules/dist/oxlint-plugin.mjs"],
+  "options": {
+    "typeAware": true
+  },
   "categories": {
     "correctness": "off"
   },
@@ -13,7 +16,11 @@
     "src/engine/workspace-manager/dev-seeder/data/seeds/**",
     "src/utils/email-providers.ts",
     "src/engine/core-modules/i18n/locales/generated/**",
-    "src/engine/core-modules/logic-function/logic-function-resource/constants/seed-project/src/index.ts"
+    "src/engine/core-modules/logic-function/logic-function-resource/constants/seed-project/src/index.ts",
+    "src/engine/metadata-modules/front-component/constants/seed-project/**",
+    "src/engine/core-modules/upgrade/constants/twenty-current-version.constant.ts",
+    "src/engine/core-modules/upgrade/constants/twenty-previous-versions.constant.ts",
+    "src/engine/core-modules/upgrade/constants/twenty-next-versions.constant.ts"
   ],
   "rules": {
     "func-style": ["error", "declaration", { "allowArrowFunctions": true }],
@@ -49,6 +56,8 @@
     }],
     "typescript/no-empty-function": "off",
     "typescript/no-explicit-any": "warn",
+    "typescript/no-floating-promises": "error",
+    "typescript/no-misused-promises": "error",
     "typescript/no-unused-vars": ["warn", {
       "vars": "all",
       "varsIgnorePattern": "^_",
@@ -59,6 +68,7 @@
     "twenty/inject-workspace-repository": "warn",
     "twenty/rest-api-methods-should-be-guarded": "error",
     "twenty/graphql-resolvers-should-be-guarded": "error",
+    "twenty/upgrade-command-filename": "error",
     "twenty/enforce-module-boundaries": ["error", {
       "depConstraints": [
         {

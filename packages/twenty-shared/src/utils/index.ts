@@ -25,7 +25,8 @@ export { assertUnreachable } from './assertUnreachable';
 export { base64UrlEncode } from './base64UrlEncode';
 export { conditionalAvailabilityParser } from './command-menu-items/conditionalAvailabilityParser';
 export { evaluateConditionalAvailabilityExpression } from './command-menu-items/evaluateConditionalAvailabilityExpression';
-export { interpolateCommandMenuItemLabel } from './command-menu-items/interpolateCommandMenuItemLabel';
+export { interpolateCommandMenuItemTemplate } from './command-menu-items/interpolateCommandMenuItemTemplate';
+export { resolveObjectMetadataLabel } from './command-menu-items/resolveObjectMetadataLabel';
 export { safeGetNestedProperty } from './command-menu-items/safeGetNestedProperty';
 export { computeDiffBetweenObjects } from './compute-diff-between-objects';
 export { isPlainDateAfter } from './date/isPlainDateAfter';
@@ -43,9 +44,14 @@ export { deepMerge } from './deepMerge';
 export { CustomError } from './errors/CustomError';
 export { evalFromContext } from './evalFromContext';
 export { extractAndSanitizeObjectStringFields } from './extractAndSanitizeObjectStringFields';
-export { computeMorphRelationFieldName } from './fieldMetadata/compute-morph-relation-field-name';
+export { computeMorphRelationGqlFieldName } from './fieldMetadata/compute-morph-relation-gql-field-name';
+export {
+  computeRelationGqlFieldJoinColumnName,
+  computeMorphRelationGqlFieldJoinColumnName,
+} from './fieldMetadata/compute-relation-gql-field-join-column-name';
 export { isFieldMetadataArrayKind } from './fieldMetadata/isFieldMetadataArrayKind';
 export { isFieldMetadataDateKind } from './fieldMetadata/isFieldMetadataDateKind';
+export { isFieldMetadataEligibleForFieldsWidget } from './fieldMetadata/isFieldMetadataEligibleForFieldsWidget';
 export { isFieldMetadataNumericKind } from './fieldMetadata/isFieldMetadataNumericKind';
 export { isFieldMetadataSelectKind } from './fieldMetadata/isFieldMetadataSelectKind';
 export { isFieldMetadataTextKind } from './fieldMetadata/isFieldMetadataTextKind';
@@ -98,6 +104,7 @@ export type {
   RecordFilterGroup,
 } from './filter/turnRecordFilterGroupIntoGqlOperationFilter';
 export { turnRecordFilterGroupsIntoGqlOperationFilter } from './filter/turnRecordFilterGroupIntoGqlOperationFilter';
+export type { FieldShared } from './filter/turnRecordFilterIntoGqlOperationFilter';
 export { turnRecordFilterIntoRecordGqlOperationFilter } from './filter/turnRecordFilterIntoGqlOperationFilter';
 export { combineFilters } from './filter/utils/combineFilters';
 export { convertViewFilterOperandToCoreOperand } from './filter/utils/convert-view-filter-operand-to-core-operand.util';
@@ -137,6 +144,12 @@ export { formatToShortNumber } from './format/formatToShortNumber';
 export { fromArrayToUniqueKeyRecord } from './from-array-to-unique-key-record.util';
 export { fromArrayToValuesByKeyRecord } from './fromArrayToValuesByKeyRecord.util';
 export { getURLSafely } from './getURLSafely';
+export {
+  getNodeTypename,
+  getConnectionTypename,
+  getEdgeTypename,
+  getGroupByConnectionTypename,
+} from './graphql/graphql-get-typename.util';
 export { getImageAbsoluteURI } from './image/getImageAbsoluteURI';
 export {
   sanitizeURL,
@@ -151,7 +164,7 @@ export { parseJson } from './parseJson';
 export { removePropertiesFromRecord } from './removePropertiesFromRecord';
 export { removeUndefinedFields } from './removeUndefinedFields';
 export { resolveRichTextVariables } from './rich-text-variable-resolver';
-export { safeParseRelativeDateFilterJSONStringified } from './safeParseRelativeDateFilterJSONStringified';
+export { safeParseRelativeDateFilterJsonStringified } from './safeParseRelativeDateFilterJsonStringified';
 export { getGenericOperationName } from './sentry/getGenericOperationName';
 export { getHumanReadableNameFromCode } from './sentry/getHumanReadableNameFromCode';
 export { appendCopySuffix } from './strings/appendCopySuffix';
@@ -181,11 +194,14 @@ export { isMetadataGqlOperationSignature } from './typeguard/isMetadataGqlOperat
 export { isPlainObject } from './typeguard/isPlainObject';
 export { isRecordGqlOperationSignature } from './typeguard/isRecordGqlOperationSignature';
 export { throwIfNotDefined } from './typeguard/throwIfNotDefined';
+export { formatUpgradeCommandName } from './upgrade/formatUpgradeCommandName';
 export { absoluteUrlSchema } from './url/absoluteUrlSchema';
 export { buildSignedPath } from './url/buildSignedPath';
 export { ensureAbsoluteUrl } from './url/ensureAbsoluteUrl';
 export { getAbsoluteUrlOrThrow } from './url/getAbsoluteUrlOrThrow';
+export { getSafeUrl } from './url/getSafeUrl';
 export { getUrlHostnameOrThrow } from './url/getUrlHostnameOrThrow';
+export { isSafeUrl } from './url/isSafeUrl';
 export { isValidHostname } from './url/isValidHostname';
 export { isValidUrl } from './url/isValidUrl';
 export { normalizeUrl } from './url/normalizeUrl';
@@ -196,6 +212,8 @@ export { assertIsDefinedOrThrow } from './validation/assertIsDefinedOrThrow';
 export { isDefined } from './validation/isDefined';
 export { isEmptyObject } from './validation/isEmptyObject';
 export { isLabelIdentifierFieldMetadataTypes } from './validation/isLabelIdentifierFieldMetadataTypes';
+export type { SearchableFieldType } from './validation/isSearchableFieldType';
+export { isSearchableFieldType } from './validation/isSearchableFieldType';
 export { isValidLocale } from './validation/isValidLocale';
 export { isValidTwentySubdomain } from './validation/isValidTwentySubdomain';
 export { isValidUuid } from './validation/isValidUuid';

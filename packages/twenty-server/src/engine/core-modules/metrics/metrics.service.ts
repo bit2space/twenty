@@ -98,7 +98,11 @@ export class MetricsService {
     counter.add(1, attributes);
 
     if (shouldStoreInCache && eventId) {
-      this.metricsCacheService.updateCounter(key, [eventId]);
+      try {
+        await this.metricsCacheService.updateCounter(key, [eventId]);
+      } catch (error) {
+        this.logger.error(`Failed to update metrics cache for ${key}`, error);
+      }
     }
 
     if (isDefined(debugLog)) {
@@ -122,7 +126,7 @@ export class MetricsService {
     counter.add(eventIds.length, attributes);
 
     if (shouldStoreInCache) {
-      this.metricsCacheService.updateCounter(key, eventIds);
+      await this.metricsCacheService.updateCounter(key, eventIds);
     }
   }
 

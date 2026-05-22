@@ -9,6 +9,8 @@ import { Like, Repository, type QueryRunner } from 'typeorm';
 
 import { ApplicationEntity } from 'src/engine/core-modules/application/application.entity';
 import { FileStorageDriverFactory } from 'src/engine/core-modules/file-storage/file-storage-driver.factory';
+import { assertStoragePathIsWithinWorkspace } from 'src/engine/core-modules/file-storage/utils/assert-storage-path-is-within-workspace.util';
+import { assertResourcePathIsSafe } from 'src/engine/core-modules/file-storage/utils/assert-resource-path-is-safe.util';
 import { FileEntity } from 'src/engine/core-modules/file/entities/file.entity';
 import { FileSettings } from 'src/engine/core-modules/file/types/file-settings.types';
 
@@ -35,12 +37,23 @@ export class FileStorageService {
     fileFolder,
     resourcePath,
   }: ResourceIdentifier): string {
-    return join(
+    assertResourcePathIsSafe(resourcePath);
+
+    const onStoragePath = join(
       workspaceId,
       applicationUniversalIdentifier,
       fileFolder,
       resourcePath,
     ).replace(/\/+/g, '/');
+
+    assertStoragePathIsWithinWorkspace({
+      onStoragePath,
+      workspaceId,
+      applicationUniversalIdentifier,
+      fileFolder,
+    });
+
+    return onStoragePath;
   }
 
   async writeFile({
@@ -152,15 +165,6 @@ export class FileStorageService {
     });
   }
 
-  deleteLegacy(params: {
-    folderPath: string;
-    filename?: string;
-  }): Promise<void> {
-    const driver = this.fileStorageDriverFactory.getCurrentDriver();
-
-    return driver.delete(params);
-  }
-
   async deleteApplicationFiles({
     applicationUniversalIdentifier,
     workspaceId,
@@ -224,14 +228,31 @@ export class FileStorageService {
         path: Like(`${fileFolder}/%`),
       },
     });
+
+    const application = await this.applicationRepository.findOneOrFail({
+      where: { id: file.applicationId, workspaceId: file.workspaceId },
+    });
+
     const driver = this.fileStorageDriverFactory.getCurrentDriver();
 
     await driver.delete({
-      folderPath: `${file.workspaceId}/${file.applicationId}`,
+      folderPath: `${file.workspaceId}/${application.universalIdentifier}`,
       filename: file.path,
     });
 
     await this.fileRepository.delete(fileId);
+  }
+
+  async checkIfWorkspaceFolderExists(workspaceId: string): Promise<boolean> {
+    const driver = this.fileStorageDriverFactory.getCurrentDriver();
+
+    return driver.checkFolderExists({ folderPath: workspaceId });
+  }
+
+  async deleteWorkspaceFolder(workspaceId: string): Promise<void> {
+    const driver = this.fileStorageDriverFactory.getCurrentDriver();
+
+    await driver.delete({ folderPath: workspaceId });
   }
 
   copyLegacy(params: {
@@ -268,12 +289,6 @@ export class FileStorageService {
       from: { folderPath: fromPath },
       to: { folderPath: toPath },
     });
-  }
-
-  checkFolderExistsLegacy(params: { folderPath: string }): Promise<boolean> {
-    const driver = this.fileStorageDriverFactory.getCurrentDriver();
-
-    return driver.checkFolderExists(params);
   }
 
   checkFileExists(params: ResourceIdentifier): Promise<boolean> {

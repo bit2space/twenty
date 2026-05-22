@@ -288,16 +288,17 @@ const createPageLayoutWithWidget = (
   name: 'Mock Page Layout',
   type: PageLayoutType.RECORD_PAGE,
   objectMetadataId,
+  universalIdentifier: '20202020-0000-0000-0000-000000000001',
   tabs: [
     {
       __typename: 'PageLayoutTab' as const,
+      isActive: true,
       applicationId: '',
       id: TAB_ID_OVERVIEW,
       title: 'Overview',
       position: 0,
       pageLayoutId: PAGE_LAYOUT_TEST_INSTANCE_ID,
       widgets: [widget],
-      isOverridden: false,
       createdAt: '2024-01-01T00:00:00Z',
       updatedAt: '2024-01-01T00:00:00Z',
       deletedAt: null,
@@ -333,6 +334,8 @@ export const TextFieldWidget: Story = {
   render: () => {
     const widget: PageLayoutWidget = {
       __typename: 'PageLayoutWidget',
+      applicationId: '',
+      isActive: true,
       id: 'widget-text-field',
       pageLayoutTabId: TAB_ID_OVERVIEW,
       type: WidgetType.FIELD,
@@ -351,7 +354,6 @@ export const TextFieldWidget: Story = {
         fieldMetadataId: nameField.id,
         fieldDisplayMode: FieldDisplayMode.FIELD,
       },
-      isOverridden: false,
       createdAt: '2024-01-01T00:00:00Z',
       updatedAt: '2024-01-01T00:00:00Z',
       deletedAt: null,
@@ -427,6 +429,8 @@ export const AddressFieldWidget: Story = {
   render: () => {
     const widget: PageLayoutWidget = {
       __typename: 'PageLayoutWidget',
+      applicationId: '',
+      isActive: true,
       id: 'widget-address-field',
       pageLayoutTabId: TAB_ID_OVERVIEW,
       type: WidgetType.FIELD,
@@ -445,7 +449,6 @@ export const AddressFieldWidget: Story = {
         fieldMetadataId: addressField.id,
         fieldDisplayMode: FieldDisplayMode.FIELD,
       },
-      isOverridden: false,
       createdAt: '2024-01-01T00:00:00Z',
       updatedAt: '2024-01-01T00:00:00Z',
       deletedAt: null,
@@ -524,6 +527,8 @@ export const NumberFieldWidget: Story = {
   render: () => {
     const widget: PageLayoutWidget = {
       __typename: 'PageLayoutWidget',
+      applicationId: '',
+      isActive: true,
       id: 'widget-number-field',
       pageLayoutTabId: TAB_ID_OVERVIEW,
       type: WidgetType.FIELD,
@@ -542,7 +547,6 @@ export const NumberFieldWidget: Story = {
         fieldMetadataId: employeesField.id,
         fieldDisplayMode: FieldDisplayMode.FIELD,
       },
-      isOverridden: false,
       createdAt: '2024-01-01T00:00:00Z',
       updatedAt: '2024-01-01T00:00:00Z',
       deletedAt: null,
@@ -618,6 +622,8 @@ export const LinkFieldWidget: Story = {
   render: () => {
     const widget: PageLayoutWidget = {
       __typename: 'PageLayoutWidget',
+      applicationId: '',
+      isActive: true,
       id: 'widget-link-field',
       pageLayoutTabId: TAB_ID_OVERVIEW,
       type: WidgetType.FIELD,
@@ -636,7 +642,6 @@ export const LinkFieldWidget: Story = {
         fieldMetadataId: linkedinField.id,
         fieldDisplayMode: FieldDisplayMode.FIELD,
       },
-      isOverridden: false,
       createdAt: '2024-01-01T00:00:00Z',
       updatedAt: '2024-01-01T00:00:00Z',
       deletedAt: null,
@@ -712,6 +717,8 @@ export const ManyToOneRelationFieldWidget: Story = {
   render: () => {
     const widget: PageLayoutWidget = {
       __typename: 'PageLayoutWidget',
+      applicationId: '',
+      isActive: true,
       id: 'widget-relation-field',
       pageLayoutTabId: TAB_ID_OVERVIEW,
       type: WidgetType.FIELD,
@@ -730,7 +737,6 @@ export const ManyToOneRelationFieldWidget: Story = {
         fieldMetadataId: accountOwnerField.id,
         fieldDisplayMode: FieldDisplayMode.FIELD,
       },
-      isOverridden: false,
       createdAt: '2024-01-01T00:00:00Z',
       updatedAt: '2024-01-01T00:00:00Z',
       deletedAt: null,
@@ -816,6 +822,8 @@ export const OneToManyRelationFieldWidget: Story = {
   render: () => {
     const widget: PageLayoutWidget = {
       __typename: 'PageLayoutWidget',
+      applicationId: '',
+      isActive: true,
       id: 'widget-one-to-many-relation-field',
       pageLayoutTabId: TAB_ID_OVERVIEW,
       type: WidgetType.FIELD,
@@ -834,7 +842,6 @@ export const OneToManyRelationFieldWidget: Story = {
         fieldMetadataId: companyPeopleField.id,
         fieldDisplayMode: FieldDisplayMode.FIELD,
       },
-      isOverridden: false,
       createdAt: '2024-01-01T00:00:00Z',
       updatedAt: '2024-01-01T00:00:00Z',
       deletedAt: null,
@@ -912,6 +919,8 @@ export const BooleanFieldWidget: Story = {
   render: () => {
     const widget: PageLayoutWidget = {
       __typename: 'PageLayoutWidget',
+      applicationId: '',
+      isActive: true,
       id: 'widget-boolean-field',
       pageLayoutTabId: TAB_ID_OVERVIEW,
       type: WidgetType.FIELD,
@@ -930,7 +939,6 @@ export const BooleanFieldWidget: Story = {
         fieldMetadataId: idealCustomerProfileField.id,
         fieldDisplayMode: FieldDisplayMode.FIELD,
       },
-      isOverridden: false,
       createdAt: '2024-01-01T00:00:00Z',
       updatedAt: '2024-01-01T00:00:00Z',
       deletedAt: null,
@@ -1005,6 +1013,8 @@ export const CurrencyFieldWidget: Story = {
   render: () => {
     const widget: PageLayoutWidget = {
       __typename: 'PageLayoutWidget',
+      applicationId: '',
+      isActive: true,
       id: 'widget-currency-field',
       pageLayoutTabId: TAB_ID_OVERVIEW,
       type: WidgetType.FIELD,
@@ -1023,7 +1033,6 @@ export const CurrencyFieldWidget: Story = {
         fieldMetadataId: annualRecurringRevenueField.id,
         fieldDisplayMode: FieldDisplayMode.FIELD,
       },
-      isOverridden: false,
       createdAt: '2024-01-01T00:00:00Z',
       updatedAt: '2024-01-01T00:00:00Z',
       deletedAt: null,
@@ -1098,6 +1107,8 @@ export const EmailsFieldWidget: Story = {
   render: () => {
     const widget: PageLayoutWidget = {
       __typename: 'PageLayoutWidget',
+      applicationId: '',
+      isActive: true,
       id: 'widget-emails-field',
       pageLayoutTabId: TAB_ID_OVERVIEW,
       type: WidgetType.FIELD,
@@ -1116,7 +1127,6 @@ export const EmailsFieldWidget: Story = {
         fieldMetadataId: personEmailsField.id,
         fieldDisplayMode: FieldDisplayMode.FIELD,
       },
-      isOverridden: false,
       createdAt: '2024-01-01T00:00:00Z',
       updatedAt: '2024-01-01T00:00:00Z',
       deletedAt: null,
@@ -1192,6 +1202,8 @@ export const PhonesFieldWidget: Story = {
   render: () => {
     const widget: PageLayoutWidget = {
       __typename: 'PageLayoutWidget',
+      applicationId: '',
+      isActive: true,
       id: 'widget-phones-field',
       pageLayoutTabId: TAB_ID_OVERVIEW,
       type: WidgetType.FIELD,
@@ -1210,7 +1222,6 @@ export const PhonesFieldWidget: Story = {
         fieldMetadataId: personPhonesField.id,
         fieldDisplayMode: FieldDisplayMode.FIELD,
       },
-      isOverridden: false,
       createdAt: '2024-01-01T00:00:00Z',
       updatedAt: '2024-01-01T00:00:00Z',
       deletedAt: null,
@@ -1286,6 +1297,8 @@ export const SelectFieldWidget: Story = {
   render: () => {
     const widget: PageLayoutWidget = {
       __typename: 'PageLayoutWidget',
+      applicationId: '',
+      isActive: true,
       id: 'widget-select-field',
       pageLayoutTabId: TAB_ID_OVERVIEW,
       type: WidgetType.FIELD,
@@ -1304,7 +1317,6 @@ export const SelectFieldWidget: Story = {
         fieldMetadataId: opportunityStageField.id,
         fieldDisplayMode: FieldDisplayMode.FIELD,
       },
-      isOverridden: false,
       createdAt: '2024-01-01T00:00:00Z',
       updatedAt: '2024-01-01T00:00:00Z',
       deletedAt: null,
@@ -1381,6 +1393,8 @@ export const MultiSelectFieldWidget: Story = {
   render: () => {
     const widget: PageLayoutWidget = {
       __typename: 'PageLayoutWidget',
+      applicationId: '',
+      isActive: true,
       id: 'widget-multi-select-field',
       pageLayoutTabId: TAB_ID_OVERVIEW,
       type: WidgetType.FIELD,
@@ -1399,7 +1413,6 @@ export const MultiSelectFieldWidget: Story = {
         fieldMetadataId: companyWorkPolicyField.id,
         fieldDisplayMode: FieldDisplayMode.FIELD,
       },
-      isOverridden: false,
       createdAt: '2024-01-01T00:00:00Z',
       updatedAt: '2024-01-01T00:00:00Z',
       deletedAt: null,
@@ -1479,6 +1492,8 @@ export const TimelineActivityRelationFieldWidget: Story = {
   render: () => {
     const widget: PageLayoutWidget = {
       __typename: 'PageLayoutWidget',
+      applicationId: '',
+      isActive: true,
       id: 'widget-timeline-activity-relation-field',
       pageLayoutTabId: TAB_ID_OVERVIEW,
       type: WidgetType.FIELD,
@@ -1497,7 +1512,6 @@ export const TimelineActivityRelationFieldWidget: Story = {
         fieldMetadataId: timelineActivityWorkspaceMemberField.id,
         fieldDisplayMode: FieldDisplayMode.FIELD,
       },
-      isOverridden: false,
       createdAt: '2024-01-01T00:00:00Z',
       updatedAt: '2024-01-01T00:00:00Z',
       deletedAt: null,
@@ -1578,6 +1592,8 @@ export const ManyToOneRelationCardWidget: Story = {
   render: () => {
     const widget: PageLayoutWidget = {
       __typename: 'PageLayoutWidget',
+      applicationId: '',
+      isActive: true,
       id: 'widget-relation-card',
       pageLayoutTabId: TAB_ID_OVERVIEW,
       type: WidgetType.FIELD,
@@ -1596,7 +1612,6 @@ export const ManyToOneRelationCardWidget: Story = {
         fieldMetadataId: accountOwnerField.id,
         fieldDisplayMode: FieldDisplayMode.CARD,
       },
-      isOverridden: false,
       createdAt: '2024-01-01T00:00:00Z',
       updatedAt: '2024-01-01T00:00:00Z',
       deletedAt: null,
@@ -1690,6 +1705,8 @@ export const OneToManyRelationCardWidget: Story = {
   render: () => {
     const widget: PageLayoutWidget = {
       __typename: 'PageLayoutWidget',
+      applicationId: '',
+      isActive: true,
       id: 'widget-one-to-many-relation-card',
       pageLayoutTabId: TAB_ID_OVERVIEW,
       type: WidgetType.FIELD,
@@ -1708,7 +1725,6 @@ export const OneToManyRelationCardWidget: Story = {
         fieldMetadataId: companyPeopleField.id,
         fieldDisplayMode: FieldDisplayMode.CARD,
       },
-      isOverridden: false,
       createdAt: '2024-01-01T00:00:00Z',
       updatedAt: '2024-01-01T00:00:00Z',
       deletedAt: null,
@@ -1785,6 +1801,8 @@ export const TimelineActivityRelationCardWidget: Story = {
   render: () => {
     const widget: PageLayoutWidget = {
       __typename: 'PageLayoutWidget',
+      applicationId: '',
+      isActive: true,
       id: 'widget-timeline-activity-relation-card',
       pageLayoutTabId: TAB_ID_OVERVIEW,
       type: WidgetType.FIELD,
@@ -1803,7 +1821,6 @@ export const TimelineActivityRelationCardWidget: Story = {
         fieldMetadataId: timelineActivityWorkspaceMemberField.id,
         fieldDisplayMode: FieldDisplayMode.CARD,
       },
-      isOverridden: false,
       createdAt: '2024-01-01T00:00:00Z',
       updatedAt: '2024-01-01T00:00:00Z',
       deletedAt: null,
@@ -1946,6 +1963,8 @@ export const OneToManyRelationCardWidgetWithProgressiveLoading: Story = {
 
     const widget: PageLayoutWidget = {
       __typename: 'PageLayoutWidget',
+      applicationId: '',
+      isActive: true,
       id: 'widget-one-to-many-relation-card-progressive',
       pageLayoutTabId: TAB_ID_OVERVIEW,
       type: WidgetType.FIELD,
@@ -1964,7 +1983,6 @@ export const OneToManyRelationCardWidgetWithProgressiveLoading: Story = {
         fieldMetadataId: companyPeopleField.id,
         fieldDisplayMode: FieldDisplayMode.CARD,
       },
-      isOverridden: false,
       createdAt: '2024-01-01T00:00:00Z',
       updatedAt: '2024-01-01T00:00:00Z',
       deletedAt: null,

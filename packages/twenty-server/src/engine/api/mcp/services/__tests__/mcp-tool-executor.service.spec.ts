@@ -1,4 +1,9 @@
 import { JSON_RPC_ERROR_CODE } from 'src/engine/api/mcp/constants/json-rpc-error-code.const';
+import { MCP_CLOSED_WORLD_READ_ONLY_TOOL_ANNOTATIONS } from 'src/engine/api/mcp/constants/mcp-closed-world-read-only-tool-annotations.const';
+import {
+  MCP_PROGRESS_NOTIFICATION_METHOD,
+  TOOL_CALL_PROGRESS_TOKEN_PREFIX,
+} from 'src/engine/api/mcp/constants/mcp-progress-notification.const';
 import { McpToolExecutorService } from 'src/engine/api/mcp/services/mcp-tool-executor.service';
 
 describe('McpToolExecutorService', () => {
@@ -20,6 +25,7 @@ describe('McpToolExecutorService', () => {
               required: ['query'],
             },
           },
+          annotations: MCP_CLOSED_WORLD_READ_ONLY_TOOL_ANNOTATIONS,
         },
       } as any;
 
@@ -38,6 +44,7 @@ describe('McpToolExecutorService', () => {
                 properties: { query: { type: 'string' } },
                 required: ['query'],
               },
+              annotations: MCP_CLOSED_WORLD_READ_ONLY_TOOL_ANNOTATIONS,
             },
           ],
         },
@@ -139,6 +146,60 @@ describe('McpToolExecutorService', () => {
         result: {
           content: [{ type: 'text', text: 'API rate limited' }],
           isError: true,
+        },
+      });
+    });
+
+    it('should emit progress notification via sseWriter before execution', async () => {
+      const sseWriter = jest.fn();
+      const toolSet = {
+        my_tool: {
+          execute: jest.fn().mockResolvedValue({ data: 'ok' }),
+          description: 'My tool',
+          inputSchema: { type: 'object' },
+        },
+      } as any;
+
+      await service.handleToolCall(
+        'sse-1',
+        toolSet,
+        { name: 'my_tool', arguments: {} },
+        sseWriter,
+      );
+
+      expect(sseWriter).toHaveBeenCalledTimes(1);
+      expect(sseWriter).toHaveBeenCalledWith({
+        jsonrpc: '2.0',
+        method: MCP_PROGRESS_NOTIFICATION_METHOD,
+        params: {
+          progressToken: `${TOOL_CALL_PROGRESS_TOKEN_PREFIX}sse-1`,
+          progress: 0,
+          total: 1,
+        },
+      });
+    });
+
+    it('should not emit progress notification when sseWriter is undefined', async () => {
+      const toolSet = {
+        my_tool: {
+          execute: jest.fn().mockResolvedValue({ data: 'ok' }),
+          description: 'My tool',
+          inputSchema: { type: 'object' },
+        },
+      } as any;
+
+      const result = await service.handleToolCall('no-sse', toolSet, {
+        name: 'my_tool',
+        arguments: {},
+      });
+
+      // Should still return normal result without errors
+      expect(result).toEqual({
+        id: 'no-sse',
+        jsonrpc: '2.0',
+        result: {
+          content: [{ type: 'text', text: '{"data":"ok"}' }],
+          isError: false,
         },
       });
     });

@@ -7,9 +7,9 @@ import { StaleRegistrationCleanupCronCommand } from 'src/engine/core-modules/app
 import { ApplicationVersionCheckCronCommand } from 'src/engine/core-modules/application/application-upgrade/crons/commands/application-version-check.cron.command';
 import { EnterpriseKeyValidationCronCommand } from 'src/engine/core-modules/enterprise/cron/command/enterprise-key-validation.cron.command';
 import { EventLogCleanupCronCommand } from 'src/engine/core-modules/event-logs/cleanup/commands/event-log-cleanup.cron.command';
+import { RotateSigningKeysCronCommand } from 'src/engine/core-modules/jwt/crons/commands/rotate-signing-keys.cron.command';
 import { CronTriggerCronCommand } from 'src/engine/core-modules/logic-function/logic-function-trigger/triggers/cron/cron-trigger.cron.command';
 import { CheckPublicDomainsValidRecordsCronCommand } from 'src/engine/core-modules/public-domain/crons/commands/check-public-domains-valid-records.cron.command';
-import { TwentyConfigService } from 'src/engine/core-modules/twenty-config/twenty-config.service';
 import { CheckCustomDomainValidRecordsCronCommand } from 'src/engine/core-modules/workspace/crons/commands/check-custom-domain-valid-records.cron.command';
 import { TrashCleanupCronCommand } from 'src/engine/trash-cleanup/commands/trash-cleanup.cron.command';
 import { CleanOnboardingWorkspacesCronCommand } from 'src/engine/workspace-manager/workspace-cleaner/commands/clean-onboarding-workspaces.cron.command';
@@ -58,7 +58,7 @@ export class CronRegisterAllCommand extends CommandRunner {
     private readonly trashCleanupCronCommand: TrashCleanupCronCommand,
     private readonly eventLogCleanupCronCommand: EventLogCleanupCronCommand,
     private readonly enterpriseKeyValidationCronCommand: EnterpriseKeyValidationCronCommand,
-    private readonly twentyConfigService: TwentyConfigService,
+    private readonly rotateSigningKeysCronCommand: RotateSigningKeysCronCommand,
     private readonly marketplaceCatalogSyncCronCommand: MarketplaceCatalogSyncCronCommand,
     private readonly applicationVersionCheckCronCommand: ApplicationVersionCheckCronCommand,
     private readonly staleRegistrationCleanupCronCommand: StaleRegistrationCleanupCronCommand,
@@ -69,7 +69,7 @@ export class CronRegisterAllCommand extends CommandRunner {
   async run(): Promise<void> {
     this.logger.log('Registering all background sync cron jobs...');
 
-    const commands = [
+    const allCommands = [
       {
         name: 'MessagingMessagesImport',
         command: this.messagingMessagesImportCronCommand,
@@ -159,6 +159,10 @@ export class CronRegisterAllCommand extends CommandRunner {
         command: this.enterpriseKeyValidationCronCommand,
       },
       {
+        name: 'RotateSigningKeys',
+        command: this.rotateSigningKeysCronCommand,
+      },
+      {
         name: 'StaleRegistrationCleanup',
         command: this.staleRegistrationCleanupCronCommand,
       },
@@ -169,7 +173,7 @@ export class CronRegisterAllCommand extends CommandRunner {
     const failures: string[] = [];
     const successes: string[] = [];
 
-    for (const { name, command } of commands) {
+    for (const { name, command } of allCommands) {
       try {
         this.logger.log(`Registering ${name} cron job...`);
         await command.run();

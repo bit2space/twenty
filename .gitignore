@@ -1,7 +1,8 @@
 **/**/.env
 .DS_Store
 /.idea
-.claude/settings.json
+.claude/
+.cursor/debug-*.log
 **/**/node_modules/
 .cache
 
@@ -50,6 +51,8 @@ dump.rdb
 
 mcp.json
 /.junie/
-twenty-crm-fork-deployment-guide.md
 TRANSLATION_QA_REPORT.md
 .playwright-mcp/
+.playwright-cli/
+output/playwright/
+twenty-crm-fork-deployment-guide.md

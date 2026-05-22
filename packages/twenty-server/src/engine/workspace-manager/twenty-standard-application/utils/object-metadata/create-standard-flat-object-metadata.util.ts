@@ -213,36 +213,6 @@ export const STANDARD_FLAT_OBJECT_METADATA_BUILDERS_BY_OBJECT_NAME = {
       twentyStandardApplicationId,
       now,
     }),
-  connectedAccount: ({
-    now,
-    workspaceId,
-    standardObjectMetadataRelatedEntityIds,
-    twentyStandardApplicationId,
-    dependencyFlatEntityMaps,
-  }: Omit<
-    CreateStandardObjectArgs<'connectedAccount'>,
-    'context' | 'objectName'
-  >) =>
-    createStandardObjectFlatMetadata({
-      objectName: 'connectedAccount',
-      dependencyFlatEntityMaps,
-      context: {
-        universalIdentifier:
-          STANDARD_OBJECTS.connectedAccount.universalIdentifier,
-        nameSingular: 'connectedAccount',
-        namePlural: 'connectedAccounts',
-        labelSingular: i18nLabel(msg`Connected Account`),
-        labelPlural: i18nLabel(msg`Connected Accounts`),
-        description: i18nLabel(msg`A connected account`),
-        icon: 'IconAt',
-        isSystem: true,
-        labelIdentifierFieldMetadataName: 'handle',
-      },
-      workspaceId,
-      standardObjectMetadataRelatedEntityIds,
-      twentyStandardApplicationId,
-      now,
-    }),
   dashboard: ({
     now,
     workspaceId,
@@ -264,62 +234,6 @@ export const STANDARD_FLAT_OBJECT_METADATA_BUILDERS_BY_OBJECT_NAME = {
         isSearchable: true,
         shortcut: 'D',
         labelIdentifierFieldMetadataName: 'title',
-      },
-      workspaceId,
-      standardObjectMetadataRelatedEntityIds,
-      twentyStandardApplicationId,
-      now,
-    }),
-  favorite: ({
-    now,
-    workspaceId,
-    standardObjectMetadataRelatedEntityIds,
-    twentyStandardApplicationId,
-    dependencyFlatEntityMaps,
-  }: Omit<CreateStandardObjectArgs<'favorite'>, 'context' | 'objectName'>) =>
-    createStandardObjectFlatMetadata({
-      objectName: 'favorite',
-      dependencyFlatEntityMaps,
-      context: {
-        universalIdentifier: STANDARD_OBJECTS.favorite.universalIdentifier,
-        nameSingular: 'favorite',
-        namePlural: 'favorites',
-        labelSingular: i18nLabel(msg`Favorite`),
-        labelPlural: i18nLabel(msg`Favorites`),
-        description: i18nLabel(msg`A favorite`),
-        icon: 'IconHeart',
-        isSystem: true,
-        labelIdentifierFieldMetadataName: 'id',
-      },
-      workspaceId,
-      standardObjectMetadataRelatedEntityIds,
-      twentyStandardApplicationId,
-      now,
-    }),
-  favoriteFolder: ({
-    now,
-    workspaceId,
-    standardObjectMetadataRelatedEntityIds,
-    twentyStandardApplicationId,
-    dependencyFlatEntityMaps,
-  }: Omit<
-    CreateStandardObjectArgs<'favoriteFolder'>,
-    'context' | 'objectName'
-  >) =>
-    createStandardObjectFlatMetadata({
-      objectName: 'favoriteFolder',
-      dependencyFlatEntityMaps,
-      context: {
-        universalIdentifier:
-          STANDARD_OBJECTS.favoriteFolder.universalIdentifier,
-        nameSingular: 'favoriteFolder',
-        namePlural: 'favoriteFolders',
-        labelSingular: i18nLabel(msg`Favorite Folder`),
-        labelPlural: i18nLabel(msg`Favorite Folders`),
-        description: i18nLabel(msg`A favorite folder`),
-        icon: 'IconFolder',
-        isSystem: true,
-        labelIdentifierFieldMetadataName: 'id',
       },
       workspaceId,
       standardObjectMetadataRelatedEntityIds,
@@ -510,7 +424,7 @@ export const STANDARD_FLAT_OBJECT_METADATA_BUILDERS_BY_OBJECT_NAME = {
         icon: 'IconMessage',
         isSystem: true,
         isAuditLogged: false,
-        labelIdentifierFieldMetadataName: 'id',
+        labelIdentifierFieldMetadataName: 'subject',
       },
       workspaceId,
       standardObjectMetadataRelatedEntityIds,
